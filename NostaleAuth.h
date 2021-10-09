@@ -31,29 +31,34 @@ public:
 
     QString getToken(const QString& accountId);
 
-signals:
+private:
+    QChar getFirstNumber(QString uuid);
+
+    QByteArray generateSecondTypeUserAgentMagic();
+
+    QByteArray generateThirdTypeUserAgentMagic(QString accountId);
+
+    bool sendStartTime();
+
+    void initInstallationId();
+
+    void initCert();
+
+    void initAllCerts();
+
+    void initPrivateKey();
 
 private:
+    // Members
     QString locale;
     QString installationId;
     QString chromeVersion;
     QString gameforgeVersion;
     QString cert;
     QSslKey privateKey;
-    QList<QSslCertificate> allCerts;
     QString token;
     QString browserUserAgent;
-
-
-    QChar getFirstNumber(QString uuid);
-    QByteArray generateSecondTypeUserAgentMagic();
-    QByteArray generateThirdTypeUserAgentMagic(QString accountId);
-    bool sendStartTime();
-    void initInstallationId();
-    void initCert();
-    void initAllCerts();
-    void initPrivateKey();
-
+    QList<QSslCertificate> allCerts;
 };
 
 #endif // NOSTALEAUTH_H

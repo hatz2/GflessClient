@@ -1,5 +1,4 @@
 #include "NostaleAuth.h"
-#include <curl/curl.h>
 
 NostaleAuth::NostaleAuth(QObject *parent) : QObject(parent)
 {
@@ -155,8 +154,6 @@ QByteArray NostaleAuth::generateThirdTypeUserAgentMagic(QString accountId)
 
         return firstTwoLettersOfAccountId.toUtf8() + hashOfSum.right(8);
     }
-
-
 }
 
 bool NostaleAuth::sendStartTime()

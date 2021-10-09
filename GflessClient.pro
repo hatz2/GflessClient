@@ -40,10 +40,6 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-unix|win32: LIBS += -L$$PWD/../../../../DEV/vcpkg/installed/x86-windows/lib/ -llibcurl
-
-INCLUDEPATH += $$PWD/../../../../DEV/vcpkg/installed/x86-windows/include
-DEPENDPATH += $$PWD/../../../../DEV/vcpkg/installed/x86-windows/include
 
 RESOURCES += \
     resources.qrc
