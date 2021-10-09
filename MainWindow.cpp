@@ -36,6 +36,13 @@ void MainWindow::on_openAccountsButton_clicked()
         {
             QString displayName = displayNames[i];
             QString token = nostaleAuth->getToken(accounts.value(gameforgeAccountUsername).value(displayName));
+
+            if (token.isEmpty())
+            {
+                qDebug() << "Error, couldn't get token";
+                return;
+            }
+
             gflessClient->openClient(displayName, token, settingsDialog->getGameClientPath(), settingsDialog->getGameLanguage());
         });
     }

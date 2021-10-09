@@ -50,6 +50,8 @@ void GflessClient::handlePipe()
     QJsonObject json = QJsonDocument::fromJson(pipe->readAll()).object();
     QString method = json["method"].toString();
 
+    qDebug() << QJsonDocument(json).toJson();
+
     if (method == "ClientLibrary.isClientRunning")
         output = prepareResponse(json, "true");
 

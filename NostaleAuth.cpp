@@ -57,8 +57,8 @@ bool NostaleAuth::authenthicate(const QString &email, const QString &password)
     QSyncNetworkManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
-    if (!sendStartTime())
-        return false;
+//    if (!sendStartTime())
+//        return false;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
     request.setRawHeader("User-Agent", browserUserAgent.toUtf8());
@@ -77,6 +77,8 @@ bool NostaleAuth::authenthicate(const QString &email, const QString &password)
 
     jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
 
+    qDebug() << QJsonDocument(jsonResponse).toJson();
+
     token = jsonResponse["token"].toString();
 
     reply->deleteLater();
@@ -94,6 +96,9 @@ QString NostaleAuth::getToken(const QString &accountId)
     if (token.isEmpty())
         return QByteArray();
 
+    if (!sendStartTime())
+        return QByteArray();
+
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
     request.setRawHeader("User-Agent", "Chrome/" + chromeVersion.toUtf8() + " (" + generateThirdTypeUserAgentMagic(accountId) + ") GameforgeClient/" + gameforgeVersion.toUtf8());
     request.setRawHeader("TNT-Installation-Id", installationId.toUtf8());
@@ -109,6 +114,8 @@ QString NostaleAuth::getToken(const QString &accountId)
         return QByteArray();
 
     jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
+
+    qDebug() << QJsonDocument(jsonResponse).toJson();
 
     reply->deleteLater();
 
