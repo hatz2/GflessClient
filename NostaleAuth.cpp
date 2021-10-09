@@ -1,9 +1,9 @@
 #include "NostaleAuth.h"
 #include <curl/curl.h>
 
-NostaleAuth::NostaleAuth(QObject *parent, QString locale) : QObject(parent)
+NostaleAuth::NostaleAuth(QObject *parent) : QObject(parent)
 {
-    this->locale = locale;
+    this->locale = "en_EN";
     this->chromeVersion = "C2.2.17.1568";
     this->gameforgeVersion = "2.2.17";
     this->browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
@@ -19,7 +19,7 @@ QMap<QString, QString> NostaleAuth::getAccounts()
     QJsonObject jsonResponse;
     QMap<QString, QString> accounts;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/user/accounts"));
-    QSyncNetworkManager networkManager(this);
+    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
     if (token.isEmpty())
@@ -54,11 +54,8 @@ bool NostaleAuth::authenthicate(const QString &email, const QString &password)
 {
     QJsonObject content, jsonResponse;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/sessions"));
-    QSyncNetworkManager networkManager(this);
+    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
-
-//    if (!sendStartTime())
-//        return false;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
     request.setRawHeader("User-Agent", browserUserAgent.toUtf8());
@@ -90,7 +87,7 @@ QString NostaleAuth::getToken(const QString &accountId)
 {
     QJsonObject content, jsonResponse;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/thin/codes"));
-    QSyncNetworkManager networkManager;
+    SyncNetworAccesskManager networkManager;
     QNetworkReply* reply = nullptr;
 
     if (token.isEmpty())
@@ -167,7 +164,7 @@ bool NostaleAuth::sendStartTime()
     QJsonObject payload, clientVersionInfo;
     QNetworkRequest request(QUrl("https://events.gameforge.com"));
     QSslConfiguration sslConfig = request.sslConfiguration();
-    QSyncNetworkManager networkManager(this);
+    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");

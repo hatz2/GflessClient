@@ -46,7 +46,7 @@ void SettingsDialog::setGameLanguage(int language)
 
 void SettingsDialog::on_selectGamePathButton_clicked()
 {
-    QString path = QFileDialog::getOpenFileName(this, "Select nostale client", QDir::rootPath(), "Nostale client (NostaleClientX.exe)");
+    QString path = QFileDialog::getOpenFileName(this, "Select NostaleClientX.exe", QDir::rootPath(), "NostaleClientX.exe (NostaleClientX.exe)");
 
     if (path.isEmpty())
         return;

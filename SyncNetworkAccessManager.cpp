@@ -1,11 +1,11 @@
-#include "QSyncNetworkManager.h"
+#include "SyncNetworkAccessManager.h"
 
-QSyncNetworkManager::QSyncNetworkManager(QObject *parent) : QNetworkAccessManager(parent)
+SyncNetworAccesskManager::SyncNetworAccesskManager(QObject *parent) : QNetworkAccessManager(parent)
 {
 
 }
 
-QNetworkReply *QSyncNetworkManager::post(const QNetworkRequest &request, const QByteArray &data)
+QNetworkReply *SyncNetworAccesskManager::post(const QNetworkRequest &request, const QByteArray &data)
 {
     QNetworkReply* reply = QNetworkAccessManager::post(request, data);
 
@@ -21,7 +21,7 @@ QNetworkReply *QSyncNetworkManager::post(const QNetworkRequest &request, const Q
     return reply;
 }
 
-QNetworkReply *QSyncNetworkManager::get(const QNetworkRequest &request)
+QNetworkReply *SyncNetworAccesskManager::get(const QNetworkRequest &request)
 {
     QNetworkReply* reply = QNetworkAccessManager::get(request);
 

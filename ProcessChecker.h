@@ -56,6 +56,8 @@ void killProcess(const wchar_t* processName)
                     TerminateProcess(hProcess, 0);
                     CloseHandle(hProcess);
                 }
+
+                break;
             }
 
         } while (Process32NextW(hSnapshot, &entry));

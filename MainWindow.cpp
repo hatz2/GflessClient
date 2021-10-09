@@ -38,12 +38,9 @@ void MainWindow::on_openAccountsButton_clicked()
             QString token = nostaleAuth->getToken(accounts.value(gameforgeAccountUsername).value(displayName));
 
             if (token.isEmpty())
-            {
                 qDebug() << "Error, couldn't get token";
-                return;
-            }
-
-            gflessClient->openClient(displayName, token, settingsDialog->getGameClientPath(), settingsDialog->getGameLanguage());
+            else
+                gflessClient->openClient(displayName, token, settingsDialog->getGameClientPath(), settingsDialog->getGameLanguage());
         });
     }
 
@@ -72,7 +69,7 @@ void MainWindow::loadSettings()
 
     for (const auto& email : accountInformation.keys())
     {
-        QString password = accountInformation.value(email).toString();
+        const QString password = accountInformation.value(email).toString();
         addGameforgeAccount(email, password);
     }
     settings.endGroup();

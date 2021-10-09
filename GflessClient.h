@@ -7,7 +7,6 @@
 #include <QProcess>
 #include <QJsonObject>
 #include <QJsonDocument>
-#include <QString>
 
 class GflessClient : public QObject
 {

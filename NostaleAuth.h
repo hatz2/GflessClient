@@ -1,7 +1,7 @@
 #ifndef NOSTALEAUTH_H
 #define NOSTALEAUTH_H
 
-#include "QSyncNetworkManager.h"
+#include "SyncNetworkAccessManager.h"
 
 #include <QObject>
 #include <QNetworkAccessManager>
@@ -23,7 +23,7 @@ class NostaleAuth : public QObject
 {
     Q_OBJECT
 public:
-    explicit NostaleAuth(QObject *parent = nullptr, QString locale = "en_EN");
+    explicit NostaleAuth(QObject *parent = nullptr);
 
     QMap<QString /* displayName */, QString /* id */> getAccounts();
 

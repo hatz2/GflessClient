@@ -16,8 +16,8 @@ SOURCES += \
     AddAccountDialog.cpp \
     GflessClient.cpp \
     NostaleAuth.cpp \
-    QSyncNetworkManager.cpp \
     SettingsDialog.cpp \
+    SyncNetworkAccessManager.cpp \
     main.cpp \
     MainWindow.cpp
 
@@ -27,8 +27,8 @@ HEADERS += \
     MainWindow.h \
     NostaleAuth.h \
     ProcessChecker.h \
-    QSyncNetworkManager.h \
-    SettingsDialog.h
+    SettingsDialog.h \
+    SyncNetworkAccessManager.h
 
 FORMS += \
     AddAccountDialog.ui \

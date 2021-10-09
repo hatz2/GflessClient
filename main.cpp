@@ -3,7 +3,6 @@
 
 #include <QApplication>
 #include <QMessageBox>
-#include <QDebug>
 
 void checkGameforgeClient();
 
