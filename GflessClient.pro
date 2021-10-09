@@ -6,6 +6,8 @@ CONFIG += c++11
 
 QMAKE_LFLAGS_WINDOWS += "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
 
+LIBS += -lkernel32
+
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
@@ -24,6 +26,7 @@ HEADERS += \
     GflessClient.h \
     MainWindow.h \
     NostaleAuth.h \
+    ProcessChecker.h \
     QSyncNetworkManager.h \
     SettingsDialog.h
 
