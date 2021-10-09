@@ -4,16 +4,11 @@
 #include "SyncNetworkAccessManager.h"
 
 #include <QObject>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSettings>
-#include <QMessageBox>
-#include <QApplication>
 #include <QCryptographicHash>
 #include <QFile>
-#include <QTextStream>
 #include <QMap>
 #include <QUuid>
 #include <QRandomGenerator>

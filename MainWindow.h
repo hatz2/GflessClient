@@ -10,7 +10,6 @@
 #include <QTimer>
 #include <QSettings>
 #include <QFileDialog>
-#include <QVariant>
 #include <QMessageBox>
 
 
@@ -25,16 +24,6 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-
-    bool checkGameClientPath();
-
-    void loadSettings();
-
-    void saveSettings();
-
-    void displayGameAccounts(const QString& gameforgeAccount);
-
-    void addGameforgeAccount(const QString& email, const QString& password);
 
 protected:
     void closeEvent(QCloseEvent* event);
@@ -51,6 +40,17 @@ private slots:
     void on_gameSettingsButton_clicked();
 
     void on_actionSettings_triggered();
+
+private:
+    bool checkGameClientPath();
+
+    void loadSettings();
+
+    void saveSettings();
+
+    void displayGameAccounts(const QString& gameforgeAccount);
+
+    void addGameforgeAccount(const QString& email, const QString& password);
 
 private:
     Ui::MainWindow *ui;
