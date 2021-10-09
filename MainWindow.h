@@ -26,7 +26,7 @@ public:
     ~MainWindow();
 
 protected:
-    void closeEvent(QCloseEvent* event);
+    void closeEvent(QCloseEvent* event) override;
 
 private slots:
     void on_openAccountsButton_clicked();
