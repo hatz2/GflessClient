@@ -224,13 +224,25 @@ void MainWindow::on_actionSettings_triggered()
 
 void MainWindow::on_actionAbout_3_triggered()
 {
+    QString text = "<b>About Gfless Client</b><br><br>"
+                   "Software developed by Hatz<br><br>"
+                   "This application is an open source project that simulates almost everything that the Gameforge client does "
+                   "allowing you to have multiple gameforge accounts in the same launcher and "
+                   "open several game clients with just one click.<br><br>"
+                   "You can find the source code here: "
+                   "<a href=https://github.com/hatz02/GflessClient>Github</a><br><br>"
+                   "Full credits to morsisko for such an amazing job reverse engineering the Gameforge Client and the login protocol.<br><br>"
+                   "Sources used to make this project:<br>"
+                   "<a href=https://github.com/morsisko/NosTale-Auth>Nostale-Auth</a><br>"
+                   "<a href=https://github.com/morsisko/NosTale-Gfless>Nostale-Gfless</a>";
 
+    QMessageBox::about(this, "About Gfless Client", text);
 }
 
 
 void MainWindow::on_actionAbout_Qt_triggered()
 {
-    QApplication::aboutQt();
+    QMessageBox::aboutQt(this);
 }
 
 void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
@@ -238,4 +250,17 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
     if (reason == QSystemTrayIcon::DoubleClick)
         show();
 }
+
+
+void MainWindow::on_actionGet_help_triggered()
+{
+    QString text = "<b>Get help</b><br><br>"
+                   "If you have any issue using this application you can contact me here:<br><br>"
+                   "Discord: Hatz#0502<br>"
+                   "Elitepvpers: "
+                   "<a href=www.google.es>www.google.es</a><br>";
+
+    QMessageBox::about(this, "Get help", text);
+}
+
 

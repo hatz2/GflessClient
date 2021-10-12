@@ -51,6 +51,8 @@ private slots:
 
     void iconActivated(QSystemTrayIcon::ActivationReason reason);
 
+    void on_actionGet_help_triggered();
+
 private:
     bool checkGameClientPath();
 
