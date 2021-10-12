@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 
     // Check if another instance of the app is already running
     QSharedMemory sharedMemory("Gfless Client");
-    if (!sharedMemory.create(64))
+    if (!sharedMemory.create(1))
     {
         QMessageBox::critical(nullptr, "Error", "Gfless Client is already running.");
         exit(0);
