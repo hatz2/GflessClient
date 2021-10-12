@@ -67,14 +67,10 @@ private:
     SettingsDialog* settingsDialog;
 
     GflessClient* gflessClient;
-    //QMap<QString /* displayName */, QString /* id */> accounts;
     QMap<QString /* gameforge account name */, QMap<QString /* display name */, QString /* id */>> accounts;
     QMap<QString /* gameforge account name */, NostaleAuth*> gameforgeAccounts;
 
     QSystemTrayIcon* trayIcon;
-//    QMenu* trayMenu;
-//    QAction* showAction;
-//    QAction* exitAction;
 
     void createTrayIcon();
 };

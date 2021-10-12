@@ -235,19 +235,7 @@ void MainWindow::on_actionAbout_Qt_triggered()
 
 void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
 {
-    switch (reason) {
-    case QSystemTrayIcon::Unknown:
-        break;
-    case QSystemTrayIcon::Context:
-        break;
-    case QSystemTrayIcon::DoubleClick:
+    if (reason == QSystemTrayIcon::DoubleClick)
         show();
-        break;
-    case QSystemTrayIcon::Trigger:
-        break;
-    case QSystemTrayIcon::MiddleClick:
-        break;
-
-    }
 }
 

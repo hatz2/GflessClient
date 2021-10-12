@@ -20,6 +20,7 @@ public:
 
 private slots:
     void handleNewConnection();
+
     void handlePipe();
 
 private:

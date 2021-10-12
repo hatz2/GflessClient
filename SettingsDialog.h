@@ -17,11 +17,15 @@ public:
     ~SettingsDialog();
 
     QString getGameClientPath() const;
+
     int getOpenInterval() const;
+
     int getGameLanguage() const;
 
     void setGameClientPath(const QString& path);
+
     void setOpenInterval(int n);
+
     void setGameLanguage(int language);
 
 private slots:
