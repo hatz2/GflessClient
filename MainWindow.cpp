@@ -8,6 +8,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     settingsDialog = new SettingsDialog(this);
     gflessClient = new GflessClient(this);
+    createTrayIcon();
     loadSettings();
 }
 
@@ -129,10 +130,34 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
     ui->gameforgeAccountComboBox->addItem(email, password);
 }
 
+void MainWindow::createTrayIcon()
+{
+    QAction* showAction = new QAction("Show", this);
+    QAction* exitAction = new QAction("Exit", this);
+    QMenu* trayMenu = new QMenu(this);
+
+    trayMenu->addAction(showAction);
+    trayMenu->addAction(exitAction);
+
+    trayIcon = new QSystemTrayIcon(this);
+    trayIcon->setIcon(windowIcon());
+    trayIcon->setContextMenu(trayMenu);
+    trayIcon->setToolTip("Gfless Client");
+    trayIcon->show();
+
+    connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
+    connect(showAction, &QAction::triggered, this, &MainWindow::show);
+    connect(exitAction, &QAction::triggered, this, [&]()
+    {
+        saveSettings();
+        QApplication::exit();
+    });
+}
+
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    saveSettings();
-    QMainWindow::closeEvent(event);
+    hide();
+    event->ignore();
 }
 
 
@@ -194,5 +219,35 @@ bool MainWindow::checkGameClientPath()
 void MainWindow::on_actionSettings_triggered()
 {
     settingsDialog->exec();
+}
+
+
+void MainWindow::on_actionAbout_3_triggered()
+{
+
+}
+
+
+void MainWindow::on_actionAbout_Qt_triggered()
+{
+    QApplication::aboutQt();
+}
+
+void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
+{
+    switch (reason) {
+    case QSystemTrayIcon::Unknown:
+        break;
+    case QSystemTrayIcon::Context:
+        break;
+    case QSystemTrayIcon::DoubleClick:
+        show();
+        break;
+    case QSystemTrayIcon::Trigger:
+        break;
+    case QSystemTrayIcon::MiddleClick:
+        break;
+
+    }
 }
 

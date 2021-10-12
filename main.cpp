@@ -3,17 +3,30 @@
 
 #include <QApplication>
 #include <QMessageBox>
+#include <QSharedMemory>
 
 void checkGameforgeClient();
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    // Check if another instance of the app is already running
+    QSharedMemory sharedMemory("Gfless Client");
+    if (!sharedMemory.create(64))
+    {
+        QMessageBox::critical(nullptr, "Error", "Gfless Client is already running.");
+        exit(0);
+    }
+
     checkGameforgeClient();
+
     QCoreApplication::setOrganizationName("Hatz Nostale");
     QCoreApplication::setApplicationName("Gfless Client");
+
     MainWindow w;
     w.show();
+
     return a.exec();
 }
 
@@ -29,6 +42,6 @@ void checkGameforgeClient()
             killProcess(gameforgeClientName);
 
         else
-            exit(EXIT_FAILURE);
+            exit(0);
     }
 }

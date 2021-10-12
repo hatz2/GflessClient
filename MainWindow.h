@@ -11,6 +11,10 @@
 #include <QSettings>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QSystemTrayIcon>
+#include <QMenu>
+#include <QAction>
+#include <QCloseEvent>
 
 
 QT_BEGIN_NAMESPACE
@@ -41,6 +45,12 @@ private slots:
 
     void on_actionSettings_triggered();
 
+    void on_actionAbout_3_triggered();
+
+    void on_actionAbout_Qt_triggered();
+
+    void iconActivated(QSystemTrayIcon::ActivationReason reason);
+
 private:
     bool checkGameClientPath();
 
@@ -60,5 +70,12 @@ private:
     //QMap<QString /* displayName */, QString /* id */> accounts;
     QMap<QString /* gameforge account name */, QMap<QString /* display name */, QString /* id */>> accounts;
     QMap<QString /* gameforge account name */, NostaleAuth*> gameforgeAccounts;
+
+    QSystemTrayIcon* trayIcon;
+//    QMenu* trayMenu;
+//    QAction* showAction;
+//    QAction* exitAction;
+
+    void createTrayIcon();
 };
 #endif // MAINWINDOW_H
