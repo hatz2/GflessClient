@@ -4,7 +4,7 @@ This application simulates almost everything that the Gameforge client does allo
 ## Instructions
 1. Download the latest release version
 2. Extract the folder and open GflessClient.exe
-3. ![Go to Options > Settings and select your NostaleClietX.exe](https://media.discordapp.net/attachments/739413308192325633/898542366753951764/unknown.png)
+3. Go to Options > Settings and select your NostaleClietX.exe\n ![](https://media.discordapp.net/attachments/739413308192325633/898542366753951764/unknown.png)
 5. Add a gameforge account
 6. Select the accounts you want to open and click on Play
 
