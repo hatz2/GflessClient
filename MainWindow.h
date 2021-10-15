@@ -54,6 +54,8 @@ private slots:
     void on_actionGet_help_triggered();
 
 private:
+    void createTrayIcon();
+
     bool checkGameClientPath();
 
     void loadSettings();
@@ -64,16 +66,11 @@ private:
 
     void addGameforgeAccount(const QString& email, const QString& password);
 
-private:
     Ui::MainWindow *ui;
     SettingsDialog* settingsDialog;
-
     GflessClient* gflessClient;
     QMap<QString /* gameforge account name */, QMap<QString /* display name */, QString /* id */>> accounts;
     QMap<QString /* gameforge account name */, NostaleAuth*> gameforgeAccounts;
-
     QSystemTrayIcon* trayIcon;
-
-    void createTrayIcon();
 };
 #endif // MAINWINDOW_H

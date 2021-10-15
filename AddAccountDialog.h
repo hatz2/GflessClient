@@ -27,7 +27,6 @@ private slots:
 
 private:
     Ui::AddAccountDialog *ui;
-
     QString email;
     QString password;
 };

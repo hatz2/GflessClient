@@ -43,8 +43,6 @@ private:
 
     void initPrivateKey();
 
-private:
-    // Members
     QString locale;
     QString installationId;
     QString chromeVersion;
