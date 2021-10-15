@@ -8,7 +8,7 @@ This application simulates almost everything that the Gameforge client does allo
 ![](https://media.discordapp.net/attachments/739413308192325633/898542366753951764/unknown.png)
 4. Add a gameforge account<br>
 ![](https://media.discordapp.net/attachments/739413308192325633/898543778627989524/unknown.png)
-5. Select the accounts you want to open and click on Play
+5. Select the accounts you want to open and click on Play<br>
 ![](https://media.discordapp.net/attachments/739413308192325633/898544878450012200/unknown.png)
 
 ## Credits
