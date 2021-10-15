@@ -12,5 +12,5 @@ This application simulates almost everything that the Gameforge client does allo
 ![](https://media.discordapp.net/attachments/739413308192325633/898544878450012200/unknown.png)
 
 ## Credits
-Big thanks and full credits to [morsisko](https://github.com/morsisko) for all the reverse engineering needed to make this project possible.
+Big thanks and full credits to [morsisko](https://github.com/morsisko) for all the reverse engineering needed to make this project possible.<br>
 Repositories used for this project: [Nostale-Auth](https://github.com/morsisko/NosTale-Auth) and [Nostale-Gfless](https://github.com/morsisko/NosTale-Gfless)
