@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     if (!sharedMemory.create(1))
     {
         QMessageBox::critical(nullptr, "Error", "Gfless Client is already running.");
-        exit(0);
+        return 0;
     }
 
     checkGameforgeClient();
