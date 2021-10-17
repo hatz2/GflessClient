@@ -2,7 +2,7 @@
 
 NostaleAuth::NostaleAuth(QObject *parent) : QObject(parent)
 {
-    this->locale = "en_EN";
+    this->locale = "en_GB";
     this->chromeVersion = "C2.2.17.1568";
     this->gameforgeVersion = "2.2.17";
     this->browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
@@ -24,7 +24,6 @@ QMap<QString, QString> NostaleAuth::getAccounts()
     if (token.isEmpty())
         return QMap<QString, QString>();
 
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
     request.setRawHeader("User-Agent", browserUserAgent.toUtf8());
     request.setRawHeader("TNT-Installation-Id", installationId.toUtf8());
     request.setRawHeader("Origin", "spark://www.gameforge.com");
@@ -203,10 +202,21 @@ bool NostaleAuth::sendStartTime()
 void NostaleAuth::initInstallationId()
 {
     QSettings s("HKEY_CURRENT_USER\\SOFTWARE\\Gameforge4d\\GameforgeClient\\MainApp", QSettings::NativeFormat);
+
     this->installationId = s.value("InstallationId").toString();
 
     if (installationId.isEmpty())
+    {
         qDebug() << "Couldn't find InstallationId";
+        qDebug() << "Trying to find it from another registry";
+
+        QSettings sett("HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Gameforge4d\\GameforgeClient\\MainApp", QSettings::NativeFormat);
+
+        this->installationId = sett.value("InstallationId").toString();
+
+        if (installationId.isEmpty())
+            qDebug() << "Couldn't find InstallationId";
+    }
 }
 
 void NostaleAuth::initCert()
