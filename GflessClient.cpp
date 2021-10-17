@@ -102,4 +102,5 @@ void GflessClient::setEnvironmentVariables() const
     QSettings settings("HKEY_CURRENT_USER\\Environment", QSettings::NativeFormat);
     settings.setValue("_TNT_CLIENT_APPLICATION_ID", "d3b2a0c1-f0d0-4888-ae0b-1c5e1febdafb");
     settings.setValue("_TNT_SESSION_ID", "12345678-1234-1234-1234-123456789012");
+    settings.sync();
 }
