@@ -1,4 +1,5 @@
 #include "GflessClient.h"
+#include "Injector.h"
 
 GflessClient::GflessClient(QObject *parent) : QObject(parent)
 {
@@ -8,10 +9,12 @@ GflessClient::GflessClient(QObject *parent) : QObject(parent)
     token = "";
     displayName = "";
 
+    setEnvironmentVariables();
+
     connect(gfServer, &QLocalServer::newConnection, this, &GflessClient::handleNewConnection);
 }
 
-bool GflessClient::openClient(const QString& displayName, const QString& token, const QString &gameClientPath, const int &gameLanguage)
+bool GflessClient::openClient(const QString& displayName, const QString& token, const QString &gameClientPath, const int &gameLanguage, bool autoLogin)
 {
     this->displayName = displayName;
     this->token = token;
@@ -22,7 +25,20 @@ bool GflessClient::openClient(const QString& displayName, const QString& token, 
         return false;
 
     QString directory = gameClientPath.left(index);
-    return QProcess::startDetached(gameClientPath, {"gf", QString::number(gameLanguage)}, directory);
+    qint64 pid;
+
+    if (!QProcess::startDetached(gameClientPath, {"gf", QString::number(gameLanguage)}, directory, &pid))
+        return false;
+
+    if (autoLogin)
+    {
+        QString dllPath = QDir::currentPath() + "/NostaleLogin.dll";
+
+        if (!Inject(pid, dllPath.toLocal8Bit().data()))
+            qDebug() << "Dll injection failed";
+    }
+
+    return true;
 }
 
 bool GflessClient::openClientSettings(const QString &gameClientPath)
@@ -79,4 +95,11 @@ QByteArray GflessClient::prepareResponse(const QJsonObject &request, const QStri
     resp["result"] = response;
 
     return QJsonDocument(resp).toJson();
+}
+
+void GflessClient::setEnvironmentVariables() const
+{
+    QSettings settings("HKEY_CURRENT_USER\\Environment", QSettings::NativeFormat);
+    settings.setValue("_TNT_CLIENT_APPLICATION_ID", "d3b2a0c1-f0d0-4888-ae0b-1c5e1febdafb");
+    settings.setValue("_TNT_SESSION_ID", "12345678-1234-1234-1234-123456789012");
 }

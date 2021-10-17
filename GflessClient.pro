@@ -26,6 +26,7 @@ SOURCES += \
 HEADERS += \
     AddAccountDialog.h \
     GflessClient.h \
+    Injector.h \
     MainWindow.h \
     NostaleAuth.h \
     ProcessChecker.h \
