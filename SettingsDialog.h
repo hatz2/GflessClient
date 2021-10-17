@@ -22,14 +22,32 @@ public:
 
     int getGameLanguage() const;
 
+    int getServerLanguage() const;
+
+    int getServer() const;
+
+    int getChannel() const;
+
+    bool autoLogIn() const;
+
     void setGameClientPath(const QString& path);
 
     void setOpenInterval(int n);
 
     void setGameLanguage(int language);
 
+    void setServerLanguage(int servLang);
+
+    void setServer(int server);
+
+    void setChannel(int channel);
+
+    void setAutoLogin(bool login);
+
 private slots:
     void on_selectGamePathButton_clicked();
+
+    void on_autoLogInCheckBox_stateChanged(int arg1);
 
 private:
     Ui::SettingsDialog *ui;

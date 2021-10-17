@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>363</width>
-    <height>187</height>
+    <width>356</width>
+    <height>218</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,115 +15,269 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Nostale path:</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0">
-     <item>
-      <widget class="QLineEdit" name="gameClientPathLineEdit">
-       <property name="readOnly">
-        <bool>true</bool>
+    <layout class="QFormLayout" name="formLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Nostale path:</string>
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QPushButton" name="selectGamePathButton">
+     <item row="0" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0">
+       <item>
+        <widget class="QLineEdit" name="gameClientPathLineEdit">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="selectGamePathButton">
+         <property name="text">
+          <string>Select</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>Select</string>
+        <string>Game language:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QComboBox" name="gameLanguageComboBox">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="currentText">
+        <string>English</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>English</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Deutsch</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Français</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Italiano</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Polski</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Español</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Türkçe</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Čeština</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Open interval:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QSpinBox" name="openIntervalSpinBox">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+       <property name="suffix">
+        <string> secs</string>
+       </property>
+       <property name="value">
+        <number>0</number>
        </property>
       </widget>
      </item>
     </layout>
    </item>
    <item>
-    <widget class="QLabel" name="label_4">
+    <widget class="QCheckBox" name="autoLogInCheckBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="text">
-      <string>Game language:</string>
+      <string>Automatically join the selected channel</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QComboBox" name="gameLanguageComboBox">
-     <property name="minimumSize">
-      <size>
-       <width>80</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="currentText">
-      <string>English</string>
-     </property>
-     <item>
-      <property name="text">
-       <string>English</string>
-      </property>
+    <layout class="QFormLayout" name="formLayout_2">
+     <item row="0" column="0">
+      <widget class="QLabel" name="serverLocationLabel">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Server location:</string>
+       </property>
+      </widget>
      </item>
-     <item>
-      <property name="text">
-       <string>Deutsch</string>
-      </property>
+     <item row="0" column="1">
+      <widget class="QComboBox" name="serverLanguageComboBox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <item>
+        <property name="text">
+         <string>International / English</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>German</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>French</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Italian</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Polish</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Spanish</string>
+        </property>
+       </item>
+      </widget>
      </item>
-     <item>
-      <property name="text">
-       <string>Français</string>
-      </property>
+     <item row="1" column="0">
+      <widget class="QLabel" name="serverLabel">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Server:</string>
+       </property>
+      </widget>
      </item>
-     <item>
-      <property name="text">
-       <string>Italiano</string>
-      </property>
+     <item row="1" column="1">
+      <widget class="QComboBox" name="serverComboBox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <item>
+        <property name="text">
+         <string>1</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>2</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>3</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>4</string>
+        </property>
+       </item>
+      </widget>
      </item>
-     <item>
-      <property name="text">
-       <string>Polski</string>
-      </property>
+     <item row="2" column="0">
+      <widget class="QLabel" name="channelLabel">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Channel:</string>
+       </property>
+      </widget>
      </item>
-     <item>
-      <property name="text">
-       <string>Español</string>
-      </property>
+     <item row="2" column="1">
+      <widget class="QComboBox" name="channelComboBox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <item>
+        <property name="text">
+         <string>Channel 1</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Channel 2</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Channel 3</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Channel 4</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Channel 5</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Channel 6</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Channel 7</string>
+        </property>
+       </item>
+      </widget>
      </item>
-     <item>
-      <property name="text">
-       <string>Türkçe</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Čeština</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Open interval:</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QSpinBox" name="openIntervalSpinBox">
-     <property name="minimumSize">
-      <size>
-       <width>80</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-     <property name="suffix">
-      <string> secs</string>
-     </property>
-     <property name="value">
-      <number>0</number>
-     </property>
-    </widget>
+    </layout>
    </item>
    <item>
     <spacer name="verticalSpacer">
