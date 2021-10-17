@@ -53,6 +53,8 @@ private slots:
 
     void on_actionGet_help_triggered();
 
+    void handleLocalConnection();
+
 private:
     void createTrayIcon();
 
@@ -72,5 +74,6 @@ private:
     QMap<QString /* gameforge account name */, QMap<QString /* display name */, QString /* id */>> accounts;
     QMap<QString /* gameforge account name */, NostaleAuth*> gameforgeAccounts;
     QSystemTrayIcon* trayIcon;
+    QLocalServer* gflessServer;
 };
 #endif // MAINWINDOW_H

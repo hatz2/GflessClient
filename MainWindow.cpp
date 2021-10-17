@@ -8,8 +8,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     settingsDialog = new SettingsDialog(this);
     gflessClient = new GflessClient(this);
+    gflessServer = new QLocalServer(this);
+    gflessServer->listen("GflessClient");
     createTrayIcon();
     loadSettings();
+
+    connect(gflessServer, &QLocalServer::newConnection, this, &MainWindow::handleLocalConnection);
 }
 
 MainWindow::~MainWindow()
@@ -41,7 +45,7 @@ void MainWindow::on_openAccountsButton_clicked()
             if (token.isEmpty())
                 qDebug() << "Error, couldn't get token";
             else
-                gflessClient->openClient(displayName, token, settingsDialog->getGameClientPath(), settingsDialog->getGameLanguage());
+                gflessClient->openClient(displayName, token, settingsDialog->getGameClientPath(), settingsDialog->getGameLanguage(), settingsDialog->autoLogIn());
         });
     }
 
@@ -62,6 +66,11 @@ void MainWindow::loadSettings()
     settingsDialog->setGameClientPath(settings.value("nostale path").toString());
     settingsDialog->setOpenInterval(settings.value("open interval", 12).toInt());
     settingsDialog->setGameLanguage(settings.value("game language", 0).toInt());
+    settingsDialog->setAutoLogin(settings.value("auto login", false).toBool());
+    settingsDialog->setServerLanguage(settings.value("server language", 0).toInt());
+    settingsDialog->setServer(settings.value("server", 0).toInt());
+    settingsDialog->setChannel(settings.value("channel", 0).toInt());
+
     settings.endGroup();
 
     settings.beginGroup("Gameforge Accounts");
@@ -85,6 +94,10 @@ void MainWindow::saveSettings()
     settings.setValue("nostale path", settingsDialog->getGameClientPath());
     settings.setValue("open interval", settingsDialog->getOpenInterval());
     settings.setValue("game language", settingsDialog->getGameLanguage());
+    settings.setValue("auto login", settingsDialog->autoLogIn());
+    settings.setValue("server language", settingsDialog->getServerLanguage());
+    settings.setValue("server", settingsDialog->getServer());
+    settings.setValue("channel", settingsDialog->getChannel());
     settings.endGroup();
 
     settings.beginGroup("Gameforge Accounts");
@@ -261,6 +274,27 @@ void MainWindow::on_actionGet_help_triggered()
                    "Discord: Hatz#0502<br>";
 
     QMessageBox::about(this, "Get help", text);
+}
+
+void MainWindow::handleLocalConnection()
+{
+    QLocalSocket* sock = gflessServer->nextPendingConnection();
+    connect(sock, &QLocalSocket::readyRead, this, [=]
+    {
+        QByteArray message = sock->readAll();
+        QByteArray output;
+
+        if (message == "ServerLanguage")
+            output = QString::number(settingsDialog->getServerLanguage()).toLocal8Bit();
+
+        else if (message == "Server")
+            output = QString::number(settingsDialog->getServer()).toLocal8Bit();
+
+        else if (message == "Channel")
+            output = QString::number(settingsDialog->getChannel()).toLocal8Bit();
+
+        sock->write(output);
+    });
 }
 
 
