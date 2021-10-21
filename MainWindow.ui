@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>440</width>
-    <height>380</height>
+    <width>464</width>
+    <height>437</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,20 +18,17 @@
     <normaloff>:/resources/gfless_icon.png</normaloff>:/resources/gfless_icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <property name="bottomMargin">
-     <number>0</number>
-    </property>
+   <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
        <widget class="QLabel" name="label_3">
         <property name="text">
          <string>Gameforge account:</string>
         </property>
        </widget>
       </item>
-      <item>
+      <item row="0" column="1">
        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,0">
         <item>
          <widget class="QComboBox" name="gameforgeAccountComboBox"/>
@@ -47,6 +44,51 @@
          <widget class="QPushButton" name="removeGameforgeAccountButton">
           <property name="text">
            <string>Remove</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Profile:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0">
+          <item>
+           <widget class="QComboBox" name="profileComboBox">
+            <item>
+             <property name="text">
+              <string>--- Not selected ---</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="addProfileButton">
+            <property name="text">
+             <string>Add</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="removeProfileButton">
+            <property name="text">
+             <string>Remove</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QPushButton" name="addProfileAccountButton">
+          <property name="text">
+           <string>Add account to profile</string>
           </property>
          </widget>
         </item>
@@ -102,7 +144,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>440</width>
+     <width>464</width>
      <height>20</height>
     </rect>
    </property>

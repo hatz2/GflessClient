@@ -15,7 +15,10 @@ LIBS += -lkernel32
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    AccountProfile.cpp \
     AddAccountDialog.cpp \
+    AddProfileAccountDialog.cpp \
+    AddProfileDialog.cpp \
     GflessClient.cpp \
     NostaleAuth.cpp \
     SettingsDialog.cpp \
@@ -24,7 +27,10 @@ SOURCES += \
     MainWindow.cpp
 
 HEADERS += \
+    AccountProfile.h \
     AddAccountDialog.h \
+    AddProfileAccountDialog.h \
+    AddProfileDialog.h \
     GflessClient.h \
     Injector.h \
     MainWindow.h \
@@ -35,6 +41,8 @@ HEADERS += \
 
 FORMS += \
     AddAccountDialog.ui \
+    AddProfileAccountDialog.ui \
+    AddProfileDialog.ui \
     MainWindow.ui \
     SettingsDialog.ui
 

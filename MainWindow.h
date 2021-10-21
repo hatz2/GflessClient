@@ -5,6 +5,9 @@
 #include "GflessClient.h"
 #include "AddAccountDialog.h"
 #include "SettingsDialog.h"
+#include "AccountProfile.h"
+#include "AddProfileDialog.h"
+#include "AddProfileAccountDialog.h"
 
 #include <QMainWindow>
 #include <QTimer>
@@ -15,6 +18,7 @@
 #include <QMenu>
 #include <QAction>
 #include <QCloseEvent>
+#include <QList>
 
 
 QT_BEGIN_NAMESPACE
@@ -55,6 +59,12 @@ private slots:
 
     void handleLocalConnection();
 
+    void on_addProfileButton_clicked();
+
+    void on_profileComboBox_currentIndexChanged(const QString &arg1);
+
+    void on_addProfileAccountButton_clicked();
+
 private:
     void createTrayIcon();
 
@@ -64,7 +74,9 @@ private:
 
     void saveSettings();
 
-    void displayGameAccounts(const QString& gameforgeAccount);
+    void displayGameAccounts(const QString& gameforgeAccount, const QString &profileName = QString());
+
+    void displayProfiles(const QString& gameforgeAccount);
 
     void addGameforgeAccount(const QString& email, const QString& password);
 
@@ -73,6 +85,13 @@ private:
     GflessClient* gflessClient;
     QMap<QString /* gameforge account name */, QMap<QString /* display name */, QString /* id */>> accounts;
     QMap<QString /* gameforge account name */, NostaleAuth*> gameforgeAccounts;
+//    QMap<QString /* gameforge account name */, QMap<QString /* profile name */, AccountProfile>> profiles;
+
+//    QMap<QString /* gameforge account name */, QMap<QString /* profile name*/, QMap<QString /* fake name */, QPair<QString /* real name */, QString /* id */>>>> profiles;
+
+    //QList <AccountProfile> profiles;
+    QMap <QString /* profile name */, AccountProfile> profiles;
+
     QSystemTrayIcon* trayIcon;
     QLocalServer* gflessServer;
 };

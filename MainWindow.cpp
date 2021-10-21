@@ -39,11 +39,28 @@ void MainWindow::on_openAccountsButton_clicked()
     {
         QTimer::singleShot(openInterval * 1000 * i, [=]
         {
-            QString displayName = displayNames[i];
+            QString displayName;
+            QString id;
+
+            if (ui->profileComboBox->currentIndex() > 0)
+            {
+                displayName = profiles.value(ui->profileComboBox->currentText()).getRealName(displayNames[i]);
+                id = profiles.value(ui->profileComboBox->currentText()).getId(displayNames[i]);
+            }
+
+            else
+            {
+                displayName = displayNames[i];
+                id = accounts.value(gameforgeAccountUsername).value(displayName);
+            }
+
             QString token = nostaleAuth->getToken(accounts.value(gameforgeAccountUsername).value(displayName));
 
             if (token.isEmpty())
+            {
                 qDebug() << "Error, couldn't get token";
+                ui->statusbar->showMessage("Couldn't get token");
+            }
             else
                 gflessClient->openClient(displayName, token, settingsDialog->getGameClientPath(), settingsDialog->getGameLanguage(), settingsDialog->autoLogIn());
         });
@@ -115,14 +132,45 @@ void MainWindow::saveSettings()
     settings.endGroup();
 }
 
-void MainWindow::displayGameAccounts(const QString &gameforgeAccount)
+void MainWindow::displayGameAccounts(const QString &gameforgeAccount, const QString& profileName)
 {
-    auto accs = accounts.value(gameforgeAccount);
-
     ui->accountsListWidget->clear();
 
-    for (const auto& acc : accs.keys())
-        ui->accountsListWidget->addItem(acc);
+    // Show the defaul accounts
+    if (ui->profileComboBox->currentIndex() <= 0)
+    {
+        auto accs = accounts.value(gameforgeAccount).keys();
+
+        for (const auto& acc : accs)
+            ui->accountsListWidget->addItem(acc);
+    }
+
+    // Show the profile accounts
+    else
+    {
+        if (profileName.isEmpty())
+            return;
+
+        auto profile = profiles.value(profileName);
+
+        for (const auto& acc : profile.getAccounts().keys())
+            ui->accountsListWidget->addItem(acc);
+    }
+
+}
+
+void MainWindow::displayProfiles(const QString &gameforgeAccount)
+{
+    ui->profileComboBox->clear();
+    ui->profileComboBox->addItem("--- Not selected ---");
+
+    for (const auto& profile : profiles)
+    {
+        if (profile.getGameforgeAccount() == gameforgeAccount)
+        {
+            ui->profileComboBox->addItem(profile.getProfileName());
+        }
+    }
 }
 
 void MainWindow::addGameforgeAccount(const QString &email, const QString &password)
@@ -191,6 +239,7 @@ void MainWindow::on_addGameforgeAccountButton_clicked()
 
 void MainWindow::on_gameforgeAccountComboBox_currentTextChanged(const QString &arg1)
 {
+    displayProfiles(arg1);
     displayGameAccounts(arg1);
 }
 
@@ -297,4 +346,61 @@ void MainWindow::handleLocalConnection()
     });
 }
 
+
+
+void MainWindow::on_addProfileButton_clicked()
+{
+    QString gameforgeAccountName = ui->gameforgeAccountComboBox->currentText();
+
+    if (gameforgeAccountName.isEmpty())
+        return;
+
+    AddProfileDialog addProfileDialog(this);
+    int res = addProfileDialog.exec();
+
+    if (res == QDialog::Accepted)
+    {
+        QString profileName = addProfileDialog.getProfileName();
+
+        AccountProfile profile(profileName, gameforgeAccountName);
+
+        profiles.insert(profileName, profile);
+        ui->profileComboBox->addItem(profileName);
+    }
+}
+
+
+void MainWindow::on_profileComboBox_currentIndexChanged(const QString &arg1)
+{
+    displayGameAccounts(ui->gameforgeAccountComboBox->currentText(), arg1);
+}
+
+
+void MainWindow::on_addProfileAccountButton_clicked()
+{
+    if (ui->profileComboBox->currentIndex() <= 0)
+        return;
+
+    QStringList accountList;
+    QString gameforgeAccountName = ui->gameforgeAccountComboBox->currentText();
+    QString profileName = ui->profileComboBox->currentText();
+
+    for (const auto& acc : accounts.value(gameforgeAccountName).keys())
+        accountList << acc;
+
+    AddProfileAccountDialog addProfileAccountDialog(accountList, this);
+    int res = addProfileAccountDialog.exec();
+
+    if (res == QDialog::Accepted)
+    {
+        QString gameAccount = addProfileAccountDialog.getAccountName();
+        QString pseudonym = addProfileAccountDialog.getPseudonym();
+
+        if (profiles.contains(profileName))
+        {
+            profiles[profileName].addAccount(pseudonym, gameAccount, accounts.value(gameforgeAccountName).value(gameAccount));
+            displayGameAccounts(gameforgeAccountName, profileName);
+        }
+    }
+}
 
