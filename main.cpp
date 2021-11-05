@@ -1,5 +1,5 @@
-#include "MainWindow.h"
-#include "ProcessChecker.h"
+#include "mainwindow.h"
+#include "processchecker.h"
 
 #include <QApplication>
 #include <QMessageBox>
@@ -7,35 +7,8 @@
 
 void checkGameforgeClient();
 
-void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
-{
-    QByteArray localMsg = msg.toLocal8Bit();
-    switch (type) {
-    case QtDebugMsg:
-        fprintf(stderr, "Debug: %s \n", localMsg.constData());
-        break;
-    case QtInfoMsg:
-        fprintf(stderr, "Info: %s \n", localMsg.constData());
-        break;
-    case QtWarningMsg:
-        fprintf(stderr, "Warning: %s \n", localMsg.constData());
-        break;
-    case QtCriticalMsg:
-        fprintf(stderr, "Critical: %s \n", localMsg.constData());
-        break;
-    case QtFatalMsg:
-        fprintf(stderr, "Fatal: %s \n", localMsg.constData());
-        abort();
-    }
-}
-
 int main(int argc, char *argv[])
 {
-    AllocConsole();
-    FILE* file = new FILE;
-    freopen_s(&file, "CONOUT$", "w", stderr);
-
-    qInstallMessageHandler(myMessageOutput); // Install the handler
     QApplication a(argc, argv);
 
     // Check if another instance of the app is already running

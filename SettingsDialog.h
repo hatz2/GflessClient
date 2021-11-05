@@ -26,8 +26,6 @@ public:
 
     int getServer() const;
 
-    int getChannel() const;
-
     bool autoLogIn() const;
 
     void setGameClientPath(const QString& path);
@@ -40,9 +38,10 @@ public:
 
     void setServer(int server);
 
-    void setChannel(int channel);
-
     void setAutoLogin(bool login);
+
+signals:
+    void autoLoginStateChanged(bool);
 
 private slots:
     void on_selectGamePathButton_clicked();

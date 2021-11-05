@@ -1,5 +1,5 @@
-#include "MainWindow.h"
-#include "ui_MainWindow.h"
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -11,9 +11,14 @@ MainWindow::MainWindow(QWidget *parent)
     gflessServer = new QLocalServer(this);
     gflessServer->listen("GflessClient");
     createTrayIcon();
-    loadSettings();
 
+    ui->accountsListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->accountsListWidget, &QListWidget::customContextMenuRequested, this, &MainWindow::showContextMenu);
     connect(gflessServer, &QLocalServer::newConnection, this, &MainWindow::handleLocalConnection);
+    connect(settingsDialog, &SettingsDialog::autoLoginStateChanged, ui->channelComboBox, &QComboBox::setEnabled);
+    connect(settingsDialog, &SettingsDialog::autoLoginStateChanged, ui->channelLabel, &QLabel::setEnabled);
+
+    loadSettings();
 }
 
 MainWindow::~MainWindow()
@@ -29,44 +34,56 @@ void MainWindow::on_openAccountsButton_clicked()
     int openInterval = settingsDialog->getOpenInterval();
     QString gameforgeAccountUsername = ui->gameforgeAccountComboBox->currentText();
     QList<QListWidgetItem*> selectedItems = ui->accountsListWidget->selectedItems();
-    NostaleAuth* nostaleAuth = gameforgeAccounts.value(gameforgeAccountUsername);
+    Account* account = accounts.value(gameforgeAccountUsername);
+    NostaleAuth* auth = account->getAuthenticator();
     QStringList displayNames;
+    int profileIndex = ui->profileComboBox->currentIndex() - 1;
 
-    for (const auto& item : selectedItems)
+    for (const auto& item : qAsConst(selectedItems))
         displayNames << item->text();
 
     for (int i = 0; i < displayNames.size(); i++)
     {
-        QTimer::singleShot(openInterval * 1000 * i, [=]
+        QTimer::singleShot(openInterval * 1000 * i, this, [=]
         {
+            int gameLang = settingsDialog->getGameLanguage();
+            bool autoLogin = settingsDialog->autoLogIn();
+            QString gamePath = settingsDialog->getGameClientPath();
             QString displayName;
             QString id;
+            QString token;
 
-            if (ui->profileComboBox->currentIndex() > 0)
+            // A profile is selected
+            if (profileIndex >= 0)
             {
-                displayName = profiles.value(ui->profileComboBox->currentText()).getRealName(displayNames[i]);
-                id = profiles.value(ui->profileComboBox->currentText()).getId(displayNames[i]);
+                displayName = account->getProfiles().at(profileIndex)->getRealName(displayNames[i]);
+                id = account->getProfiles().at(profileIndex)->getId(displayNames[i]);
             }
 
+            // No profile is selected
             else
             {
                 displayName = displayNames[i];
-                id = accounts.value(gameforgeAccountUsername).value(displayName);
+                id = account->getAccounts().value(displayName);
             }
 
-            QString token = nostaleAuth->getToken(accounts.value(gameforgeAccountUsername).value(displayName));
+            token = auth->getToken(id);
 
             if (token.isEmpty())
             {
-                qDebug() << "Error, couldn't get token";
+                qDebug() << "Error: Couldn't get token";
                 ui->statusbar->showMessage("Couldn't get token");
             }
+
             else
-                gflessClient->openClient(displayName, token, settingsDialog->getGameClientPath(), settingsDialog->getGameLanguage(), settingsDialog->autoLogIn());
+            {
+                gflessClient->openClient(displayName, token, gamePath, gameLang, autoLogin);
+            }
+
         });
     }
 
-    QTimer::singleShot(displayNames.size() * openInterval * 1000, [=]
+    QTimer::singleShot(displayNames.size() * openInterval * 1000, this, [=]
     {
         ui->statusbar->showMessage("All accounts are opened.", 10000);
     });
@@ -86,7 +103,7 @@ void MainWindow::loadSettings()
     settingsDialog->setAutoLogin(settings.value("auto login", false).toBool());
     settingsDialog->setServerLanguage(settings.value("server language", 0).toInt());
     settingsDialog->setServer(settings.value("server", 0).toInt());
-    settingsDialog->setChannel(settings.value("channel", 0).toInt());
+    ui->channelComboBox->setCurrentIndex(settings.value("channel", 0).toInt());
 
     settings.endGroup();
 
@@ -100,6 +117,8 @@ void MainWindow::loadSettings()
         addGameforgeAccount(email, password);
     }
     settings.endGroup();
+
+    loadAccountProfiles();
 }
 
 void MainWindow::saveSettings()
@@ -114,7 +133,7 @@ void MainWindow::saveSettings()
     settings.setValue("auto login", settingsDialog->autoLogIn());
     settings.setValue("server language", settingsDialog->getServerLanguage());
     settings.setValue("server", settingsDialog->getServer());
-    settings.setValue("channel", settingsDialog->getChannel());
+    settings.setValue("channel", ui->channelComboBox->currentIndex());
     settings.endGroup();
 
     settings.beginGroup("Gameforge Accounts");
@@ -130,47 +149,162 @@ void MainWindow::saveSettings()
 
     settings.setValue("accounts", accountInformation);
     settings.endGroup();
+
+    saveAccountProfiles();
 }
 
-void MainWindow::displayGameAccounts(const QString &gameforgeAccount, const QString& profileName)
+void MainWindow::loadAccountProfiles()
+{
+    QFile settingsFile(QDir::currentPath() + "/profiles.txt");
+
+    if (!settingsFile.open(QFile::ReadOnly))
+    {
+        qDebug() << "Error opening profiles file";
+        return;
+    }
+
+    QTextStream is(&settingsFile);
+
+    while (!is.atEnd())
+    {
+        QString line = is.readLine();
+        if (line.isEmpty()) continue;
+
+        QStringList lineSplitted = line.split('=', Qt::SkipEmptyParts);
+
+        if (lineSplitted.size() != 2)
+        {
+            qDebug() << "Error: line in profile file does not match the format";
+            continue;
+        }
+
+        QString gameforgeAccountName = lineSplitted.first();
+        QString value = lineSplitted.last();
+
+        QStringList profilesInformation = value.split('$', Qt::SkipEmptyParts);
+
+        for (const auto& profileInfo : qAsConst(profilesInformation))
+        {
+            QStringList profileInfoSplitted = profileInfo.split('/', Qt::SkipEmptyParts);
+            QString profileName = profileInfoSplitted.first();
+            QString profileAccounts = profileInfoSplitted.last();
+            QStringList profileAccountsSplitted = profileAccounts.split('|', Qt::SkipEmptyParts);
+
+            Profile* profile = new Profile(profileName, this);
+
+            if (accounts.value(gameforgeAccountName) == nullptr)
+                continue;
+
+            accounts.value(gameforgeAccountName)->addProfile(profile);
+
+            for (const auto& profileAccountInfo : qAsConst(profileAccountsSplitted))
+            {
+                QStringList accountInfo = profileAccountInfo.split(',');
+
+                if (accountInfo.size() != 2)
+                {
+                    qDebug() << "Error: account format doesn't math in profile file";
+                    continue;
+                }
+
+                QString fakeName = accountInfo[0];
+                QString realName = accountInfo[1];
+                QString id = accounts.value(gameforgeAccountName)->getAccounts().value(realName);
+
+                profile->addAccount(fakeName, realName, id);
+            }
+        }
+    }
+
+    settingsFile.close();
+
+    if (ui->gameforgeAccountComboBox->currentIndex() < 0)
+        return;
+
+    displayProfiles(ui->gameforgeAccountComboBox->currentText());
+}
+
+void MainWindow::saveAccountProfiles()
+{
+    QFile settingsFile(QDir::currentPath() + "/profiles.txt");
+
+    if (!settingsFile.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        qDebug() << "Error opening profiles file";
+        return;
+    }
+
+    QTextStream os(&settingsFile);
+
+    // Write all profiles for each gf account
+    for (const auto& account : accounts.values())
+    {
+        // Write the gf account name
+        os << account->getGameforgeAccountUsername() << "=";
+        const QList<Profile*> profiles = account->getProfiles();
+
+        for (const auto& profile : profiles)
+        {
+            // Write the profile name
+            os << profile->getProfileName() << "/";
+
+            // Write the profile accounts
+            for (const auto& profileAcc : profile->getAccounts().keys())
+            {
+                QString fakeName = profileAcc;
+                QString realName = profile->getRealName(profileAcc);
+
+                os << fakeName << "," << realName;
+
+                if (profileAcc != profile->getAccounts().keys().last())
+                    os << "|";
+            }
+
+            os << "$";
+        }
+
+        os << "\n\n";
+    }
+
+    settingsFile.close();
+}
+
+void MainWindow::displayGameAccounts(const QString &gameforgeAccount)
 {
     ui->accountsListWidget->clear();
+    int profileIndex = ui->profileComboBox->currentIndex() - 1;
 
-    // Show the defaul accounts
-    if (ui->profileComboBox->currentIndex() <= 0)
+    if (accounts.size() <= 0)
+        return;
+
+    // Show raw accounts
+    if (profileIndex < 0)
     {
-        auto accs = accounts.value(gameforgeAccount).keys();
-
-        for (const auto& acc : accs)
+        for (const auto& acc : accounts.value(gameforgeAccount)->getAccounts().keys())
             ui->accountsListWidget->addItem(acc);
     }
 
-    // Show the profile accounts
+    // Show accounts from profile
     else
     {
-        if (profileName.isEmpty())
-            return;
+        const QList<Profile*> profiles = accounts.value(gameforgeAccount)->getProfiles();
+        const Profile* profile = profiles.at(profileIndex);
 
-        auto profile = profiles.value(profileName);
-
-        for (const auto& acc : profile.getAccounts().keys())
+        for (const auto& acc : profile->getAccounts().keys())
             ui->accountsListWidget->addItem(acc);
     }
-
 }
 
 void MainWindow::displayProfiles(const QString &gameforgeAccount)
 {
     ui->profileComboBox->clear();
-    ui->profileComboBox->addItem("--- Not selected ---");
+    ui->profileComboBox->addItem("No profile");
 
-    for (const auto& profile : profiles)
-    {
-        if (profile.getGameforgeAccount() == gameforgeAccount)
-        {
-            ui->profileComboBox->addItem(profile.getProfileName());
-        }
-    }
+    if (accounts.size() <= 0)
+        return;
+
+    for (const auto& profile : accounts.value(gameforgeAccount)->getProfiles())
+        ui->profileComboBox->addItem(profile->getProfileName());
 }
 
 void MainWindow::addGameforgeAccount(const QString &email, const QString &password)
@@ -185,8 +319,14 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
 
     QMap<QString, QString> accs = nostaleAuth->getAccounts();
 
-    accounts.insert(email, accs);
-    gameforgeAccounts.insert(email, nostaleAuth);
+    Account* account = new Account(email, this);
+
+    account->setAuthenticator(nostaleAuth);
+
+    for (const auto& displayName : accs.keys())
+        account->addRawAccount(displayName, accs.value(displayName));
+
+    accounts.insert(email, account);
 
     ui->gameforgeAccountComboBox->addItem(email, password);
 }
@@ -208,7 +348,7 @@ void MainWindow::createTrayIcon()
 
     connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
     connect(showAction, &QAction::triggered, this, &MainWindow::show);
-    connect(exitAction, &QAction::triggered, this, [&]()
+    connect(exitAction, &QAction::triggered, this, [=]
     {
         saveSettings();
         QApplication::exit();
@@ -218,6 +358,7 @@ void MainWindow::createTrayIcon()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     hide();
+    saveSettings();
     event->ignore();
 }
 
@@ -256,6 +397,9 @@ void MainWindow::on_removeGameforgeAccountButton_clicked()
     if (index < 0)
         return;
 
+    QString gameforgeAccountUsername = ui->gameforgeAccountComboBox->currentText();
+
+    accounts.remove(gameforgeAccountUsername);
     ui->gameforgeAccountComboBox->removeItem(index);
 }
 
@@ -340,7 +484,7 @@ void MainWindow::handleLocalConnection()
             output = QString::number(settingsDialog->getServer()).toLocal8Bit();
 
         else if (message == "Channel")
-            output = QString::number(settingsDialog->getChannel()).toLocal8Bit();
+            output = QString::number(ui->channelComboBox->currentIndex()).toLocal8Bit();
 
         sock->write(output);
     });
@@ -350,11 +494,10 @@ void MainWindow::handleLocalConnection()
 
 void MainWindow::on_addProfileButton_clicked()
 {
-    QString gameforgeAccountName = ui->gameforgeAccountComboBox->currentText();
-
-    if (gameforgeAccountName.isEmpty())
+    if (ui->gameforgeAccountComboBox->currentIndex() < 0)
         return;
 
+    QString gameforgeAccountName = ui->gameforgeAccountComboBox->currentText();
     AddProfileDialog addProfileDialog(this);
     int res = addProfileDialog.exec();
 
@@ -362,45 +505,91 @@ void MainWindow::on_addProfileButton_clicked()
     {
         QString profileName = addProfileDialog.getProfileName();
 
-        AccountProfile profile(profileName, gameforgeAccountName);
-
-        profiles.insert(profileName, profile);
+        Profile* profile = new Profile(profileName, this);
+        accounts.value(gameforgeAccountName)->addProfile(profile);
         ui->profileComboBox->addItem(profileName);
     }
 }
 
-
-void MainWindow::on_profileComboBox_currentIndexChanged(const QString &arg1)
+void MainWindow::on_profileComboBox_currentIndexChanged(int index)
 {
-    displayGameAccounts(ui->gameforgeAccountComboBox->currentText(), arg1);
+    Q_UNUSED(index);
+    displayGameAccounts(ui->gameforgeAccountComboBox->currentText());
 }
 
-
-void MainWindow::on_addProfileAccountButton_clicked()
+void MainWindow::showContextMenu(const QPoint& pos)
 {
     if (ui->profileComboBox->currentIndex() <= 0)
         return;
 
-    QStringList accountList;
-    QString gameforgeAccountName = ui->gameforgeAccountComboBox->currentText();
-    QString profileName = ui->profileComboBox->currentText();
+    QPoint globalPos = ui->accountsListWidget->mapToGlobal(pos);
 
-    for (const auto& acc : accounts.value(gameforgeAccountName).keys())
-        accountList << acc;
-
-    AddProfileAccountDialog addProfileAccountDialog(accountList, this);
-    int res = addProfileAccountDialog.exec();
-
-    if (res == QDialog::Accepted)
+    QMenu menu(this);
+    menu.addAction("Add account", this, [=]
     {
-        QString gameAccount = addProfileAccountDialog.getAccountName();
-        QString pseudonym = addProfileAccountDialog.getPseudonym();
+        int profileIndex = ui->profileComboBox->currentIndex() - 1;
+        QStringList accountList;
+        QString gameforgeAccountName = ui->gameforgeAccountComboBox->currentText();
 
-        if (profiles.contains(profileName))
+        if (profileIndex < 0)
+            return;
+
+        for (const auto& acc : accounts.value(gameforgeAccountName)->getAccounts().keys())
+            accountList << acc;
+
+        AddProfileAccountDialog addProfileAccountDialog(accountList, this);
+        int res = addProfileAccountDialog.exec();
+
+        if (res == QDialog::Accepted)
         {
-            profiles[profileName].addAccount(pseudonym, gameAccount, accounts.value(gameforgeAccountName).value(gameAccount));
-            displayGameAccounts(gameforgeAccountName, profileName);
+            QString gameAccount = addProfileAccountDialog.getAccountName();
+            QString pseudonym = addProfileAccountDialog.getPseudonym();
+            QString id = accounts.value(gameforgeAccountName)->getAccounts().value(gameAccount);
+
+            accounts.value(gameforgeAccountName)->getProfiles().at(profileIndex)->addAccount(pseudonym, gameAccount, id);
+            displayGameAccounts(gameforgeAccountName);
         }
+    });
+
+    menu.addAction("Remove selected accounts", this, [=]
+    {
+        int profileIndex = ui->profileComboBox->currentIndex() - 1;
+        QList<QListWidgetItem*> selectedItems = ui->accountsListWidget->selectedItems();
+        QString gameforgeAccountName = ui->gameforgeAccountComboBox->currentText();
+
+        if (profileIndex < 0)
+            return;
+
+        for (const auto& item : selectedItems)
+        {
+            accounts.value(gameforgeAccountName)->getProfiles().at(profileIndex)->removeAccount(item->text());
+        }
+
+        displayGameAccounts(gameforgeAccountName);
+    });
+
+    menu.exec(globalPos);
+}
+
+
+void MainWindow::on_removeProfileButton_clicked()
+{
+    if (ui->gameforgeAccountComboBox->currentIndex() < 0)
+        return;
+
+    int index = ui->profileComboBox->currentIndex() - 1;
+
+    if (index < 0)
+        return;
+
+    int res = QMessageBox::warning(this, "Remove profile", "Are you sure that you want to remove this profile?", QMessageBox::Yes | QMessageBox::No);
+
+    if (res == QMessageBox::Yes)
+    {
+        QString gameforgeAccountUsername = ui->gameforgeAccountComboBox->currentText();
+
+        accounts.value(gameforgeAccountUsername)->removeProfile(index);
+        ui->profileComboBox->removeItem(index + 1);
     }
 }
 

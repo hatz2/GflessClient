@@ -1,5 +1,5 @@
-#include "GflessClient.h"
-#include "Injector.h"
+#include "gflessclient.h"
+#include "injector.h"
 
 GflessClient::GflessClient(QObject *parent) : QObject(parent)
 {
@@ -8,8 +8,6 @@ GflessClient::GflessClient(QObject *parent) : QObject(parent)
     gfServer->listen("GameforgeClientJSONRPC");
     token = "";
     displayName = "";
-
-    setEnvironmentVariables();
 
     connect(gfServer, &QLocalServer::newConnection, this, &GflessClient::handleNewConnection);
 }
@@ -25,17 +23,35 @@ bool GflessClient::openClient(const QString& displayName, const QString& token, 
         return false;
 
     QString directory = gameClientPath.left(index);
+    QProcess process;
+    QProcessEnvironment env = process.processEnvironment();
     qint64 pid;
 
-    if (!QProcess::startDetached(gameClientPath, {"gf", QString::number(gameLanguage)}, directory, &pid))
+    env.insert("_TNT_CLIENT_APPLICATION_ID", "d3b2a0c1-f0d0-4888-ae0b-1c5e1febdafb");
+    env.insert("_TNT_SESSION_ID", "12345678-1234-1234-1234-123456789012");
+
+    process.setProcessEnvironment(env);
+    process.setWorkingDirectory(directory);
+    process.setProgram(gameClientPath);
+    process.setArguments({"gf", QString::number(gameLanguage)});
+
+    if (!process.startDetached(&pid))
+    {
+        qDebug() << "Error creating process";
         return false;
+    }
 
     if (autoLogin)
     {
         QString dllPath = QDir::currentPath() + "/NostaleLogin.dll";
 
-        if (!Inject(pid, dllPath.toLocal8Bit().data()))
-            qDebug() << "Dll injection failed";
+        QTimer::singleShot(1500,  this, [=]
+        {
+            if (!Inject(pid, dllPath.toLocal8Bit().constData()))
+                qDebug() << "Dll injection failed";
+            else
+                qDebug() << "Dll injected successfully";
+        });
     }
 
     return true;
@@ -95,12 +111,4 @@ QByteArray GflessClient::prepareResponse(const QJsonObject &request, const QStri
     resp["result"] = response;
 
     return QJsonDocument(resp).toJson();
-}
-
-void GflessClient::setEnvironmentVariables() const
-{
-    QSettings settings("HKEY_CURRENT_USER\\Environment", QSettings::NativeFormat);
-    settings.setValue("_TNT_CLIENT_APPLICATION_ID", "d3b2a0c1-f0d0-4888-ae0b-1c5e1febdafb");
-    settings.setValue("_TNT_SESSION_ID", "12345678-1234-1234-1234-123456789012");
-    settings.sync();
 }

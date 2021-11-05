@@ -13,6 +13,7 @@ public:
     explicit SyncNetworAccesskManager(QObject *parent = nullptr);
 
     QNetworkReply* post(const QNetworkRequest& request, const QByteArray& data);
+
     QNetworkReply* get(const QNetworkRequest& request);
 };
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>464</width>
-    <height>437</height>
+    <width>506</width>
+    <height>469</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <normaloff>:/resources/gfless_icon.png</normaloff>:/resources/gfless_icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <layout class="QFormLayout" name="formLayout">
       <item row="0" column="0">
@@ -57,42 +57,86 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0">
+         <widget class="QComboBox" name="profileComboBox">
+          <property name="currentText">
+           <string>No profile</string>
+          </property>
           <item>
-           <widget class="QComboBox" name="profileComboBox">
-            <item>
-             <property name="text">
-              <string>--- Not selected ---</string>
-             </property>
-            </item>
-           </widget>
+           <property name="text">
+            <string>No profile</string>
+           </property>
           </item>
-          <item>
-           <widget class="QPushButton" name="addProfileButton">
-            <property name="text">
-             <string>Add</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="removeProfileButton">
-            <property name="text">
-             <string>Remove</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="addProfileAccountButton">
+         <widget class="QPushButton" name="addProfileButton">
           <property name="text">
-           <string>Add account to profile</string>
+           <string>Add</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="removeProfileButton">
+          <property name="text">
+           <string>Remove</string>
           </property>
          </widget>
         </item>
        </layout>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="channelLabel">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Channel:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="channelComboBox">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <item>
+         <property name="text">
+          <string>Channel 1</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Channel 2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Channel 3</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Channel 4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Channel 5</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Channel 6</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Channel 7</string>
+         </property>
+        </item>
+       </widget>
       </item>
      </layout>
     </item>
@@ -144,8 +188,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>464</width>
-     <height>20</height>
+     <width>506</width>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSettings">

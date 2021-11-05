@@ -1,13 +1,13 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "NostaleAuth.h"
-#include "GflessClient.h"
-#include "AddAccountDialog.h"
-#include "SettingsDialog.h"
-#include "AccountProfile.h"
-#include "AddProfileDialog.h"
-#include "AddProfileAccountDialog.h"
+#include "nostaleauth.h"
+#include "gflessclient.h"
+#include "addaccountdialog.h"
+#include "settingsdialog.h"
+#include "addprofiledialog.h"
+#include "addprofileaccountdialog.h"
+#include "account.h"
 
 #include <QMainWindow>
 #include <QTimer>
@@ -19,6 +19,10 @@
 #include <QAction>
 #include <QCloseEvent>
 #include <QList>
+#include <QMenu>
+#include <QAction>
+#include <QFile>
+#include <QTextStream>
 
 
 QT_BEGIN_NAMESPACE
@@ -61,38 +65,29 @@ private slots:
 
     void on_addProfileButton_clicked();
 
-    void on_profileComboBox_currentIndexChanged(const QString &arg1);
+    void on_profileComboBox_currentIndexChanged(int index);
 
-    void on_addProfileAccountButton_clicked();
+    void showContextMenu(const QPoint &pos);
+
+    void on_removeProfileButton_clicked();
 
 private:
     void createTrayIcon();
-
     bool checkGameClientPath();
-
     void loadSettings();
-
     void saveSettings();
-
-    void displayGameAccounts(const QString& gameforgeAccount, const QString &profileName = QString());
-
+    void loadAccountProfiles();
+    void saveAccountProfiles();
+    void displayGameAccounts(const QString& gameforgeAccount);
     void displayProfiles(const QString& gameforgeAccount);
-
     void addGameforgeAccount(const QString& email, const QString& password);
 
     Ui::MainWindow *ui;
     SettingsDialog* settingsDialog;
     GflessClient* gflessClient;
-    QMap<QString /* gameforge account name */, QMap<QString /* display name */, QString /* id */>> accounts;
-    QMap<QString /* gameforge account name */, NostaleAuth*> gameforgeAccounts;
-//    QMap<QString /* gameforge account name */, QMap<QString /* profile name */, AccountProfile>> profiles;
-
-//    QMap<QString /* gameforge account name */, QMap<QString /* profile name*/, QMap<QString /* fake name */, QPair<QString /* real name */, QString /* id */>>>> profiles;
-
-    //QList <AccountProfile> profiles;
-    QMap <QString /* profile name */, AccountProfile> profiles;
-
     QSystemTrayIcon* trayIcon;
     QLocalServer* gflessServer;
+    QMap<QString /* gameforge account name */, Account*> accounts;
 };
+
 #endif // MAINWINDOW_H

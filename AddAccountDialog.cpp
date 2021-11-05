@@ -1,5 +1,5 @@
-#include "AddAccountDialog.h"
-#include "ui_AddAccountDialog.h"
+#include "addaccountdialog.h"
+#include "ui_addaccountdialog.h"
 
 AddAccountDialog::AddAccountDialog(QWidget *parent) :
     QDialog(parent),

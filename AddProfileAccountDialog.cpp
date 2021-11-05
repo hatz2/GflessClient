@@ -1,11 +1,13 @@
-#include "AddProfileAccountDialog.h"
-#include "ui_AddProfileAccountDialog.h"
+#include "addprofileaccountdialog.h"
+#include "ui_addprofileaccountdialog.h"
 
 AddProfileAccountDialog::AddProfileAccountDialog(QStringList accounts, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AddProfileAccountDialog)
 {
     ui->setupUi(this);
+
+    setWindowFlag(Qt::WindowContextHelpButtonHint, false);
 
     for (const auto& acc : accounts)
         ui->gameAccountComboBox->addItem(acc);

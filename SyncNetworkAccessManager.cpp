@@ -1,4 +1,4 @@
-#include "SyncNetworkAccessManager.h"
+#include "syncnetworkaccessmanager.h"
 
 SyncNetworAccesskManager::SyncNetworAccesskManager(QObject *parent) : QNetworkAccessManager(parent)
 {

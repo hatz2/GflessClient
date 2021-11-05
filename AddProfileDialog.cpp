@@ -1,11 +1,13 @@
-#include "AddProfileDialog.h"
-#include "ui_AddProfileDialog.h"
+#include "addprofiledialog.h"
+#include "ui_addprofiledialog.h"
 
 AddProfileDialog::AddProfileDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AddProfileDialog)
 {
     ui->setupUi(this);
+
+    setWindowFlag(Qt::WindowContextHelpButtonHint, false);
 }
 
 AddProfileDialog::~AddProfileDialog()
