@@ -1,7 +1,7 @@
 #ifndef NOSTALEAUTH_H
 #define NOSTALEAUTH_H
 
-#include "SyncNetworkAccessManager.h"
+#include "syncnetworkaccessmanager.h"
 
 #include <QObject>
 #include <QJsonDocument>

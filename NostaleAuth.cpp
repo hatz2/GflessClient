@@ -1,10 +1,10 @@
-#include "NostaleAuth.h"
+#include "nostaleauth.h"
 
 NostaleAuth::NostaleAuth(QObject *parent) : QObject(parent)
 {
     this->locale = "en_GB";
-    this->chromeVersion = "C2.2.17.1568";
-    this->gameforgeVersion = "2.2.17";
+    this->chromeVersion = "C2.2.19.1700";
+    this->gameforgeVersion = "2.2.19";
     this->browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
 
     initCert();
@@ -96,12 +96,13 @@ QString NostaleAuth::getToken(const QString &accountId)
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
     request.setRawHeader("User-Agent", "Chrome/" + chromeVersion.toUtf8() + " (" + generateThirdTypeUserAgentMagic(accountId) + ") GameforgeClient/" + gameforgeVersion.toUtf8());
-    request.setRawHeader("TNT-Installation-Id", installationId.toUtf8());
+    request.setRawHeader("tnt-installation-id", installationId.toUtf8());
     request.setRawHeader("Origin", "spark://www.gameforge.com");
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     request.setRawHeader("Connection", "Keep-Alive");
 
     content["platformGameAccountId"] = accountId;
+    content["gsid"] = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces) + "-" + QString::number(QRandomGenerator::global()->bounded(1000, 9999));
 
     reply = networkManager.post(request, QJsonDocument(content).toJson());
 
@@ -174,7 +175,7 @@ bool NostaleAuth::sendStartTime()
 
     payload["client_installation_id"] = installationId;
     payload["client_locale"] = "pol_pol";
-    payload["client_session_id"] = QUuid::createUuid().toString();
+    payload["client_session_id"] = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
     payload["client_version_info"] = clientVersionInfo;
     payload["id"] = 0;
     payload["localtime"] = QDateTime::currentDateTime().toString(Qt::ISODate);

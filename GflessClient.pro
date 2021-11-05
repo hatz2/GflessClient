@@ -15,36 +15,38 @@ LIBS += -lkernel32
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    AccountProfile.cpp \
-    AddAccountDialog.cpp \
-    AddProfileAccountDialog.cpp \
-    AddProfileDialog.cpp \
-    GflessClient.cpp \
-    NostaleAuth.cpp \
-    SettingsDialog.cpp \
-    SyncNetworkAccessManager.cpp \
+    account.cpp \
+    addaccountdialog.cpp \
+    addprofileaccountDialog.cpp \
+    addprofiledialog.cpp \
+    gflessclient.cpp \
+    nostaleauth.cpp \
+    profile.cpp \
+    settingsdialog.cpp \
+    syncnetworkaccessmanager.cpp \
     main.cpp \
-    MainWindow.cpp
+    mainwindow.cpp
 
 HEADERS += \
-    AccountProfile.h \
-    AddAccountDialog.h \
-    AddProfileAccountDialog.h \
-    AddProfileDialog.h \
-    GflessClient.h \
-    Injector.h \
-    MainWindow.h \
-    NostaleAuth.h \
-    ProcessChecker.h \
-    SettingsDialog.h \
-    SyncNetworkAccessManager.h
+    account.h \
+    addaccountdialog.h \
+    addprofileaccountdialog.h \
+    addprofiledialog.h \
+    gflessclient.h \
+    injector.h \
+    mainwindow.h \
+    nostaleauth.h \
+    processchecker.h \
+    profile.h \
+    settingsdialog.h \
+    syncnetworkaccessmanager.h
 
 FORMS += \
-    AddAccountDialog.ui \
-    AddProfileAccountDialog.ui \
-    AddProfileDialog.ui \
-    MainWindow.ui \
-    SettingsDialog.ui
+    addaccountdialog.ui \
+    addprofileaccountdialog.ui \
+    addprofiledialog.ui \
+    mainwindow.ui \
+    settingsdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

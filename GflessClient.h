@@ -9,6 +9,7 @@
 #include <QJsonDocument>
 #include <QDir>
 #include <QSettings>
+#include <QTimer>
 
 class GflessClient : public QObject
 {
@@ -29,8 +30,6 @@ private:
     QByteArray prepareResponse(const QJsonObject& request, const QString& response);
 
 private:
-    void setEnvironmentVariables() const;
-
     QLocalServer* gfServer;
     QLocalSocket* pipe;
     QString token;
