@@ -1,4 +1,5 @@
 #include "syncnetworkaccessmanager.h"
+#include <QMessageBox>
 
 SyncNetworAccesskManager::SyncNetworAccesskManager(QObject *parent) : QNetworkAccessManager(parent)
 {
@@ -12,7 +13,7 @@ QNetworkReply* SyncNetworAccesskManager::post(const QNetworkRequest &request, co
     connect(reply, &QNetworkReply::errorOccurred, this, [=]
     {
         QString err = reply->errorString();
-        qDebug() << "Error: " << err;
+        QMessageBox::critical(nullptr, "Error", err);
     });
 
     while (!reply->isFinished())
@@ -28,7 +29,7 @@ QNetworkReply* SyncNetworAccesskManager::get(const QNetworkRequest &request)
     connect(reply, &QNetworkReply::errorOccurred, this, [=]
     {
         QString err = reply->errorString();
-        qDebug() << "Error: " << err;
+        QMessageBox::critical(nullptr, "Error", err);
     });
 
     while (!reply->isFinished())
