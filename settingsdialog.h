@@ -22,6 +22,8 @@ public:
 
     int getGameLanguage() const;
 
+    int getGameLanguageIndex() const;
+
     int getServerLanguage() const;
 
     int getServer() const;
@@ -49,6 +51,8 @@ private slots:
     void on_autoLogInCheckBox_stateChanged(int arg1);
 
 private:
+    void initLanguageComboBox();
+
     Ui::SettingsDialog *ui;
 };
 

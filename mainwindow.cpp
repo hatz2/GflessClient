@@ -129,7 +129,7 @@ void MainWindow::saveSettings()
     settings.setValue("geometry", saveGeometry());
     settings.setValue("nostale path", settingsDialog->getGameClientPath());
     settings.setValue("open interval", settingsDialog->getOpenInterval());
-    settings.setValue("game language", settingsDialog->getGameLanguage());
+    settings.setValue("game language", settingsDialog->getGameLanguageIndex());
     settings.setValue("auto login", settingsDialog->autoLogIn());
     settings.setValue("server language", settingsDialog->getServerLanguage());
     settings.setValue("server", settingsDialog->getServer());

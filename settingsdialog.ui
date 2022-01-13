@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>345</width>
-    <height>190</height>
+    <height>203</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -57,48 +57,8 @@
         </size>
        </property>
        <property name="currentText">
-        <string>English</string>
+        <string/>
        </property>
-       <item>
-        <property name="text">
-         <string>English</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Deutsch</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Français</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Italiano</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Polski</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Español</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Türkçe</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Čeština</string>
-        </property>
-       </item>
       </widget>
      </item>
      <item row="2" column="0">

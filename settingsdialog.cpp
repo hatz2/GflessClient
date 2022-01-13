@@ -7,6 +7,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
+    initLanguageComboBox();
 }
 
 SettingsDialog::~SettingsDialog()
@@ -25,6 +26,11 @@ int SettingsDialog::getOpenInterval() const
 }
 
 int SettingsDialog::getGameLanguage() const
+{
+    return ui->gameLanguageComboBox->currentData().toInt();
+}
+
+int SettingsDialog::getGameLanguageIndex() const
 {
     return ui->gameLanguageComboBox->currentIndex();
 }
@@ -93,5 +99,17 @@ void SettingsDialog::on_autoLogInCheckBox_stateChanged(int arg1)
     ui->serverComboBox->setEnabled(arg1);
 
     emit autoLoginStateChanged(arg1);
+}
+
+void SettingsDialog::initLanguageComboBox()
+{
+    ui->gameLanguageComboBox->addItem("English", 0);
+    ui->gameLanguageComboBox->addItem("Deutsch", 1);
+    ui->gameLanguageComboBox->addItem("Français", 2);
+    ui->gameLanguageComboBox->addItem("Italiano", 3);
+    ui->gameLanguageComboBox->addItem("Polski", 4);
+    ui->gameLanguageComboBox->addItem("Español", 5);
+    ui->gameLanguageComboBox->addItem("Türkçe", 8);
+    ui->gameLanguageComboBox->addItem("Čeština", 7);
 }
 
