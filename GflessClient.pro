@@ -8,7 +8,7 @@ RC_ICONS = resources/gfless_icon.ico
 
 QMAKE_LFLAGS_WINDOWS += "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
 
-LIBS += -lkernel32
+LIBS += -lkernel32 -luser32 -lgdi32
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -19,7 +19,10 @@ SOURCES += \
     addaccountdialog.cpp \
     addprofileaccountDialog.cpp \
     addprofiledialog.cpp \
+    blackbox.cpp \
+    fingerprint.cpp \
     gflessclient.cpp \
+    identity.cpp \
     nostaleauth.cpp \
     profile.cpp \
     settingsdialog.cpp \
@@ -32,7 +35,10 @@ HEADERS += \
     addaccountdialog.h \
     addprofileaccountdialog.h \
     addprofiledialog.h \
+    blackbox.h \
+    fingerprint.h \
     gflessclient.h \
+    identity.h \
     injector.h \
     mainwindow.h \
     nostaleauth.h \

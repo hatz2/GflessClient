@@ -13,6 +13,7 @@
 #include <QUuid>
 #include <QRandomGenerator>
 #include <QSslKey>
+#include "blackbox.h"
 
 class NostaleAuth : public QObject
 {
@@ -34,6 +35,8 @@ private:
     QByteArray generateThirdTypeUserAgentMagic(QString accountId);
 
     bool sendStartTime();
+
+    bool sendIovation(const QString& accountId);
 
     void initInstallationId();
 

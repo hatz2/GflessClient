@@ -1,16 +1,32 @@
 #include "nostaleauth.h"
+#include "identity.h"
+
+// TODO: Remove global identity
+
+
+namespace
+{
+    bool init_identity = false;
+    std::shared_ptr<Identity> identity;
+}
 
 NostaleAuth::NostaleAuth(QObject *parent) : QObject(parent)
 {
     this->locale = "en_GB";
-    this->chromeVersion = "C2.2.22.1801";
-    this->gameforgeVersion = "2.2.22";
+    this->chromeVersion = "C2.2.23.1813";
+    this->gameforgeVersion = "2.2.23";
     this->browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
 
     initCert();
     initInstallationId();
     initAllCerts();
     initPrivateKey();
+
+    if (!init_identity)
+    {
+        identity = std::make_shared<Identity>("");
+        init_identity = true;
+    }
 }
 
 QMap<QString, QString> NostaleAuth::getAccounts()
@@ -91,27 +107,34 @@ QString NostaleAuth::getToken(const QString &accountId)
     if (token.isEmpty())
         return QByteArray();
 
-    if (!sendStartTime())
+    if (!sendIovation(accountId))
         return QByteArray();
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
-    request.setRawHeader("User-Agent", "Chrome/" + chromeVersion.toUtf8() + " (" + generateThirdTypeUserAgentMagic(accountId) + ") GameforgeClient/" + gameforgeVersion.toUtf8());
-    request.setRawHeader("tnt-installation-id", installationId.toUtf8());
-    request.setRawHeader("Origin", "spark://www.gameforge.com");
+    request.setRawHeader("User-Agent", "Chrome/" + chromeVersion.toUtf8() + " (" + generateThirdTypeUserAgentMagic(accountId) + ")");
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     request.setRawHeader("Connection", "Keep-Alive");
+    request.setRawHeader("tnt-installation-id", installationId.toUtf8());
+
+    QString gsid = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces) + "-" + QString::number(QRandomGenerator::global()->bounded(1000, 9999));
+    identity->update();
+    EncryptedBlackBox blackbox(identity, accountId, gsid, installationId);
 
     content["platformGameAccountId"] = accountId;
-    content["gsid"] = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces) + "-" + QString::number(QRandomGenerator::global()->bounded(1000, 9999));
+    content["gsid"] = gsid;
+    content["blackbox"] = blackbox.encrypted();
+    content["gameId"] = "dd4e22d6-00d1-44b9-8126-d8b40e0cd7c9";
 
     reply = networkManager.post(request, QJsonDocument(content).toJson());
+
+    QByteArray response = reply->readAll();
+
+    qDebug() << response;
 
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 201)
         return QByteArray();
 
-    jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
-
-    qDebug() << QJsonDocument(jsonResponse).toJson();
+    jsonResponse = QJsonDocument::fromJson(response).object();
 
     reply->deleteLater();
 
@@ -196,6 +219,47 @@ bool NostaleAuth::sendStartTime()
     qDebug() << reply->readAll();
 
     reply->deleteLater();
+
+    return true;
+}
+
+bool NostaleAuth::sendIovation(const QString& accountId)
+{
+    QJsonObject content, jsonResponse;
+    QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/iovation"));
+    SyncNetworAccesskManager networkManager(this);
+    QNetworkReply* reply = nullptr;
+
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
+    request.setRawHeader("Accept", "*/*");
+    request.setRawHeader("User-Agent", browserUserAgent.toUtf8());
+    request.setRawHeader("TNT-Installation-Id", installationId.toUtf8());
+    request.setRawHeader("Origin", "spark://www.gameforge.com");
+    request.setRawHeader("Connection", "Keep-Alive");
+    request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
+
+    identity->update();
+    BlackBox blackbox(identity, QJsonValue::Null);
+
+    content["accountId"] = accountId;
+    content["blackbox"] = blackbox.encoded();
+    content["type"] = "play_now";
+
+    reply = networkManager.post(request, QJsonDocument(content).toJson());
+
+    reply->deleteLater();
+
+    QByteArray response = reply->readAll();
+
+    qDebug() << response;
+
+    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
+        return false;
+
+    jsonResponse = QJsonDocument::fromJson(response).object();
+
+    if (jsonResponse["status"] != "ok")
+        return false;
 
     return true;
 }
