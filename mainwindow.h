@@ -8,6 +8,7 @@
 #include "addprofiledialog.h"
 #include "addprofileaccountdialog.h"
 #include "account.h"
+#include "identitydialog.h"
 
 #include <QMainWindow>
 #include <QTimer>
@@ -72,6 +73,8 @@ private slots:
     void on_removeProfileButton_clicked();
 
     void on_actionSave_profiles_triggered();
+
+    void on_actionIdentity_generator_triggered();
 
 private:
     void createTrayIcon();

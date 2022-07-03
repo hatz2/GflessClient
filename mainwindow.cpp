@@ -605,3 +605,10 @@ void MainWindow::on_actionSave_profiles_triggered()
     saveAccountProfiles(path);
 }
 
+
+void MainWindow::on_actionIdentity_generator_triggered()
+{
+    IdentityDialog dialog(this);
+    dialog.exec();
+}
+

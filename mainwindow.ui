@@ -197,6 +197,7 @@
      <string>Options</string>
     </property>
     <addaction name="actionSave_profiles"/>
+    <addaction name="actionIdentity_generator"/>
     <addaction name="actionSettings"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -235,6 +236,11 @@
   <action name="actionSave_profiles">
    <property name="text">
     <string>Save profiles</string>
+   </property>
+  </action>
+  <action name="actionIdentity_generator">
+   <property name="text">
+    <string>Identity generator</string>
    </property>
   </action>
  </widget>

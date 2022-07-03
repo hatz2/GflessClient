@@ -23,6 +23,7 @@ SOURCES += \
     fingerprint.cpp \
     gflessclient.cpp \
     identity.cpp \
+    identitydialog.cpp \
     nostaleauth.cpp \
     profile.cpp \
     settingsdialog.cpp \
@@ -39,6 +40,7 @@ HEADERS += \
     fingerprint.h \
     gflessclient.h \
     identity.h \
+    identitydialog.h \
     injector.h \
     mainwindow.h \
     nostaleauth.h \
@@ -51,6 +53,7 @@ FORMS += \
     addaccountdialog.ui \
     addprofileaccountdialog.ui \
     addprofiledialog.ui \
+    identitydialog.ui \
     mainwindow.ui \
     settingsdialog.ui
 
