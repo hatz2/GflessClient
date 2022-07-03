@@ -35,6 +35,43 @@ QByteArray BlackBox::encode(const QJsonObject &fingerprint) const
     return "tra:" + blackbox;
 }
 
+QByteArray BlackBox::decode(const QByteArray &blackbox)
+{
+    QByteArray decodedBlackbox = blackbox;
+    decodedBlackbox = decodedBlackbox.replace("tra:", "").replace('_', '/').replace('-', '+');
+    decodedBlackbox = QByteArray::fromBase64(decodedBlackbox);
+
+    QByteArray uriDecoded;
+    uriDecoded.push_back(decodedBlackbox[0]);
+
+    for (int i = 1; i < decodedBlackbox.size(); ++i)
+    {
+        const uint8_t b = decodedBlackbox[i - 1];
+        uint8_t a = decodedBlackbox[i];
+
+        if (a < b) a += 0x100;
+
+        const char c = (a - b);
+
+        uriDecoded.push_back(c);
+    }
+
+    QByteArray fingerprintStr = QUrl::fromPercentEncoding(uriDecoded).toLocal8Bit();
+    QJsonArray fingerprintArray = QJsonDocument::fromJson(fingerprintStr).array();
+    QJsonObject fingerprint;
+
+    if (fingerprintArray.size() != BLACKBOX_FIELDS.size())
+    {
+        qDebug() << "BlackBox::decode Error size doesn't match";
+        return QByteArray();
+    }
+
+    for (int i = 0; i < BLACKBOX_FIELDS.size(); ++i)
+        fingerprint[BLACKBOX_FIELDS[i]] = fingerprintArray[i];
+
+    return QJsonDocument(fingerprint).toJson();
+}
+
 QString BlackBox::encoded() const
 {
     return QString(encode(identity->getFingerprint().json()));

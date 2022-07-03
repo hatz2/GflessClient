@@ -12,6 +12,8 @@ public:
 
     QString encoded() const;
 
+    static QByteArray decode(const QByteArray& blackbox);
+
 protected:
     static const QStringList BLACKBOX_FIELDS;
     std::shared_ptr<Identity> identity;
