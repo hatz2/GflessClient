@@ -17,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(gflessServer, &QLocalServer::newConnection, this, &MainWindow::handleLocalConnection);
     connect(settingsDialog, &SettingsDialog::autoLoginStateChanged, ui->channelComboBox, &QComboBox::setEnabled);
     connect(settingsDialog, &SettingsDialog::autoLoginStateChanged, ui->channelLabel, &QLabel::setEnabled);
+    connect(settingsDialog, &SettingsDialog::profilesPathSelected, this, &MainWindow::loadAccountProfiles);
 
     loadSettings();
 }
@@ -98,6 +99,7 @@ void MainWindow::loadSettings()
     settings.beginGroup("MainWindow");
     restoreGeometry(settings.value("geometry").toByteArray());
     settingsDialog->setGameClientPath(settings.value("nostale path").toString());
+    settingsDialog->setProfilesPath(settings.value("profiles path").toString());
     settingsDialog->setOpenInterval(settings.value("open interval", 12).toInt());
     settingsDialog->setGameLanguage(settings.value("game language", 0).toInt());
     settingsDialog->setAutoLogin(settings.value("auto login", false).toBool());
@@ -128,6 +130,7 @@ void MainWindow::saveSettings()
     settings.beginGroup("MainWindow");
     settings.setValue("geometry", saveGeometry());
     settings.setValue("nostale path", settingsDialog->getGameClientPath());
+    settings.setValue("profiles path", settingsDialog->getProfilesPath());
     settings.setValue("open interval", settingsDialog->getOpenInterval());
     settings.setValue("game language", settingsDialog->getGameLanguageIndex());
     settings.setValue("auto login", settingsDialog->autoLogIn());
@@ -149,74 +152,54 @@ void MainWindow::saveSettings()
 
     settings.setValue("accounts", accountInformation);
     settings.endGroup();
-
-    saveAccountProfiles();
 }
 
 void MainWindow::loadAccountProfiles()
 {
-    QFile settingsFile(QDir::currentPath() + "/profiles.txt");
-
-    if (!settingsFile.open(QFile::ReadOnly))
-    {
-        qDebug() << "Error opening profiles file";
+    if (settingsDialog->getProfilesPath().isEmpty())
         return;
-    }
 
-    QTextStream is(&settingsFile);
+    QSettings settings(settingsDialog->getProfilesPath(), QSettings::IniFormat);
+    int gfAccSize, profileSize, accSize;
 
-    while (!is.atEnd())
+    settings.beginGroup("profile_data");
+
+    gfAccSize = settings.beginReadArray("gameforge_accounts");
+    for (int i = 0; i < gfAccSize; ++i)
     {
-        QString line = is.readLine();
-        if (line.isEmpty()) continue;
+        settings.setArrayIndex(i);
+        QString gameforgeAccountUsername = settings.value("gf_account_name").toString();
 
-        QStringList lineSplitted = line.split('=', Qt::SkipEmptyParts);
-
-        if (lineSplitted.size() != 2)
+        profileSize = settings.beginReadArray("profiles");
+        for (int j = 0; j < profileSize; ++j)
         {
-            qDebug() << "Error: line in profile file does not match the format";
-            continue;
-        }
-
-        QString gameforgeAccountName = lineSplitted.first();
-        QString value = lineSplitted.last();
-
-        QStringList profilesInformation = value.split('$', Qt::SkipEmptyParts);
-
-        for (const auto& profileInfo : qAsConst(profilesInformation))
-        {
-            QStringList profileInfoSplitted = profileInfo.split('/', Qt::SkipEmptyParts);
-            QString profileName = profileInfoSplitted.first();
-            QString profileAccounts = profileInfoSplitted.last();
-            QStringList profileAccountsSplitted = profileAccounts.split('|', Qt::SkipEmptyParts);
+            settings.setArrayIndex(j);
+            QString profileName = settings.value("profile_name").toString();
 
             Profile* profile = new Profile(profileName, this);
 
-            if (accounts.value(gameforgeAccountName) == nullptr)
+            if (accounts.value(gameforgeAccountUsername) == nullptr)
                 continue;
 
-            accounts.value(gameforgeAccountName)->addProfile(profile);
+            accounts.value(gameforgeAccountUsername)->addProfile(profile);
 
-            for (const auto& profileAccountInfo : qAsConst(profileAccountsSplitted))
+            accSize = settings.beginReadArray("profile_accounts");
+            for (int h = 0; h < accSize; ++h)
             {
-                QStringList accountInfo = profileAccountInfo.split(',');
+                settings.setArrayIndex(h);
+                QString pseudonym = settings.value("pseudonym").toString();
+                QString accountName = settings.value("account_name").toString();
+                QString id = accounts.value(gameforgeAccountUsername)->getAccounts().value(accountName);
 
-                if (accountInfo.size() != 2)
-                {
-                    qDebug() << "Error: account format doesn't math in profile file";
-                    continue;
-                }
-
-                QString fakeName = accountInfo[0];
-                QString realName = accountInfo[1];
-                QString id = accounts.value(gameforgeAccountName)->getAccounts().value(realName);
-
-                profile->addAccount(fakeName, realName, id);
+                profile->addAccount(pseudonym, accountName, id);
             }
+            settings.endArray();
         }
+        settings.endArray();
     }
+    settings.endArray();
 
-    settingsFile.close();
+    settings.endGroup();
 
     if (ui->gameforgeAccountComboBox->currentIndex() < 0)
         return;
@@ -224,49 +207,46 @@ void MainWindow::loadAccountProfiles()
     displayProfiles(ui->gameforgeAccountComboBox->currentText());
 }
 
-void MainWindow::saveAccountProfiles()
+void MainWindow::saveAccountProfiles(const QString &path)
 {
-    QFile settingsFile(QDir::currentPath() + "/profiles.txt");
+    QSettings settings(path, QSettings::IniFormat);
+    QList<Account*> accs = accounts.values();
+    settings.beginGroup("profile_data");
 
-    if (!settingsFile.open(QFile::WriteOnly | QFile::Truncate))
+    settings.beginWriteArray("gameforge_accounts");
+    for (int i = 0; i < accs.size(); ++i)
     {
-        qDebug() << "Error opening profiles file";
-        return;
-    }
-
-    QTextStream os(&settingsFile);
-
-    // Write all profiles for each gf account
-    for (const auto& account : accounts.values())
-    {
-        // Write the gf account name
-        os << account->getGameforgeAccountUsername() << "=";
+        settings.setArrayIndex(i);
+        Account* account = accs[i];
         const QList<Profile*> profiles = account->getProfiles();
 
-        for (const auto& profile : profiles)
+        settings.setValue("gf_account_name", account->getGameforgeAccountUsername());
+
+        settings.beginWriteArray("profiles");
+        for (int j = 0; j < profiles.size(); ++j)
         {
-            // Write the profile name
-            os << profile->getProfileName() << "/";
+            settings.setArrayIndex(j);
+            Profile* profile = profiles[j];
+            QList<QString> profileAccounts = profile->getAccounts().keys();
 
-            // Write the profile accounts
-            for (const auto& profileAcc : profile->getAccounts().keys())
+            settings.setValue("profile_name", profile->getProfileName());
+
+            settings.beginWriteArray("profile_accounts");
+            for (int h = 0; h < profileAccounts.size(); ++h)
             {
-                QString fakeName = profileAcc;
-                QString realName = profile->getRealName(profileAcc);
+                settings.setArrayIndex(h);
+                QString profileAcc = profileAccounts[h];
 
-                os << fakeName << "," << realName;
-
-                if (profileAcc != profile->getAccounts().keys().last())
-                    os << "|";
+                settings.setValue("pseudonym", profileAcc);
+                settings.setValue("account_name", profile->getRealName(profileAcc));
             }
-
-            os << "$";
+            settings.endArray();
         }
-
-        os << "\n\n";
+        settings.endArray();
     }
+    settings.endArray();
 
-    settingsFile.close();
+    settings.endGroup();
 }
 
 void MainWindow::displayGameAccounts(const QString &gameforgeAccount)
@@ -591,5 +571,16 @@ void MainWindow::on_removeProfileButton_clicked()
         accounts.value(gameforgeAccountUsername)->removeProfile(index);
         ui->profileComboBox->removeItem(index + 1);
     }
+}
+
+
+void MainWindow::on_actionSave_profiles_triggered()
+{
+    QString path = QFileDialog::getSaveFileName(this, "Save profiles", QDir::rootPath(), "(*.ini)");
+
+    if (path.isEmpty())
+        return;
+
+    saveAccountProfiles(path);
 }
 

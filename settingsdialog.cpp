@@ -20,6 +20,11 @@ QString SettingsDialog::getGameClientPath() const
     return ui->gameClientPathLineEdit->text();
 }
 
+QString SettingsDialog::getProfilesPath() const
+{
+    return ui->profilesPathLineEdit->text();
+}
+
 int SettingsDialog::getOpenInterval() const
 {
     return ui->openIntervalSpinBox->value();
@@ -53,6 +58,11 @@ bool SettingsDialog::autoLogIn() const
 void SettingsDialog::setGameClientPath(const QString &path)
 {
     ui->gameClientPathLineEdit->setText(path);
+}
+
+void SettingsDialog::setProfilesPath(const QString &path)
+{
+    ui->profilesPathLineEdit->setText(path);
 }
 
 void SettingsDialog::setOpenInterval(int n)
@@ -111,5 +121,18 @@ void SettingsDialog::initLanguageComboBox()
     ui->gameLanguageComboBox->addItem("Español", 5);
     ui->gameLanguageComboBox->addItem("Türkçe", 8);
     ui->gameLanguageComboBox->addItem("Čeština", 7);
+}
+
+
+void SettingsDialog::on_selectProfilePathButton_clicked()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Select profile", QDir::rootPath(), "(*.ini)");
+
+    if (path.isEmpty())
+        return;
+
+    setProfilesPath(path);
+
+    emit profilesPathSelected(path);
 }
 

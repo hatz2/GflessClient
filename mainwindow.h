@@ -71,13 +71,15 @@ private slots:
 
     void on_removeProfileButton_clicked();
 
+    void on_actionSave_profiles_triggered();
+
 private:
     void createTrayIcon();
     bool checkGameClientPath();
     void loadSettings();
     void saveSettings();
     void loadAccountProfiles();
-    void saveAccountProfiles();
+    void saveAccountProfiles(const QString& path);
     void displayGameAccounts(const QString& gameforgeAccount);
     void displayProfiles(const QString& gameforgeAccount);
     void addGameforgeAccount(const QString& email, const QString& password);

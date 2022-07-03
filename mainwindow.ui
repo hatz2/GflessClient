@@ -196,6 +196,7 @@
     <property name="title">
      <string>Options</string>
     </property>
+    <addaction name="actionSave_profiles"/>
     <addaction name="actionSettings"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -229,6 +230,11 @@
   <action name="actionAbout_Qt">
    <property name="text">
     <string>About Qt</string>
+   </property>
+  </action>
+  <action name="actionSave_profiles">
+   <property name="text">
+    <string>Save profiles</string>
    </property>
   </action>
  </widget>

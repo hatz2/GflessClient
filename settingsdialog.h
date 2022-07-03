@@ -18,6 +18,8 @@ public:
 
     QString getGameClientPath() const;
 
+    QString getProfilesPath() const;
+
     int getOpenInterval() const;
 
     int getGameLanguage() const;
@@ -32,6 +34,8 @@ public:
 
     void setGameClientPath(const QString& path);
 
+    void setProfilesPath(const QString& path);
+
     void setOpenInterval(int n);
 
     void setGameLanguage(int language);
@@ -45,10 +49,14 @@ public:
 signals:
     void autoLoginStateChanged(bool);
 
+    void profilesPathSelected(QString);
+
 private slots:
     void on_selectGamePathButton_clicked();
 
     void on_autoLogInCheckBox_stateChanged(int arg1);
+
+    void on_selectProfilePathButton_clicked();
 
 private:
     void initLanguageComboBox();
