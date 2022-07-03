@@ -2,6 +2,8 @@
 #define NOSTALEAUTH_H
 
 #include "syncnetworkaccessmanager.h"
+#include "blackbox.h"
+#include "identity.h"
 
 #include <QObject>
 #include <QJsonDocument>
@@ -13,13 +15,13 @@
 #include <QUuid>
 #include <QRandomGenerator>
 #include <QSslKey>
-#include "blackbox.h"
+
 
 class NostaleAuth : public QObject
 {
     Q_OBJECT
 public:
-    explicit NostaleAuth(QObject *parent = nullptr);
+    explicit NostaleAuth(const std::shared_ptr<Identity>& id, QObject *parent = nullptr);
 
     QMap<QString /* displayName */, QString /* id */> getAccounts();
 
@@ -55,6 +57,7 @@ private:
     QString token;
     QString browserUserAgent;
     QList<QSslCertificate> allCerts;
+    std::shared_ptr<Identity> identity;
 };
 
 #endif // NOSTALEAUTH_H

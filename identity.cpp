@@ -11,6 +11,12 @@ Identity::~Identity()
     save();
 }
 
+void Identity::load(const QString &filePath)
+{
+    filename = filePath;
+    initFingerprint();
+}
+
 void Identity::update()
 {
     fingerprint.updateTimings();

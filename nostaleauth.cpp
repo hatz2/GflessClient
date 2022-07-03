@@ -1,16 +1,6 @@
 #include "nostaleauth.h"
-#include "identity.h"
 
-// TODO: Remove global identity
-
-
-namespace
-{
-    bool init_identity = false;
-    std::shared_ptr<Identity> identity;
-}
-
-NostaleAuth::NostaleAuth(QObject *parent) : QObject(parent)
+NostaleAuth::NostaleAuth(const std::shared_ptr<Identity> &id, QObject *parent) : QObject(parent), identity(id)
 {
     this->locale = "en_GB";
     this->chromeVersion = "C2.2.23.1813";
@@ -21,12 +11,6 @@ NostaleAuth::NostaleAuth(QObject *parent) : QObject(parent)
     initInstallationId();
     initAllCerts();
     initPrivateKey();
-
-    if (!init_identity)
-    {
-        identity = std::make_shared<Identity>("");
-        init_identity = true;
-    }
 }
 
 QMap<QString, QString> NostaleAuth::getAccounts()

@@ -76,6 +76,7 @@ private slots:
 private:
     void createTrayIcon();
     bool checkGameClientPath();
+    bool checkIdentityPath();
     void loadSettings();
     void saveSettings();
     void loadAccountProfiles();
@@ -83,6 +84,7 @@ private:
     void displayGameAccounts(const QString& gameforgeAccount);
     void displayProfiles(const QString& gameforgeAccount);
     void addGameforgeAccount(const QString& email, const QString& password);
+    void loadIdentity(const QString& path);
 
     Ui::MainWindow *ui;
     SettingsDialog* settingsDialog;
@@ -90,6 +92,7 @@ private:
     QSystemTrayIcon* trayIcon;
     QLocalServer* gflessServer;
     QMap<QString /* gameforge account name */, Account*> accounts;
+    std::shared_ptr<Identity> identity;
 };
 
 #endif // MAINWINDOW_H

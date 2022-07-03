@@ -11,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent)
     gflessServer = new QLocalServer(this);
     gflessServer->listen("GflessClient");
     createTrayIcon();
+    identity = std::make_shared<Identity>();
 
     ui->accountsListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->accountsListWidget, &QListWidget::customContextMenuRequested, this, &MainWindow::showContextMenu);
@@ -18,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(settingsDialog, &SettingsDialog::autoLoginStateChanged, ui->channelComboBox, &QComboBox::setEnabled);
     connect(settingsDialog, &SettingsDialog::autoLoginStateChanged, ui->channelLabel, &QLabel::setEnabled);
     connect(settingsDialog, &SettingsDialog::profilesPathSelected, this, &MainWindow::loadAccountProfiles);
+    connect(settingsDialog, &SettingsDialog::identityPathSelected, this, &MainWindow::loadIdentity);
 
     loadSettings();
 }
@@ -31,6 +33,7 @@ void MainWindow::on_openAccountsButton_clicked()
 {
     if (ui->accountsListWidget->currentRow() < 0) return;
     if (!checkGameClientPath()) return;
+    if (!checkIdentityPath()) return;
 
     int openInterval = settingsDialog->getOpenInterval();
     QString gameforgeAccountUsername = ui->gameforgeAccountComboBox->currentText();
@@ -100,6 +103,7 @@ void MainWindow::loadSettings()
     restoreGeometry(settings.value("geometry").toByteArray());
     settingsDialog->setGameClientPath(settings.value("nostale path").toString());
     settingsDialog->setProfilesPath(settings.value("profiles path").toString());
+    settingsDialog->setIdentityPath(settings.value("identity path").toString());
     settingsDialog->setOpenInterval(settings.value("open interval", 12).toInt());
     settingsDialog->setGameLanguage(settings.value("game language", 0).toInt());
     settingsDialog->setAutoLogin(settings.value("auto login", false).toBool());
@@ -131,6 +135,7 @@ void MainWindow::saveSettings()
     settings.setValue("geometry", saveGeometry());
     settings.setValue("nostale path", settingsDialog->getGameClientPath());
     settings.setValue("profiles path", settingsDialog->getProfilesPath());
+    settings.setValue("identity path", settingsDialog->getIdentityPath());
     settings.setValue("open interval", settingsDialog->getOpenInterval());
     settings.setValue("game language", settingsDialog->getGameLanguageIndex());
     settings.setValue("auto login", settingsDialog->autoLogIn());
@@ -289,7 +294,7 @@ void MainWindow::displayProfiles(const QString &gameforgeAccount)
 
 void MainWindow::addGameforgeAccount(const QString &email, const QString &password)
 {
-    NostaleAuth* nostaleAuth = new NostaleAuth(this);
+    NostaleAuth* nostaleAuth = new NostaleAuth(identity, this);
 
     if (!nostaleAuth->authenthicate(email, password))
     {
@@ -309,6 +314,11 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
     accounts.insert(email, account);
 
     ui->gameforgeAccountComboBox->addItem(email, password);
+}
+
+void MainWindow::loadIdentity(const QString &path)
+{
+    identity->load(path);
 }
 
 void MainWindow::createTrayIcon()
@@ -395,6 +405,17 @@ bool MainWindow::checkGameClientPath()
     if (!QFile::exists(settingsDialog->getGameClientPath()))
     {
         QMessageBox::critical(this, "Error", "NostaleClientX.exe path doesn't exist");
+        return false;
+    }
+
+    return true;
+}
+
+bool MainWindow::checkIdentityPath()
+{
+    if (!QFile::exists(settingsDialog->getIdentityPath()))
+    {
+        QMessageBox::critical(this, "Error", "Identity file path doesn't exist");
         return false;
     }
 

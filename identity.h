@@ -7,8 +7,11 @@
 class Identity
 {
 public:
+    Identity() {}
     Identity(const QString& filePath);
     ~Identity();
+
+    void load(const QString& filePath);
 
     void update();
 

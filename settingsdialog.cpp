@@ -25,6 +25,11 @@ QString SettingsDialog::getProfilesPath() const
     return ui->profilesPathLineEdit->text();
 }
 
+QString SettingsDialog::getIdentityPath() const
+{
+    return ui->identityLineEdit->text();
+}
+
 int SettingsDialog::getOpenInterval() const
 {
     return ui->openIntervalSpinBox->value();
@@ -63,6 +68,11 @@ void SettingsDialog::setGameClientPath(const QString &path)
 void SettingsDialog::setProfilesPath(const QString &path)
 {
     ui->profilesPathLineEdit->setText(path);
+}
+
+void SettingsDialog::setIdentityPath(const QString &path)
+{
+    ui->identityLineEdit->setText(path);
 }
 
 void SettingsDialog::setOpenInterval(int n)
@@ -134,5 +144,18 @@ void SettingsDialog::on_selectProfilePathButton_clicked()
     setProfilesPath(path);
 
     emit profilesPathSelected(path);
+}
+
+
+void SettingsDialog::on_selectIdentityButton_clicked()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Select identity file", QDir::rootPath(), "(*.json)");
+
+    if (path.isEmpty())
+        return;
+
+    setIdentityPath(path);
+
+    emit identityPathSelected(path);
 }
 
