@@ -17,7 +17,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->accountsListWidget, &QListWidget::customContextMenuRequested, this, &MainWindow::showContextMenu);
     connect(gflessServer, &QLocalServer::newConnection, this, &MainWindow::handleLocalConnection);
     connect(settingsDialog, &SettingsDialog::autoLoginStateChanged, ui->channelComboBox, &QComboBox::setEnabled);
+    connect(settingsDialog, &SettingsDialog::autoLoginStateChanged, ui->characterComboBox, &QComboBox::setEnabled);
     connect(settingsDialog, &SettingsDialog::autoLoginStateChanged, ui->channelLabel, &QLabel::setEnabled);
+    connect(settingsDialog, &SettingsDialog::autoLoginStateChanged, ui->characterLabel, &QLabel::setEnabled);
     connect(settingsDialog, &SettingsDialog::profilesPathSelected, this, &MainWindow::loadAccountProfiles);
     connect(settingsDialog, &SettingsDialog::identityPathSelected, this, &MainWindow::loadIdentity);
 
@@ -110,6 +112,7 @@ void MainWindow::loadSettings()
     settingsDialog->setServerLanguage(settings.value("server language", 0).toInt());
     settingsDialog->setServer(settings.value("server", 0).toInt());
     ui->channelComboBox->setCurrentIndex(settings.value("channel", 0).toInt());
+    ui->characterComboBox->setCurrentIndex(settings.value("character", 0).toInt());
 
     settings.endGroup();
 
@@ -142,6 +145,7 @@ void MainWindow::saveSettings()
     settings.setValue("server language", settingsDialog->getServerLanguage());
     settings.setValue("server", settingsDialog->getServer());
     settings.setValue("channel", ui->channelComboBox->currentIndex());
+    settings.setValue("character", ui->characterComboBox->currentIndex());
     settings.endGroup();
 
     settings.beginGroup("Gameforge Accounts");
@@ -483,6 +487,9 @@ void MainWindow::handleLocalConnection()
 
         else if (message == "Channel")
             output = QString::number(ui->channelComboBox->currentIndex()).toLocal8Bit();
+
+        else if (message == "Character")
+            output = QString::number(ui->characterComboBox->currentIndex()).toLocal8Bit();
 
         sock->write(output);
     });
