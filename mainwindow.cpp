@@ -422,12 +422,10 @@ bool MainWindow::checkIdentityPath()
     return true;
 }
 
-
 void MainWindow::on_actionSettings_triggered()
 {
     settingsDialog->exec();
 }
-
 
 void MainWindow::on_actionAbout_3_triggered()
 {
@@ -438,14 +436,14 @@ void MainWindow::on_actionAbout_3_triggered()
                    "open several game clients with just one click.<br><br>"
                    "You can find the source code here: "
                    "<a href=https://github.com/hatz02/GflessClient>Github</a><br><br>"
-                   "Full credits to morsisko for such an amazing job reverse engineering the Gameforge Client and the login protocol.<br><br>"
+                   "Full credits to morsisko and stdLemon for such an amazing job reverse engineering the Gameforge Client and the login protocol.<br><br>"
                    "Sources used to make this project:<br>"
                    "<a href=https://github.com/morsisko/NosTale-Auth>Nostale-Auth</a><br>"
-                   "<a href=https://github.com/morsisko/NosTale-Gfless>Nostale-Gfless</a>";
+                   "<a href=https://github.com/morsisko/NosTale-Gfless>Nostale-Gfless</a><br>"
+                   "<a href=https://github.com/stdLemon/nostale-auth>nostale-auth</a>";
 
     QMessageBox::about(this, "About Gfless Client", text);
 }
-
 
 void MainWindow::on_actionAbout_Qt_triggered()
 {
@@ -457,7 +455,6 @@ void MainWindow::iconActivated(QSystemTrayIcon::ActivationReason reason)
     if (reason == QSystemTrayIcon::DoubleClick)
         show();
 }
-
 
 void MainWindow::on_actionGet_help_triggered()
 {
@@ -490,8 +487,6 @@ void MainWindow::handleLocalConnection()
         sock->write(output);
     });
 }
-
-
 
 void MainWindow::on_addProfileButton_clicked()
 {
@@ -572,7 +567,6 @@ void MainWindow::showContextMenu(const QPoint& pos)
     menu.exec(globalPos);
 }
 
-
 void MainWindow::on_removeProfileButton_clicked()
 {
     if (ui->gameforgeAccountComboBox->currentIndex() < 0)
@@ -594,7 +588,6 @@ void MainWindow::on_removeProfileButton_clicked()
     }
 }
 
-
 void MainWindow::on_actionSave_profiles_triggered()
 {
     QString path = QFileDialog::getSaveFileName(this, "Save profiles", QDir::rootPath(), "(*.ini)");
@@ -605,10 +598,8 @@ void MainWindow::on_actionSave_profiles_triggered()
     saveAccountProfiles(path);
 }
 
-
 void MainWindow::on_actionIdentity_generator_triggered()
 {
     IdentityDialog dialog(this);
     dialog.exec();
 }
-
