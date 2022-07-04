@@ -17,13 +17,19 @@ bool Inject(DWORD pid, const char* dllPath)
     lpAllocMem =  VirtualAllocEx(hProc, NULL, MAX_PATH, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
     if (!lpAllocMem)
+    {
+        CloseHandle(hProc);
         return false;
+    }
 
     WriteProcessMemory(hProc, lpAllocMem, dllPath, strlen(dllPath) + 1, nullptr);
     hThread = CreateRemoteThread(hProc, NULL, 0, (LPTHREAD_START_ROUTINE)LoadLibraryA, lpAllocMem, 0, NULL);
 
     if (!hThread)
+    {
+        CloseHandle(hProc);
         return false;
+    }
 
     CloseHandle(hThread);
     CloseHandle(hProc);
