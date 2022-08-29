@@ -5,6 +5,7 @@
 #include <QDialog>
 #include <QPixmap>
 #include <QMessageBox>
+#include <QLocale>
 
 namespace Ui {
 class CaptchaDialog;

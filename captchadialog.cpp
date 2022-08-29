@@ -6,7 +6,7 @@ CaptchaDialog::CaptchaDialog(const QString &gfChallengeId, QWidget *parent) :
     ui(new Ui::CaptchaDialog)
 {
     ui->setupUi(this);
-    captcha = new CaptchaSolver(gfChallengeId, "en-US", this);
+    captcha = new CaptchaSolver(gfChallengeId, QLocale().name().replace("_", "-"), this);
 
     initImages();
 }
