@@ -16,7 +16,6 @@
 #include <QRandomGenerator>
 #include <QSslKey>
 
-
 class NostaleAuth : public QObject
 {
     Q_OBJECT
@@ -25,9 +24,13 @@ public:
 
     QMap<QString /* displayName */, QString /* id */> getAccounts();
 
-    bool authenthicate(const QString& email, const QString& password);
+    bool authenthicate(const QString& email, const QString& password, bool &captcha, QString &gfChallengeId, bool& wrongCredentials);
 
     QString getToken(const QString& accountId);
+
+signals:
+    void captchaStart();
+    void captchaEnd();
 
 private:
     QChar getFirstNumber(QString uuid);

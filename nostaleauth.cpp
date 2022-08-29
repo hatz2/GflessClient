@@ -48,7 +48,7 @@ QMap<QString, QString> NostaleAuth::getAccounts()
     return accounts;
 }
 
-bool NostaleAuth::authenthicate(const QString &email, const QString &password)
+bool NostaleAuth::authenthicate(const QString &email, const QString &password, bool& captcha, QString& gfChallengeId, bool &wrongCredentials)
 {
     QJsonObject content, jsonResponse;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/sessions"));
@@ -68,7 +68,23 @@ bool NostaleAuth::authenthicate(const QString &email, const QString &password)
     reply = networkManager.post(request, QJsonDocument(content).toJson());
 
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 201)
-        return false;
+    {
+        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 409) // Conflict Captcha
+        {
+            gfChallengeId = reply->rawHeader("gf-challenge-id").split(';').first();
+            captcha = true;
+            return false;
+        }
+        else if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 403) // Incorrect username or password
+        {
+            wrongCredentials = true;
+            return false;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
     jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
 

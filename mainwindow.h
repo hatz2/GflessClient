@@ -9,6 +9,7 @@
 #include "addprofileaccountdialog.h"
 #include "account.h"
 #include "identitydialog.h"
+#include "captchadialog.h"
 
 #include <QMainWindow>
 #include <QTimer>

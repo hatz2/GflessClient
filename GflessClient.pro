@@ -20,6 +20,8 @@ SOURCES += \
     addprofileaccountDialog.cpp \
     addprofiledialog.cpp \
     blackbox.cpp \
+    captchadialog.cpp \
+    captchasolver.cpp \
     fingerprint.cpp \
     gflessclient.cpp \
     identity.cpp \
@@ -37,6 +39,8 @@ HEADERS += \
     addprofileaccountdialog.h \
     addprofiledialog.h \
     blackbox.h \
+    captchadialog.h \
+    captchasolver.h \
     fingerprint.h \
     gflessclient.h \
     identity.h \
@@ -53,6 +57,7 @@ FORMS += \
     addaccountdialog.ui \
     addprofileaccountdialog.ui \
     addprofiledialog.ui \
+    captchadialog.ui \
     identitydialog.ui \
     mainwindow.ui \
     settingsdialog.ui
@@ -65,3 +70,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
     resources.qrc
+

@@ -299,10 +299,31 @@ void MainWindow::displayProfiles(const QString &gameforgeAccount)
 void MainWindow::addGameforgeAccount(const QString &email, const QString &password)
 {
     NostaleAuth* nostaleAuth = new NostaleAuth(identity, this);
+    bool captcha = false;
+    bool wrongCredentials = false;
+    QString gfChallengeId;
 
-    if (!nostaleAuth->authenthicate(email, password))
+    if (!nostaleAuth->authenthicate(email, password, captcha, gfChallengeId, wrongCredentials))
     {
-        QMessageBox::critical(this, "Error", "Authentication failed");
+        if (captcha)
+        {
+            CaptchaDialog captcha(gfChallengeId, this);
+            int res = captcha.exec();
+
+            if (res == QDialog::Accepted)
+            {
+                addGameforgeAccount(email, password);
+            }
+        }
+        else if (wrongCredentials)
+        {
+            QMessageBox::critical(this, "Error", "Incorrect username or password");
+        }
+        else
+        {
+            QMessageBox::critical(this, "Error", "Authentication failed");
+        }
+
         return;
     }
 
