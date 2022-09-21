@@ -73,6 +73,7 @@ void SettingsDialog::setProfilesPath(const QString &path)
 void SettingsDialog::setIdentityPath(const QString &path)
 {
     ui->identityLineEdit->setText(path);
+    emit identityPathSelected(path);
 }
 
 void SettingsDialog::setOpenInterval(int n)
@@ -155,7 +156,5 @@ void SettingsDialog::on_selectIdentityButton_clicked()
         return;
 
     setIdentityPath(path);
-
-    emit identityPathSelected(path);
 }
 
