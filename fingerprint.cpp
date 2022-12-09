@@ -40,12 +40,7 @@ void Fingerprint::updateServerTime()
 
 void Fingerprint::updateTimings()
 {
-    fingerprint["dP"] = QRandomGenerator64::global()->bounded(0, 50);
-    fingerprint["dF"] = QRandomGenerator64::global()->bounded(0, 50);
-    fingerprint["dW"] = QRandomGenerator64::global()->bounded(0, 50);
-    fingerprint["dC"] = QRandomGenerator64::global()->bounded(0, 50);
-    fingerprint["d"] = fingerprint["dP"].toInt() + fingerprint["dF"].toInt() +
-            fingerprint["dW"].toInt() + fingerprint["dC"].toInt() + QRandomGenerator64::global()->bounded(0, 10);
+    fingerprint["d"] = QRandomGenerator64::global()->bounded(10, 300);
 }
 
 void Fingerprint::setRequest(const QJsonValue &request)
