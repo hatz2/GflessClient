@@ -1,11 +1,10 @@
 #include "nostaleauth.h"
 
-NostaleAuth::NostaleAuth(const std::shared_ptr<Identity> &id, QObject *parent) : QObject(parent), identity(id)
+NostaleAuth::NostaleAuth(const std::shared_ptr<Identity> &id, const QString &gfver, QObject *parent) : QObject(parent), identity(id)
 {
     this->locale = QLocale().name();
-    this->chromeVersion = "C2.2.27.1832";
-    this->gameforgeVersion = "2.2.27";
     this->browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
+    setGfVersion(gfver);
 
     initCert();
     initInstallationId();
@@ -139,6 +138,12 @@ QString NostaleAuth::getToken(const QString &accountId)
     reply->deleteLater();
 
     return jsonResponse["code"].toString();
+}
+
+void NostaleAuth::setGfVersion(QString ver)
+{
+    this->chromeVersion = "C" + ver;
+    this->gameforgeVersion = ver.left(ver.lastIndexOf("."));
 }
 
 QChar NostaleAuth::getFirstNumber(QString uuid)

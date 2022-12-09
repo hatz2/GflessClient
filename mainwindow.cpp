@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(settingsDialog, &SettingsDialog::autoLoginStateChanged, ui->characterLabel, &QLabel::setEnabled);
     connect(settingsDialog, &SettingsDialog::profilesPathSelected, this, &MainWindow::loadAccountProfiles);
     connect(settingsDialog, &SettingsDialog::identityPathSelected, this, &MainWindow::loadIdentity);
+    connect(settingsDialog, &SettingsDialog::gfVersionChanged, this, &MainWindow::updateGfVersion);
 
     loadSettings();
 }
@@ -36,6 +37,7 @@ void MainWindow::on_openAccountsButton_clicked()
     if (ui->accountsListWidget->currentRow() < 0) return;
     if (!checkGameClientPath()) return;
     if (!checkIdentityPath()) return;
+    if (!checkGfVersion()) return;
 
     int openInterval = settingsDialog->getOpenInterval();
     QString gameforgeAccountUsername = ui->gameforgeAccountComboBox->currentText();
@@ -113,6 +115,7 @@ void MainWindow::loadSettings()
     settingsDialog->setServer(settings.value("server", 0).toInt());
     ui->channelComboBox->setCurrentIndex(settings.value("channel", 0).toInt());
     ui->characterComboBox->setCurrentIndex(settings.value("character", 0).toInt());
+    settingsDialog->setGfClientVersion(settings.value("gfver").toString());
 
     settings.endGroup();
 
@@ -146,6 +149,7 @@ void MainWindow::saveSettings()
     settings.setValue("server", settingsDialog->getServer());
     settings.setValue("channel", ui->channelComboBox->currentIndex());
     settings.setValue("character", ui->characterComboBox->currentIndex());
+    settings.setValue("gfver", settingsDialog->getGfClientVersion());
     settings.endGroup();
 
     settings.beginGroup("Gameforge Accounts");
@@ -298,7 +302,7 @@ void MainWindow::displayProfiles(const QString &gameforgeAccount)
 
 void MainWindow::addGameforgeAccount(const QString &email, const QString &password)
 {
-    NostaleAuth* nostaleAuth = new NostaleAuth(identity, this);
+    NostaleAuth* nostaleAuth = new NostaleAuth(identity, settingsDialog->getGfClientVersion(), this);
     bool captcha = false;
     bool wrongCredentials = false;
     QString gfChallengeId;
@@ -344,6 +348,25 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
 void MainWindow::loadIdentity(const QString &path)
 {
     identity->load(path);
+}
+
+void MainWindow::updateGfVersion(QString gfver)
+{
+    for (auto accs : accounts)
+    {
+        accs->setGfVersion(gfver);
+    }
+}
+
+bool MainWindow::checkGfVersion()
+{
+    if (settingsDialog->getGfClientVersion().isEmpty())
+    {
+        QMessageBox::critical(this, "Error", "Gameforge Client version is empty. Please set it up on Options > Settings");
+        return false;
+    }
+
+    return true;
 }
 
 void MainWindow::createTrayIcon()
