@@ -20,15 +20,13 @@ class NostaleAuth : public QObject
 {
     Q_OBJECT
 public:
-    explicit NostaleAuth(const std::shared_ptr<Identity>& id, const QString& gfver, QObject *parent = nullptr);
+    explicit NostaleAuth(const std::shared_ptr<Identity>& id, QObject *parent = nullptr);
 
     QMap<QString /* displayName */, QString /* id */> getAccounts();
 
     bool authenthicate(const QString& email, const QString& password, bool &captcha, QString &gfChallengeId, bool& wrongCredentials);
 
     QString getToken(const QString& accountId);
-
-    void setGfVersion(QString ver);
 
 signals:
     void captchaStart();
@@ -52,6 +50,8 @@ private:
     void initAllCerts();
 
     void initPrivateKey();
+
+    void initGfVersion();
 
     QString locale;
     QString installationId;

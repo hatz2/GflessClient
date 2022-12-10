@@ -1,11 +1,11 @@
 #include "nostaleauth.h"
 
-NostaleAuth::NostaleAuth(const std::shared_ptr<Identity> &id, const QString &gfver, QObject *parent) : QObject(parent), identity(id)
+NostaleAuth::NostaleAuth(const std::shared_ptr<Identity> &id, QObject *parent) : QObject(parent), identity(id)
 {
     this->locale = QLocale().name();
     this->browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
-    setGfVersion(gfver);
 
+    initGfVersion();
     initCert();
     initInstallationId();
     initAllCerts();
@@ -60,6 +60,10 @@ bool NostaleAuth::authenthicate(const QString &email, const QString &password, b
     request.setRawHeader("Origin", "spark://www.gameforge.com");
     request.setRawHeader("Connection", "Keep-Alive");
 
+    identity->update();
+    BlackBox blackbox(identity, QJsonValue::Null);
+
+    content["blackbox"] = blackbox.encoded();
     content["email"] = email;
     content["locale"] = locale;
     content["password"] = password;
@@ -138,12 +142,6 @@ QString NostaleAuth::getToken(const QString &accountId)
     reply->deleteLater();
 
     return jsonResponse["code"].toString();
-}
-
-void NostaleAuth::setGfVersion(QString ver)
-{
-    this->chromeVersion = "C" + ver;
-    this->gameforgeVersion = ver.left(ver.lastIndexOf("."));
 }
 
 QChar NostaleAuth::getFirstNumber(QString uuid)
@@ -331,4 +329,26 @@ void NostaleAuth::initPrivateKey()
     key =  certData.mid(start, end - start + strlen("-----END PRIVATE KEY-----") + 1);
 
     this->privateKey = QSslKey(key, QSsl::Rsa);
+}
+
+void NostaleAuth::initGfVersion()
+{
+    QJsonObject jsonResponse;
+    QNetworkRequest request(QUrl("http://dl.tnt.gameforge.com/tnt/final-ms3/clientversioninfo.json"));
+    SyncNetworAccesskManager networkManager(this);
+    QNetworkReply* reply = nullptr;
+
+
+    reply = networkManager.get(request);
+    reply->deleteLater();
+
+    QByteArray response = reply->readAll();
+
+    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
+        return;
+
+    jsonResponse = QJsonDocument::fromJson(response).object();
+
+    this->chromeVersion = "C" + jsonResponse["version"].toString();
+    this->gameforgeVersion = jsonResponse["minimumVersionForDelayedUpdate"].toString();
 }

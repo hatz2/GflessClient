@@ -89,8 +89,6 @@ private:
     void displayProfiles(const QString& gameforgeAccount);
     void addGameforgeAccount(const QString& email, const QString& password);
     void loadIdentity(const QString& path);
-    void updateGfVersion(QString gfver);
-    bool checkGfVersion();
 
     Ui::MainWindow *ui;
     SettingsDialog* settingsDialog;

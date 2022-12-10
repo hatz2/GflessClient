@@ -28,8 +28,6 @@ public:
 
     NostaleAuth *getAuthenticator() const;
 
-    void setGfVersion(QString ver);
-
 private:
     QString gameforgeAccountUsername;
     NostaleAuth* authenticator;

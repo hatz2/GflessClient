@@ -49,8 +49,3 @@ NostaleAuth *Account::getAuthenticator() const
 {
     return authenticator;
 }
-
-void Account::setGfVersion(QString ver)
-{
-    authenticator->setGfVersion(ver);
-}

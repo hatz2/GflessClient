@@ -34,8 +34,6 @@ public:
 
     bool autoLogIn() const;
 
-    QString getGfClientVersion() const;
-
     void setGameClientPath(const QString& path);
 
     void setProfilesPath(const QString& path);
@@ -52,16 +50,12 @@ public:
 
     void setAutoLogin(bool login);
 
-    void setGfClientVersion(const QString& version);
-
 signals:
     void autoLoginStateChanged(bool);
 
     void profilesPathSelected(QString);
 
     void identityPathSelected(QString);
-
-    void gfVersionChanged(QString);
 
 private slots:
     void on_selectGamePathButton_clicked();
@@ -71,8 +65,6 @@ private slots:
     void on_selectProfilePathButton_clicked();
 
     void on_selectIdentityButton_clicked();
-
-    void on_gfClientVersionEdit_textChanged(const QString &arg1);
 
 private:
     void initLanguageComboBox();

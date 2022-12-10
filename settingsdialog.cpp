@@ -60,11 +60,6 @@ bool SettingsDialog::autoLogIn() const
     return ui->autoLogInCheckBox->isChecked();
 }
 
-QString SettingsDialog::getGfClientVersion() const
-{
-    return ui->gfClientVersionEdit->text();
-}
-
 void SettingsDialog::setGameClientPath(const QString &path)
 {
     ui->gameClientPathLineEdit->setText(path);
@@ -104,11 +99,6 @@ void SettingsDialog::setServer(int server)
 void SettingsDialog::setAutoLogin(bool login)
 {
     ui->autoLogInCheckBox->setChecked(login);
-}
-
-void SettingsDialog::setGfClientVersion(const QString &version)
-{
-    ui->gfClientVersionEdit->setText(version);
 }
 
 void SettingsDialog::on_selectGamePathButton_clicked()
@@ -168,9 +158,4 @@ void SettingsDialog::on_selectIdentityButton_clicked()
     setIdentityPath(path);
 }
 
-
-void SettingsDialog::on_gfClientVersionEdit_textChanged(const QString &arg1)
-{
-    emit gfVersionChanged(arg1);
-}
 
