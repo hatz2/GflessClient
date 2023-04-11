@@ -289,7 +289,7 @@ void NostaleAuth::initInstallationId()
 
 void NostaleAuth::initCert()
 {
-    QFile file(":/resources/all_certs.pem");
+    QFile file(":/resources/new_cert.pem");
     QByteArray data;
     int start, end;
 

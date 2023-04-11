@@ -3,5 +3,6 @@
         <file>resources/all_certs.pem</file>
         <file>resources/settings_icon.png</file>
         <file>resources/gfless_icon.png</file>
+        <file>resources/new_cert.pem</file>
     </qresource>
 </RCC>
