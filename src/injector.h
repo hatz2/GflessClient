@@ -2,6 +2,7 @@
 #define INJECTOR_H
 
 #include <Windows.h>
+#include <QDebug>
 
 bool Inject(DWORD pid, const char* dllPath)
 {
@@ -18,22 +19,54 @@ bool Inject(DWORD pid, const char* dllPath)
 
     if (!lpAllocMem)
     {
+        qDebug() << "Error on VirtualAllocEx:" << GetLastError();
         CloseHandle(hProc);
         return false;
     }
 
-    WriteProcessMemory(hProc, lpAllocMem, dllPath, strlen(dllPath) + 1, nullptr);
+    if (!WriteProcessMemory(hProc, lpAllocMem, dllPath, strlen(dllPath) + 1, nullptr))
+    {
+        qDebug() << "Error on WriteProcessMemory:" << GetLastError();
+        CloseHandle(hProc);
+        return false;
+    }
+
     hThread = CreateRemoteThread(hProc, NULL, 0, (LPTHREAD_START_ROUTINE)LoadLibraryA, lpAllocMem, 0, NULL);
 
     if (!hThread)
     {
+        qDebug() << "Error on CreateRemoteThread:" << GetLastError();
+
+        if (!VirtualFreeEx(hProc, lpAllocMem, 0, MEM_RELEASE))
+        {
+            qDebug() << "Error on VirtualFreeEx:" << GetLastError();
+        }
+
         CloseHandle(hProc);
         return false;
     }
 
+    if (WaitForSingleObject(hThread, INFINITE) == WAIT_FAILED)
+    {
+        qDebug() << "Error on WaitForSingleObject:" << GetLastError();
+
+        if (!VirtualFreeEx(hProc, lpAllocMem, 0, MEM_RELEASE))
+        {
+            qDebug() << "Error on VirtualFreeEx:" << GetLastError();
+        }
+
+        CloseHandle(hThread);
+        CloseHandle(hProc);
+        return false;
+    }
+
+    if (!VirtualFreeEx(hProc, lpAllocMem, 0, MEM_RELEASE))
+    {
+        qDebug() << "Error on VirtualFreeEx:" << GetLastError();
+    }
+
     CloseHandle(hThread);
     CloseHandle(hProc);
-
     return true;
 }
 
