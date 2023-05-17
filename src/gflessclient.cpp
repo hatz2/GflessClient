@@ -1,5 +1,6 @@
 #include "gflessclient.h"
 #include "injector.h"
+#include "TlHelp32.h"
 
 GflessClient::GflessClient(QObject *parent) : QObject(parent)
 {
@@ -35,24 +36,48 @@ bool GflessClient::openClient(const QString& displayName, const QString& token, 
     process.setProgram(gameClientPath);
     process.setArguments({"gf", QString::number(gameLanguage)});
 
+    PROCESS_INFORMATION* procInfo;
+    DWORD threadId;
+
+    process.setCreateProcessArgumentsModifier([&](QProcess::CreateProcessArguments *args) {
+        args->flags |= CREATE_SUSPENDED;
+        procInfo = args->processInformation;
+    });
+
     if (!process.startDetached(&pid))
     {
         qDebug() << "Error creating process";
         return false;
     }
 
+    threadId = procInfo->dwThreadId;
+
     if (autoLogin)
     {
         QString dllPath = QDir::currentPath() + "/NostaleLogin.dll";
 
-        QTimer::singleShot(1500,  this, [=]
-        {
-            if (!Inject(pid, dllPath.toLocal8Bit().constData()))
-                qDebug() << "Dll injection failed";
-            else
-                qDebug() << "Dll injected successfully";
-        });
+        if (!Inject(pid, dllPath.toLocal8Bit().constData()))
+            qDebug() << "Dll injection failed";
+        else
+            qDebug() << "Dll injected successfully";
     }
+
+    // Resume the game
+    HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, threadId);
+
+    if (hThread == NULL)
+    {
+        qDebug() << "Error on OpenThread:" << GetLastError();
+        return false;
+    }
+
+    if (ResumeThread(hThread) == -1) {
+        qDebug() << "Error on ResumeThread:" << GetLastError();
+        CloseHandle(hThread);
+        return false;
+    }
+
+    CloseHandle(hThread);
 
     return true;
 }
