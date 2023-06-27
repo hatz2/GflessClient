@@ -1,4 +1,9 @@
 #include "mainwindow.h"
+#include "addaccountdialog.h"
+#include "addprofileaccountdialog.h"
+#include "addprofiledialog.h"
+#include "captchadialog.h"
+#include "identitydialog.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -111,6 +116,8 @@ void MainWindow::loadSettings()
     settingsDialog->setAutoLogin(settings.value("auto login", false).toBool());
     settingsDialog->setServerLanguage(settings.value("server language", 0).toInt());
     settingsDialog->setServer(settings.value("server", 0).toInt());
+    settingsDialog->setTheme(settings.value("theme", 0).toInt());
+    settingsDialog->setThemeComboBox(settings.value("theme", 0).toInt());
     ui->channelComboBox->setCurrentIndex(settings.value("channel", 0).toInt());
     ui->characterComboBox->setCurrentIndex(settings.value("character", 0).toInt());
 
@@ -146,6 +153,7 @@ void MainWindow::saveSettings()
     settings.setValue("server", settingsDialog->getServer());
     settings.setValue("channel", ui->channelComboBox->currentIndex());
     settings.setValue("character", ui->characterComboBox->currentIndex());
+    settings.setValue("theme", settingsDialog->getTheme());
     settings.endGroup();
 
     settings.beginGroup("Gameforge Accounts");

@@ -60,6 +60,11 @@ bool SettingsDialog::autoLogIn() const
     return ui->autoLogInCheckBox->isChecked();
 }
 
+int SettingsDialog::getTheme() const
+{
+    return ui->themeComboBox->currentIndex();
+}
+
 void SettingsDialog::setGameClientPath(const QString &path)
 {
     ui->gameClientPathLineEdit->setText(path);
@@ -99,6 +104,25 @@ void SettingsDialog::setServer(int server)
 void SettingsDialog::setAutoLogin(bool login)
 {
     ui->autoLogInCheckBox->setChecked(login);
+}
+
+void SettingsDialog::setTheme(int index)
+{
+    switch (index) {
+    case 0:
+        QApplication::setStyle("Fusion");
+        break;
+    case 1:
+        QApplication::setStyle("Windowsvista");
+        break;
+    default:
+        break;
+    }
+}
+
+void SettingsDialog::setThemeComboBox(int index)
+{
+    ui->themeComboBox->setCurrentIndex(index);
 }
 
 void SettingsDialog::on_selectGamePathButton_clicked()
@@ -158,4 +182,10 @@ void SettingsDialog::on_selectIdentityButton_clicked()
     setIdentityPath(path);
 }
 
+
+
+void SettingsDialog::on_themeComboBox_currentIndexChanged(int index)
+{
+    setTheme(index);
+}
 

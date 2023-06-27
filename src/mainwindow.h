@@ -1,15 +1,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "nostaleauth.h"
 #include "gflessclient.h"
-#include "addaccountdialog.h"
 #include "settingsdialog.h"
-#include "addprofiledialog.h"
-#include "addprofileaccountdialog.h"
 #include "account.h"
-#include "identitydialog.h"
-#include "captchadialog.h"
 
 #include <QMainWindow>
 #include <QTimer>

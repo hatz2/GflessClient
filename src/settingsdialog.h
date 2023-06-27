@@ -34,6 +34,8 @@ public:
 
     bool autoLogIn() const;
 
+    int getTheme() const;
+
     void setGameClientPath(const QString& path);
 
     void setProfilesPath(const QString& path);
@@ -50,6 +52,10 @@ public:
 
     void setAutoLogin(bool login);
 
+    void setTheme(int index);
+
+    void setThemeComboBox(int index);
+
 signals:
     void autoLoginStateChanged(bool);
 
@@ -65,6 +71,8 @@ private slots:
     void on_selectProfilePathButton_clicked();
 
     void on_selectIdentityButton_clicked();
+
+    void on_themeComboBox_currentIndexChanged(int index);
 
 private:
     void initLanguageComboBox();
