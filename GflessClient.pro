@@ -10,7 +10,8 @@ QMAKE_LFLAGS_WINDOWS += "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='f
 
 LIBS += -lkernel32 -luser32 -lgdi32
 
-INCLUDEPATH += ./src
+INCLUDEPATH += ./src ./src/gui ./src/auth
+
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -18,51 +19,51 @@ INCLUDEPATH += ./src
 
 SOURCES += \
     src/account.cpp \
-    src/addaccountdialog.cpp \
-    src/addprofileaccountDialog.cpp \
-    src/addprofiledialog.cpp \
-    src/blackbox.cpp \
-    src/captchadialog.cpp \
-    src/captchasolver.cpp \
-    src/fingerprint.cpp \
-    src/gflessclient.cpp \
-    src/identity.cpp \
-    src/identitydialog.cpp \
-    src/nostaleauth.cpp \
+    src/gui/addaccountdialog.cpp \
+    src/gui/addprofileaccountDialog.cpp \
+    src/gui/addprofiledialog.cpp \
+    src/auth/blackbox.cpp \
+    src/gui/captchadialog.cpp \
+    src/auth/captchasolver.cpp \
+    src/auth/fingerprint.cpp \
+    src/auth/gflessclient.cpp \
+    src/auth/identity.cpp \
+    src/gui/identitydialog.cpp \
+    src/auth/nostaleauth.cpp \
     src/profile.cpp \
-    src/settingsdialog.cpp \
+    src/gui/settingsdialog.cpp \
     src/syncnetworkaccessmanager.cpp \
     src/main.cpp \
-    src/mainwindow.cpp
+    src/gui/mainwindow.cpp
 
 HEADERS += \
     src/account.h \
-    src/addaccountdialog.h \
-    src/addprofileaccountdialog.h \
-    src/addprofiledialog.h \
-    src/blackbox.h \
-    src/captchadialog.h \
-    src/captchasolver.h \
-    src/fingerprint.h \
-    src/gflessclient.h \
-    src/identity.h \
-    src/identitydialog.h \
+    src/gui/addaccountdialog.h \
+    src/gui/addprofileaccountdialog.h \
+    src/gui/addprofiledialog.h \
+    src/auth/blackbox.h \
+    src/gui/captchadialog.h \
+    src/auth/captchasolver.h \
+    src/auth/fingerprint.h \
+    src/auth/gflessclient.h \
+    src/auth/identity.h \
+    src/gui/identitydialog.h \
     src/injector.h \
-    src/mainwindow.h \
-    src/nostaleauth.h \
+    src/gui/mainwindow.h \
+    src/auth/nostaleauth.h \
     src/processchecker.h \
     src/profile.h \
-    src/settingsdialog.h \
+    src/gui/settingsdialog.h \
     src/syncnetworkaccessmanager.h
 
 FORMS += \
-    src/addaccountdialog.ui \
-    src/addprofileaccountdialog.ui \
-    src/addprofiledialog.ui \
-    src/captchadialog.ui \
-    src/identitydialog.ui \
-    src/mainwindow.ui \
-    src/settingsdialog.ui
+    src/gui/addaccountdialog.ui \
+    src/gui/addprofileaccountdialog.ui \
+    src/gui/addprofiledialog.ui \
+    src/gui/captchadialog.ui \
+    src/gui/identitydialog.ui \
+    src/gui/mainwindow.ui \
+    src/gui/settingsdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
