@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QSettings>
 #include <QTimer>
+#include <Windows.h>
 
 class GflessClient : public QObject
 {
@@ -17,7 +18,7 @@ class GflessClient : public QObject
 public:
     explicit GflessClient(QObject *parent = nullptr);
 
-    bool openClient(const QString& displayName, const QString& token, const QString& gameClientPath, const int& gameLanguage, bool autoLogin);
+    bool openClient(const QString& displayName, const QString& token, const QString& gameClientPath, const int& gameLanguage, bool autoLogin, DWORD& createdPID);
 
     bool openClientSettings(const QString& gameClientPath);
 

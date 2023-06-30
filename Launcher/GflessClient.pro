@@ -18,9 +18,10 @@ INCLUDEPATH += ./src ./src/gui ./src/auth
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    src/account.cpp \
+    src/gameaccount.cpp \
+    src/gameforgeaccount.cpp \
     src/gui/addaccountdialog.cpp \
-    src/gui/addprofileaccountDialog.cpp \
+    src/gui/addprofileaccountdialog.cpp \
     src/gui/addprofiledialog.cpp \
     src/auth/blackbox.cpp \
     src/gui/captchadialog.cpp \
@@ -28,6 +29,7 @@ SOURCES += \
     src/auth/fingerprint.cpp \
     src/auth/gflessclient.cpp \
     src/auth/identity.cpp \
+    src/gui/editmultipleprofileaccountsdialog.cpp \
     src/gui/identitydialog.cpp \
     src/auth/nostaleauth.cpp \
     src/profile.cpp \
@@ -37,7 +39,8 @@ SOURCES += \
     src/gui/mainwindow.cpp
 
 HEADERS += \
-    src/account.h \
+    src/gameaccount.h \
+    src/gameforgeaccount.h \
     src/gui/addaccountdialog.h \
     src/gui/addprofileaccountdialog.h \
     src/gui/addprofiledialog.h \
@@ -47,6 +50,7 @@ HEADERS += \
     src/auth/fingerprint.h \
     src/auth/gflessclient.h \
     src/auth/identity.h \
+    src/gui/editmultipleprofileaccountsdialog.h \
     src/gui/identitydialog.h \
     src/injector.h \
     src/gui/mainwindow.h \
@@ -61,6 +65,7 @@ FORMS += \
     src/gui/addprofileaccountdialog.ui \
     src/gui/addprofiledialog.ui \
     src/gui/captchadialog.ui \
+    src/gui/editmultipleprofileaccountsdialog.ui \
     src/gui/identitydialog.ui \
     src/gui/mainwindow.ui \
     src/gui/settingsdialog.ui

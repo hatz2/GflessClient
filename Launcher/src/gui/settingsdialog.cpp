@@ -25,11 +25,6 @@ QString SettingsDialog::getProfilesPath() const
     return ui->profilesPathLineEdit->text();
 }
 
-QString SettingsDialog::getIdentityPath() const
-{
-    return ui->identityLineEdit->text();
-}
-
 int SettingsDialog::getOpenInterval() const
 {
     return ui->openIntervalSpinBox->value();
@@ -43,21 +38,6 @@ int SettingsDialog::getGameLanguage() const
 int SettingsDialog::getGameLanguageIndex() const
 {
     return ui->gameLanguageComboBox->currentIndex();
-}
-
-int SettingsDialog::getServerLanguage() const
-{
-    return ui->serverLanguageComboBox->currentIndex();
-}
-
-int SettingsDialog::getServer() const
-{
-    return ui->serverComboBox->currentIndex();
-}
-
-bool SettingsDialog::autoLogIn() const
-{
-    return ui->autoLogInCheckBox->isChecked();
 }
 
 int SettingsDialog::getTheme() const
@@ -75,12 +55,6 @@ void SettingsDialog::setProfilesPath(const QString &path)
     ui->profilesPathLineEdit->setText(path);
 }
 
-void SettingsDialog::setIdentityPath(const QString &path)
-{
-    ui->identityLineEdit->setText(path);
-    emit identityPathSelected(path);
-}
-
 void SettingsDialog::setOpenInterval(int n)
 {
     ui->openIntervalSpinBox->setValue(n);
@@ -89,21 +63,6 @@ void SettingsDialog::setOpenInterval(int n)
 void SettingsDialog::setGameLanguage(int language)
 {
     ui->gameLanguageComboBox->setCurrentIndex(language);
-}
-
-void SettingsDialog::setServerLanguage(int servLang)
-{
-    ui->serverLanguageComboBox->setCurrentIndex(servLang);
-}
-
-void SettingsDialog::setServer(int server)
-{
-    ui->serverComboBox->setCurrentIndex(server);
-}
-
-void SettingsDialog::setAutoLogin(bool login)
-{
-    ui->autoLogInCheckBox->setChecked(login);
 }
 
 void SettingsDialog::setTheme(int index)
@@ -135,17 +94,6 @@ void SettingsDialog::on_selectGamePathButton_clicked()
     setGameClientPath(path);
 }
 
-
-void SettingsDialog::on_autoLogInCheckBox_stateChanged(int arg1)
-{
-    ui->serverLabel->setEnabled(arg1);
-    ui->serverLocationLabel->setEnabled(arg1);
-    ui->serverLanguageComboBox->setEnabled(arg1);
-    ui->serverComboBox->setEnabled(arg1);
-
-    emit autoLoginStateChanged(arg1);
-}
-
 void SettingsDialog::initLanguageComboBox()
 {
     ui->gameLanguageComboBox->addItem("English", 0);
@@ -170,19 +118,6 @@ void SettingsDialog::on_selectProfilePathButton_clicked()
 
     emit profilesPathSelected(path);
 }
-
-
-void SettingsDialog::on_selectIdentityButton_clicked()
-{
-    QString path = QFileDialog::getOpenFileName(this, "Select identity file", QDir::rootPath(), "(*.json)");
-
-    if (path.isEmpty())
-        return;
-
-    setIdentityPath(path);
-}
-
-
 
 void SettingsDialog::on_themeComboBox_currentIndexChanged(int index)
 {

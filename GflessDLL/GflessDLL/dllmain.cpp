@@ -15,6 +15,7 @@ int main()
     char readBuffer[BUFFER_SIZE];
     TNTNewServerSelectWidget2* newServerSelectWidget = nullptr;
     TCharacterSelectWidget* characterSelectWidget = nullptr;
+    DWORD pid = GetCurrentProcessId();
 
     while (newServerSelectWidget == nullptr || characterSelectWidget == nullptr)
     {
@@ -39,7 +40,7 @@ int main()
         return EXIT_FAILURE;
 
     // Send the server language message
-    message = "ServerLanguage";
+    message = std::to_string(pid) + " ServerLanguage";
     fSuccess = WriteFile(hPipe, message.c_str(), message.size(), NULL, NULL);
 
     if (!fSuccess)
@@ -54,7 +55,7 @@ int main()
     language = readBuffer[0] - 0x30;
 
     // Send the server message
-    message = "Server";
+    message = std::to_string(pid) + " Server";
     fSuccess = WriteFile(hPipe, message.c_str(), message.size(), NULL, NULL);
 
     if (!fSuccess)
@@ -69,7 +70,7 @@ int main()
     server = readBuffer[0] - 0x30;
 
     // Send the channel message
-    message = "Channel";
+    message = std::to_string(pid) + " Channel";
     fSuccess = WriteFile(hPipe, message.c_str(), message.size(), NULL, NULL);
 
     if (!fSuccess)
@@ -84,7 +85,7 @@ int main()
     channel = readBuffer[0] - 0x30;
 
     // Send the character message
-    message = "Character";
+    message = std::to_string(pid) + " Character";
     fSuccess = WriteFile(hPipe, message.c_str(), message.size(), NULL, NULL);
 
     if (!fSuccess)

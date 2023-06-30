@@ -1,5 +1,6 @@
 #include "addaccountdialog.h"
 #include "ui_addaccountdialog.h"
+#include <QFileDialog>
 
 AddAccountDialog::AddAccountDialog(QWidget *parent) :
     QDialog(parent),
@@ -38,13 +39,30 @@ void AddAccountDialog::on_loginButton_clicked()
 {
     email = ui->emailLineEdit->text();
     password = ui->passwordLineEdit->text();
+    identityPath = ui->identityPathLineEdit->text();
 
-    if (email.isEmpty() || password.isEmpty())
+    if (email.isEmpty() || password.isEmpty() || identityPath.isEmpty())
     {
-        QMessageBox::critical(this, "Error", "Email or password field is empty");
+        QMessageBox::critical(this, "Error", "Email, password or identity path field is empty");
         return;
     }
 
     accept();
+}
+
+QString AddAccountDialog::getIdentityPath() const
+{
+    return identityPath;
+}
+
+
+void AddAccountDialog::on_selectIdentityButton_clicked()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Select identity file", QDir::rootPath(), "(*.json)");
+
+    if (path.isEmpty())
+        return;
+
+    ui->identityPathLineEdit->setText(path);
 }
 

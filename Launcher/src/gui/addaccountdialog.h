@@ -20,15 +20,20 @@ public:
 
     const QString &getPassword() const;
 
+    QString getIdentityPath() const;
+
 private slots:
     void on_showPasswordCheckBox_stateChanged(int arg1);
 
     void on_loginButton_clicked();
 
+    void on_selectIdentityButton_clicked();
+
 private:
     Ui::AddAccountDialog *ui;
     QString email;
     QString password;
+    QString identityPath;
 };
 
 #endif // ADDACCOUNTDIALOG_H

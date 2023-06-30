@@ -1,6 +1,5 @@
 #include "gflessclient.h"
 #include "injector.h"
-#include "TlHelp32.h"
 
 GflessClient::GflessClient(QObject *parent) : QObject(parent)
 {
@@ -13,7 +12,7 @@ GflessClient::GflessClient(QObject *parent) : QObject(parent)
     connect(gfServer, &QLocalServer::newConnection, this, &GflessClient::handleNewConnection);
 }
 
-bool GflessClient::openClient(const QString& displayName, const QString& token, const QString &gameClientPath, const int &gameLanguage, bool autoLogin)
+bool GflessClient::openClient(const QString& displayName, const QString& token, const QString &gameClientPath, const int &gameLanguage, bool autoLogin, DWORD& createdPID)
 {
     this->displayName = displayName;
     this->token = token;
@@ -54,7 +53,7 @@ bool GflessClient::openClient(const QString& displayName, const QString& token, 
 
     if (autoLogin)
     {
-        QString dllPath = QDir::currentPath() + "/NostaleLogin.dll";
+        QString dllPath = QDir::currentPath() + "/GflessDLL.dll";
 
         if (!Inject(pid, dllPath.toLocal8Bit().constData()))
             qDebug() << "Dll injection failed";
@@ -78,6 +77,7 @@ bool GflessClient::openClient(const QString& displayName, const QString& token, 
     }
 
     CloseHandle(hThread);
+    createdPID = pid;
 
     return true;
 }

@@ -14,7 +14,7 @@
    <string>Gfless Client</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources.qrc">
+   <iconset resource="../../resources.qrc">
     <normaloff>:/resources/gfless_icon.png</normaloff>:/resources/gfless_icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -61,13 +61,8 @@
         <item>
          <widget class="QComboBox" name="profileComboBox">
           <property name="currentText">
-           <string>No profile</string>
+           <string/>
           </property>
-          <item>
-           <property name="text">
-            <string>No profile</string>
-           </property>
-          </item>
          </widget>
         </item>
         <item>
@@ -86,101 +81,16 @@
         </item>
        </layout>
       </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="channelLabel">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Channel:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QComboBox" name="channelComboBox">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <item>
-         <property name="text">
-          <string>Channel 1</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Channel 2</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Channel 3</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Channel 4</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Channel 5</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Channel 6</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Channel 7</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="characterLabel">
-        <property name="text">
-         <string>Character:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QComboBox" name="characterComboBox">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <item>
-         <property name="text">
-          <string>Not selected</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Slot 1</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Slot 2</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Slot 3</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Slot 4</string>
-         </property>
-        </item>
-       </widget>
-      </item>
      </layout>
     </item>
     <item>
      <widget class="QListWidget" name="accountsListWidget">
+      <property name="dragEnabled">
+       <bool>false</bool>
+      </property>
+      <property name="dragDropMode">
+       <enum>QAbstractItemView::NoDragDrop</enum>
+      </property>
       <property name="selectionMode">
        <enum>QAbstractItemView::ExtendedSelection</enum>
       </property>
@@ -207,7 +117,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../../resources.qrc">
           <normaloff>:/resources/settings_icon.png</normaloff>:/resources/settings_icon.png</iconset>
         </property>
         <property name="iconSize">
@@ -284,7 +194,7 @@
   </action>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -4,6 +4,8 @@
 #include "gflessclient.h"
 #include "settingsdialog.h"
 #include "account.h"
+#include "gameforgeaccount.h"
+#include "gameaccount.h"
 
 #include <QMainWindow>
 #include <QTimer>
@@ -19,6 +21,7 @@
 #include <QAction>
 #include <QFile>
 #include <QTextStream>
+#include <QVector>
 
 
 QT_BEGIN_NAMESPACE
@@ -37,11 +40,7 @@ protected:
     void closeEvent(QCloseEvent* event) override;
 
 private slots:
-    void on_openAccountsButton_clicked();
-
     void on_addGameforgeAccountButton_clicked();
-
-    void on_gameforgeAccountComboBox_currentTextChanged(const QString &arg1);
 
     void on_removeGameforgeAccountButton_clicked();
 
@@ -59,17 +58,19 @@ private slots:
 
     void handleLocalConnection();
 
-    void on_addProfileButton_clicked();
-
-    void on_profileComboBox_currentIndexChanged(int index);
-
     void showContextMenu(const QPoint &pos);
-
-    void on_removeProfileButton_clicked();
 
     void on_actionSave_profiles_triggered();
 
     void on_actionIdentity_generator_triggered();
+
+    void on_addProfileButton_clicked();
+
+    void on_removeProfileButton_clicked();
+
+    void on_profileComboBox_currentIndexChanged(int index);
+
+    void on_openAccountsButton_clicked();
 
 private:
     void createTrayIcon();
@@ -77,12 +78,12 @@ private:
     bool checkIdentityPath();
     void loadSettings();
     void saveSettings();
-    void loadAccountProfiles();
+    void setupDefaultProfile();
+    void loadAccountProfiles(const QString& path);
     void saveAccountProfiles(const QString& path);
-    void displayGameAccounts(const QString& gameforgeAccount);
-    void displayProfiles(const QString& gameforgeAccount);
-    void addGameforgeAccount(const QString& email, const QString& password);
-    void loadIdentity(const QString& path);
+    void addGameforgeAccount(const QString& email, const QString& password, const QString &identityPath);
+    void displayAllAccounts();
+    void displayProfile(int index);
 
     Ui::MainWindow *ui;
     SettingsDialog* settingsDialog;
@@ -91,6 +92,10 @@ private:
     QLocalServer* gflessServer;
     QMap<QString /* gameforge account name */, Account*> accounts;
     std::shared_ptr<Identity> identity;
+
+    QVector<Profile*> profiles;
+    QVector<GameforgeAccount*> gfAccounts;
+    QMap<DWORD, GameAccount> processAccounts;
 };
 
 #endif // MAINWINDOW_H

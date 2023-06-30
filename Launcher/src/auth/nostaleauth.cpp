@@ -39,7 +39,7 @@ QMap<QString, QString> NostaleAuth::getAccounts()
     for (const auto& key : jsonResponse.keys())
     {
         auto accountData = jsonResponse[key].toObject();
-        accounts.insert(accountData["displayName"].toString(), accountData["id"].toString());
+        accounts.insert(accountData["id"].toString(), accountData["displayName"].toString());
     }
 
     reply->deleteLater();
@@ -47,7 +47,7 @@ QMap<QString, QString> NostaleAuth::getAccounts()
     return accounts;
 }
 
-bool NostaleAuth::authenthicate(const QString &email, const QString &password, bool& captcha, QString& gfChallengeId, bool &wrongCredentials)
+bool NostaleAuth::authenticate(const QString &email, const QString &password, bool& captcha, QString& gfChallengeId, bool &wrongCredentials)
 {
     QJsonObject content, jsonResponse;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/sessions"));

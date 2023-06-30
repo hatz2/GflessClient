@@ -24,7 +24,7 @@ public:
 
     QMap<QString /* displayName */, QString /* id */> getAccounts();
 
-    bool authenthicate(const QString& email, const QString& password, bool &captcha, QString &gfChallengeId, bool& wrongCredentials);
+    bool authenticate(const QString& email, const QString& password, bool &captcha, QString &gfChallengeId, bool& wrongCredentials);
 
     QString getToken(const QString& accountId);
 
