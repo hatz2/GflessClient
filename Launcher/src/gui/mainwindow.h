@@ -3,9 +3,9 @@
 
 #include "gflessclient.h"
 #include "settingsdialog.h"
-#include "account.h"
 #include "gameforgeaccount.h"
 #include "gameaccount.h"
+#include "profile.h"
 
 #include <QMainWindow>
 #include <QTimer>
@@ -90,8 +90,6 @@ private:
     GflessClient* gflessClient;
     QSystemTrayIcon* trayIcon;
     QLocalServer* gflessServer;
-    QMap<QString /* gameforge account name */, Account*> accounts;
-    std::shared_ptr<Identity> identity;
 
     QVector<Profile*> profiles;
     QVector<GameforgeAccount*> gfAccounts;

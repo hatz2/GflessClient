@@ -17,7 +17,6 @@ MainWindow::MainWindow(QWidget *parent)
     gflessServer = new QLocalServer(this);
     gflessServer->listen("GflessClient");
     createTrayIcon();
-    identity = std::make_shared<Identity>();
 
     ui->accountsListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->accountsListWidget, &QListWidget::customContextMenuRequested, this, &MainWindow::showContextMenu);
@@ -230,7 +229,6 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
 
 
     // Update default profile
-
     QMap<QString, QString> gameAccs = gfAcc->getGameAccounts();
 
     for (auto it = gameAccs.begin(); it != gameAccs.end(); ++it) {
