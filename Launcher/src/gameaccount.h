@@ -36,6 +36,8 @@ public:
     void setSlot(int newSlot);
     void setAutoLogin(bool newAutoLogin);
 
+    QString toString() const;
+
 private:
     class GameforgeAccount* gfAcc;
     QString name;

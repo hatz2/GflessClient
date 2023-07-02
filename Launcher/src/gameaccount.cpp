@@ -96,3 +96,27 @@ void GameAccount::setAutoLogin(bool newAutoLogin)
 {
     autoLogin = newAutoLogin;
 }
+
+QString GameAccount::toString() const
+{
+    QString output;
+
+    if (autoLogin) {
+        output += "Server: " + QString::number(server + 1);
+        output += " | Ch: " + QString::number(channel + 1);
+        output += " | Char: ";
+
+        if (slot == 0) {
+            output += "Login screen";
+        }
+        else {
+            output += QString::number(slot);
+        }
+
+        output += " | ";
+    }
+
+    output += displayName;
+
+    return output;
+}
