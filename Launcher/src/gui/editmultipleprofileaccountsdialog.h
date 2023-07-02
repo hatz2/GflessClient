@@ -13,6 +13,9 @@ class EditMultipleProfileAccountsDialog : public QDialog
 
 public:
     explicit EditMultipleProfileAccountsDialog(QWidget *parent = nullptr);
+
+    explicit EditMultipleProfileAccountsDialog(bool login, int serverLoc, int serverIndex, int channelIndex, int characterIndex, QWidget* parent = nullptr);
+
     ~EditMultipleProfileAccountsDialog();
 
     bool getAutoLogin() const;
@@ -28,12 +31,6 @@ private slots:
 
 private:
     Ui::EditMultipleProfileAccountsDialog *ui;
-
-    static bool defaultAutoLogin;
-    static int defaultServerLocation;
-    static int defaultServer;
-    static int defaultChannel;
-    static int defaultCharacter;
 
     bool autoLogin;
     int serverLocation;

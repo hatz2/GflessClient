@@ -1,12 +1,5 @@
 #include "editmultipleprofileaccountsdialog.h"
-#include "qdebug.h"
 #include "ui_editmultipleprofileaccountsdialog.h"
-
-bool EditMultipleProfileAccountsDialog::defaultAutoLogin = false;
-int EditMultipleProfileAccountsDialog::defaultServerLocation = 0;
-int EditMultipleProfileAccountsDialog::defaultServer = 0;
-int EditMultipleProfileAccountsDialog::defaultChannel = 0;
-int EditMultipleProfileAccountsDialog::defaultCharacter = 0;
 
 EditMultipleProfileAccountsDialog::EditMultipleProfileAccountsDialog(QWidget *parent) :
     QDialog(parent),
@@ -14,12 +7,16 @@ EditMultipleProfileAccountsDialog::EditMultipleProfileAccountsDialog(QWidget *pa
 {
     ui->setupUi(this);
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
+}
 
-    ui->loginCheckBox->setChecked(defaultAutoLogin);
-    ui->serverLocationComboBox->setCurrentIndex(defaultServerLocation);
-    ui->serverComboBox->setCurrentIndex(defaultServer);
-    ui->channelComboBox->setCurrentIndex(defaultChannel);
-    ui->characterComboBox->setCurrentIndex(defaultCharacter);
+EditMultipleProfileAccountsDialog::EditMultipleProfileAccountsDialog(bool login, int serverLoc, int serverIndex, int channelIndex, int characterIndex, QWidget *parent)
+    : EditMultipleProfileAccountsDialog(parent)
+{
+    ui->loginCheckBox->setChecked(login);
+    ui->serverLocationComboBox->setCurrentIndex(serverLoc);
+    ui->serverComboBox->setCurrentIndex(serverIndex);
+    ui->channelComboBox->setCurrentIndex(channelIndex);
+    ui->characterComboBox->setCurrentIndex(characterIndex);
 }
 
 EditMultipleProfileAccountsDialog::~EditMultipleProfileAccountsDialog()
@@ -47,12 +44,6 @@ void EditMultipleProfileAccountsDialog::on_addProfAccountButton_clicked()
     server = ui->serverComboBox->currentIndex();
     channel = ui->channelComboBox->currentIndex();
     character = ui->characterComboBox->currentIndex();
-
-    defaultAutoLogin = autoLogin;
-    defaultServerLocation = serverLocation;
-    defaultServer = server;
-    defaultChannel = channel;
-    defaultCharacter = character;
 
     accept();
 }

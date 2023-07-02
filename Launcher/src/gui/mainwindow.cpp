@@ -573,8 +573,43 @@ void MainWindow::showContextMenu(const QPoint& pos)
             QList<QListWidgetItem*> selectedItems = ui->accountsListWidget->selectedItems();
             Profile* profile = profiles[profileIndex];
 
+            // Check if the selected accounts have any field in common
+            bool sharedAutoLogin = true;
+            bool sharedServerLocation = true;
+            bool sharedServer = true;
+            bool sharedChannel = true;
+            bool sharedCharacter = true;
 
-            EditMultipleProfileAccountsDialog dialog(this);
+            GameAccount firstAcc = profile->getAccounts().at(ui->accountsListWidget->row(selectedItems.first()));
+
+            for (auto item : selectedItems) {
+                GameAccount acc = profile->getAccounts().at(ui->accountsListWidget->row(item));
+
+                if (acc.getAutoLogin() != firstAcc.getAutoLogin())
+                    sharedAutoLogin = false;
+
+                if (acc.getServerLocation() != firstAcc.getServerLocation())
+                    sharedServerLocation = false;
+
+                if (acc.getServer() != firstAcc.getServer())
+                    sharedServer = false;
+
+                if (acc.getChannel() != firstAcc.getChannel())
+                    sharedChannel = false;
+
+                if (acc.getSlot() != firstAcc.getSlot())
+                    sharedCharacter = false;
+            }
+
+            EditMultipleProfileAccountsDialog dialog(
+                sharedAutoLogin ? firstAcc.getAutoLogin() : false,
+                sharedServerLocation ? firstAcc.getServerLocation() : 0,
+                sharedServer ? firstAcc.getServer() : 0,
+                sharedChannel ? firstAcc.getChannel() : 0,
+                sharedCharacter ? firstAcc.getSlot() : 5,
+                this
+                );
+
             int res = dialog.exec();
 
             if (res == QDialog::Accepted) {
