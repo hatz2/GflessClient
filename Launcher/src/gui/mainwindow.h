@@ -82,7 +82,6 @@ private:
     void loadAccountProfiles(const QString& path);
     void saveAccountProfiles(const QString& path);
     void addGameforgeAccount(const QString& email, const QString& password, const QString &identityPath);
-    void displayAllAccounts();
     void displayProfile(int index);
 
     Ui::MainWindow *ui;
@@ -94,6 +93,12 @@ private:
     QVector<Profile*> profiles;
     QVector<GameforgeAccount*> gfAccounts;
     QMap<DWORD, GameAccount> processAccounts;
+
+    bool defaultAutoLogin = false;
+    int defaultServerLocation = 0;
+    int defaultServer = 0;
+    int defaultChannel = 0;
+    int defaultCharacter = 0;
 };
 
 #endif // MAINWINDOW_H

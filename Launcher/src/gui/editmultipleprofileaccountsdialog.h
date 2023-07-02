@@ -26,10 +26,14 @@ private slots:
 
     void on_addProfAccountButton_clicked();
 
-    void on_pushButton_clicked();
-
 private:
     Ui::EditMultipleProfileAccountsDialog *ui;
+
+    static bool defaultAutoLogin;
+    static int defaultServerLocation;
+    static int defaultServer;
+    static int defaultChannel;
+    static int defaultCharacter;
 
     bool autoLogin;
     int serverLocation;
