@@ -1,4 +1,5 @@
 #include "profile.h"
+#include "gameforgeaccount.h"
 #include <algorithm>
 
 Profile::Profile(QString profileName, QObject *parent)
@@ -72,6 +73,12 @@ void Profile::moveAccountDown(int index)
 void Profile::sort()
 {
     std::sort(accounts.begin(), accounts.end(), [](const GameAccount& a, const GameAccount& b) {
-        return a.getName() < b.getName();
+
+        if (a.getGfAcc()->getEmail() == b.getGfAcc()->getEmail()) {
+            return a.getName() < b.getName();
+        }
+        else {
+            return a.getGfAcc()->getEmail() < b.getGfAcc()->getEmail();
+        }
     });
 }
