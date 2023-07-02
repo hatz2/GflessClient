@@ -624,7 +624,9 @@ void MainWindow::showContextMenu(const QPoint& pos)
                     defaultServerLocation = serverLocation;
                     defaultServer = server;
                     defaultChannel = channel;
-                    defaultCharacter = character;
+
+                    if (character != 5)
+                        defaultCharacter = character;
                 }
 
                 for (const auto item : selectedItems) {
