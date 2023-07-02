@@ -39,6 +39,11 @@ QMap<QString, QString> NostaleAuth::getAccounts()
     for (const auto& key : jsonResponse.keys())
     {
         auto accountData = jsonResponse[key].toObject();
+        auto guls = accountData["guls"].toObject();
+
+        if (guls["game"].toString() != "nostale")
+            continue;
+
         accounts.insert(accountData["id"].toString(), accountData["displayName"].toString());
     }
 
