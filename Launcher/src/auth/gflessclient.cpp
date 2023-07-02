@@ -1,5 +1,5 @@
 #include "gflessclient.h"
-#include "injector.h"
+#include <QMessageBox>
 
 GflessClient::GflessClient(QObject *parent) : QObject(parent)
 {
@@ -55,7 +55,7 @@ bool GflessClient::openClient(const QString& displayName, const QString& token, 
     {
         QString dllPath = QDir::currentPath() + "/GflessDLL.dll";
 
-        if (!Inject(pid, dllPath.toLocal8Bit().constData()))
+        if (!injectDll(pid, dllPath))
             qDebug() << "Dll injection failed";
         else
             qDebug() << "Dll injected successfully";
@@ -136,4 +136,25 @@ QByteArray GflessClient::prepareResponse(const QJsonObject &request, const QStri
     resp["result"] = response;
 
     return QJsonDocument(resp).toJson();
+}
+
+bool GflessClient::injectDll(DWORD pid, const QString &dllPath)
+{
+    QString injectorPath = QDir::currentPath() + "/Injector.exe";
+    QStringList arguments;
+    arguments << QString::number(pid) << dllPath;
+
+    if (!QFile::exists(injectorPath)) {
+        QMessageBox::critical((QWidget*)this->parent(), "Error", "Injector.exe not found in the current directory.\nMake sure your antivirus has not deleted it");
+        return false;
+    }
+
+    QProcess process;
+    process.start(injectorPath, arguments);
+
+    process.waitForFinished();
+
+    qDebug() << process.readAllStandardOutput();
+
+    return !process.exitCode();
 }

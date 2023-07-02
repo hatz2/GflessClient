@@ -52,7 +52,6 @@ HEADERS += \
     src/auth/identity.h \
     src/gui/editmultipleprofileaccountsdialog.h \
     src/gui/identitydialog.h \
-    src/injector.h \
     src/gui/mainwindow.h \
     src/auth/nostaleauth.h \
     src/processchecker.h \

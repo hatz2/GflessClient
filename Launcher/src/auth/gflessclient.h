@@ -28,13 +28,14 @@ private slots:
     void handlePipe();
 
 private:
-    QByteArray prepareResponse(const QJsonObject& request, const QString& response);
-
-private:
     QLocalServer* gfServer;
     QLocalSocket* pipe;
     QString token;
     QString displayName;
+
+    QByteArray prepareResponse(const QJsonObject& request, const QString& response);
+
+    bool injectDll(DWORD pid, const QString& dllPath);
 };
 
 #endif // GFLESSCLIENT_H

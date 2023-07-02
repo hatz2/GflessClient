@@ -1,10 +1,7 @@
-#ifndef INJECTOR_H
-#define INJECTOR_H
+#include "injector.h"
+#include <stdio.h>
 
-#include <Windows.h>
-#include <QDebug>
-
-bool Inject(DWORD pid, const char* dllPath)
+int Inject(DWORD pid, const char* dllPath)
 {
     HANDLE hProc;
     HANDLE hThread;
@@ -15,24 +12,24 @@ bool Inject(DWORD pid, const char* dllPath)
     hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
 
     if (!hProc)
-        return false;
+        return EXIT_FAILURE;
 
     // Allocate memory in the target process to write the DLL path
-    lpAllocMem =  VirtualAllocEx(hProc, NULL, MAX_PATH, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    lpAllocMem = VirtualAllocEx(hProc, NULL, MAX_PATH, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
     if (!lpAllocMem)
     {
-        qDebug() << "Error on VirtualAllocEx:" << GetLastError();
+        printf("Error on VirtualAllocEx: %u\n", GetLastError());
         CloseHandle(hProc);
-        return false;
+        return EXIT_FAILURE;
     }
 
     // Write the DLL path into the allocated memory
-    if (!WriteProcessMemory(hProc, lpAllocMem, dllPath, strlen(dllPath) + 1, nullptr))
+    if (!WriteProcessMemory(hProc, lpAllocMem, dllPath, strlen(dllPath) + 1, NULL))
     {
-        qDebug() << "Error on WriteProcessMemory:" << GetLastError();
+        printf("Error on WriteProcessMemory: %u\n", GetLastError());
         CloseHandle(hProc);
-        return false;
+        return EXIT_FAILURE;
     }
 
     // Create a thread in the target memory that calls LoadLibraryA with the path to the DLL
@@ -40,71 +37,69 @@ bool Inject(DWORD pid, const char* dllPath)
 
     if (!hThread)
     {
-        qDebug() << "Error on CreateRemoteThread:" << GetLastError();
+        printf("Error on CreateRemoteThread: %u\n", GetLastError());
 
         if (!VirtualFreeEx(hProc, lpAllocMem, 0, MEM_RELEASE))
         {
-            qDebug() << "Error on VirtualFreeEx:" << GetLastError();
+            printf("Error on VirtualFreeEx: %u\n", GetLastError());
         }
 
         CloseHandle(hProc);
-        return false;
+        return EXIT_FAILURE;
     }
 
     // Waits for thread execution to finish
     if (WaitForSingleObject(hThread, INFINITE) == WAIT_FAILED)
     {
-        qDebug() << "Error on WaitForSingleObject:" << GetLastError();
+        printf("Error on WaitForSingleObject: %u\n", GetLastError());
 
         if (!VirtualFreeEx(hProc, lpAllocMem, 0, MEM_RELEASE))
         {
-            qDebug() << "Error on VirtualFreeEx:" << GetLastError();
+            printf("Error on VirtualFreeEx: %u\n", GetLastError());
         }
 
         CloseHandle(hThread);
         CloseHandle(hProc);
-        return false;
+        return EXIT_FAILURE;
     }
 
     // Retrieve the exit code of the thread
     if (!GetExitCodeThread(hThread, &exitCode))
     {
-        qDebug() << "Error on GetExitCodeThread:" << GetLastError();
+        printf("Error on GetExitCodeThread: %u\n", GetLastError());
 
         if (!VirtualFreeEx(hProc, lpAllocMem, 0, MEM_RELEASE))
         {
-            qDebug() << "Error on VirtualFreeEx:" << GetLastError();
+            printf("Error on VirtualFreeEx: %u\n", GetLastError());
         }
 
         CloseHandle(hThread);
         CloseHandle(hProc);
-        return false;
+        return EXIT_FAILURE;
     }
 
     // Check if there was any error during the execution of LoadLibraryA in the target process
     if (!exitCode)
     {
-        qDebug() << "Error in the execution of LoadLibraryA in the target process:" << exitCode;
+        printf("Error in the execution of LoadLibraryA in the target process: %u\n", exitCode);
 
         if (!VirtualFreeEx(hProc, lpAllocMem, 0, MEM_RELEASE))
         {
-            qDebug() << "Error on VirtualFreeEx:" << GetLastError();
+            printf("Error on VirtualFreeEx: %u\n", GetLastError());
         }
 
         CloseHandle(hThread);
         CloseHandle(hProc);
-        return false;
+        return EXIT_FAILURE;
     }
 
     // Frees the allocated memory and close the process and thread handles
     if (!VirtualFreeEx(hProc, lpAllocMem, 0, MEM_RELEASE))
     {
-        qDebug() << "Error on VirtualFreeEx:" << GetLastError();
+        printf("Error on VirtualFreeEx: %u\n", GetLastError());
     }
 
     CloseHandle(hThread);
     CloseHandle(hProc);
-    return true;
+    return EXIT_SUCCESS;
 }
-
-#endif // INJECTOR_H
