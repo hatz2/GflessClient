@@ -3,7 +3,6 @@
 #include "injector.h"
 
 int main(int argc, char** argv) {
-//int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     if (argc != 3) {
         printf("Wrong arguments\n");
         printf("Program must be started with the following arguments: PID DLL_PATH\n");
