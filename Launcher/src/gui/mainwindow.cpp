@@ -258,6 +258,10 @@ void MainWindow::displayProfile(int index)
 
     Profile* profile = profiles[index];
 
+    if (index == 0) {
+        profile->sort();
+    }
+
     auto accounts = profile->getAccounts();
 
     ui->accountsListWidget->clear();

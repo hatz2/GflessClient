@@ -28,6 +28,8 @@ public:
 
     void moveAccountDown(int index);
 
+    void sort();
+
 private:
     QString profileName;
     QMap<QString, GameAccount> accountsMap;

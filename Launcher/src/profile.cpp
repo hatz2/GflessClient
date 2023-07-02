@@ -1,4 +1,5 @@
 #include "profile.h"
+#include <algorithm>
 
 Profile::Profile(QString profileName, QObject *parent)
     : QObject(parent)
@@ -66,4 +67,11 @@ void Profile::moveAccountDown(int index)
         return;
 
     accounts.swapItemsAt(index, index + 1);
+}
+
+void Profile::sort()
+{
+    std::sort(accounts.begin(), accounts.end(), [](const GameAccount& a, const GameAccount& b) {
+        return a.getName() < b.getName();
+    });
 }
