@@ -45,7 +45,14 @@ void MainWindow::loadSettings()
     settingsDialog->setOpenInterval(settings.value("open interval", 12).toInt());
     settingsDialog->setGameLanguage(settings.value("game language", 0).toInt());
     settingsDialog->setTheme(settings.value("theme", 0).toInt());
-    settingsDialog->setThemeComboBox(settings.value("theme", 1).toInt());
+    settingsDialog->setThemeComboBox(settings.value("theme", 0).toInt());
+
+    defaultAutoLogin = settings.value("default_autologin", false).toBool();
+    defaultServerLocation = settings.value("default_serverlocation", 0).toInt();
+    defaultServer = settings.value("default_server", 0).toInt();
+    defaultChannel = settings.value("default_channel", 0).toInt();
+    defaultCharacter = settings.value("default_character", 0).toInt();
+
     settings.endGroup();
 
     settings.beginGroup("Gameforge Accounts");
@@ -64,7 +71,7 @@ void MainWindow::loadSettings()
     settings.endArray();
     settings.endGroup();
 
-    displayAllAccounts();
+    displayProfile(ui->profileComboBox->currentIndex());
 }
 
 void MainWindow::saveSettings()
@@ -78,6 +85,11 @@ void MainWindow::saveSettings()
     settings.setValue("open interval", settingsDialog->getOpenInterval());
     settings.setValue("game language", settingsDialog->getGameLanguageIndex());
     settings.setValue("theme", settingsDialog->getTheme());
+    settings.setValue("default_autologin", defaultAutoLogin);
+    settings.setValue("default_serverlocation", defaultServerLocation);
+    settings.setValue("default_server", defaultServer);
+    settings.setValue("default_channel", defaultChannel);
+    settings.setValue("default_character", defaultCharacter);
     settings.endGroup();
 
     settings.beginGroup("Gameforge Accounts");
@@ -232,26 +244,11 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
     QMap<QString, QString> gameAccs = gfAcc->getGameAccounts();
 
     for (auto it = gameAccs.begin(); it != gameAccs.end(); ++it) {
-        GameAccount gameAccount(gfAcc, it.value(), it.key());
+        GameAccount gameAccount(gfAcc, it.value(), it.key(), it.value(), defaultServerLocation, defaultServer, defaultChannel, defaultCharacter, defaultAutoLogin);
         profiles.first()->addAccount(gameAccount);
     }
 
     displayProfile(ui->profileComboBox->currentIndex());
-}
-
-void MainWindow::displayAllAccounts()
-{
-    ui->accountsListWidget->clear();
-
-    for (const GameforgeAccount* gfAcc : gfAccounts) {
-        QMap<QString, QString> gameAccs = gfAcc->getGameAccounts();
-
-        for (auto it = gameAccs.begin(); it != gameAccs.end(); ++it) {
-            QListWidgetItem* item = new QListWidgetItem(ui->accountsListWidget);
-            item->setText(it.value());
-            item->setData(Qt::UserRole, it.key());
-        }
-    }
 }
 
 void MainWindow::displayProfile(int index)
@@ -263,11 +260,10 @@ void MainWindow::displayProfile(int index)
 
     auto accounts = profile->getAccounts();
 
-
     ui->accountsListWidget->clear();
     for (const GameAccount& acc : accounts) {
         QListWidgetItem* item = new QListWidgetItem(ui->accountsListWidget);
-        item->setText(acc.getDisplayName());
+        item->setText(acc.toString());
         item->setData(Qt::UserRole, acc.getId());
     }
 }
@@ -443,144 +439,134 @@ void MainWindow::handleLocalConnection()
 
 void MainWindow::showContextMenu(const QPoint& pos)
 {
-    if (ui->profileComboBox->currentIndex() <= 0)
-        return;
+    int profileIndex = ui->profileComboBox->currentIndex();
 
     QPoint globalPos = ui->accountsListWidget->mapToGlobal(pos);
 
     QMenu menu(this);
 
-    menu.addAction("Add account", this, [=]
-    {
-        int profileIndex = ui->profileComboBox->currentIndex();
-
-        if (profileIndex <= 0)
-            return;
-
-        AddProfileAccountDialog dialog(gfAccounts, this);
-
-        int res = dialog.exec();
-
-        if (res == QDialog::Accepted) {
-            Profile* profile = profiles[profileIndex];
-
-            GameAccount acc(
-                dialog.getGfAcc(),
-                dialog.getAccountName(),
-                dialog.getId(),
-                dialog.getPseudonym(),
-                dialog.getServerLocation(),
-                dialog.getServer(),
-                dialog.getChannel(),
-                dialog.getCharacter(),
-                dialog.getAutoLogin()
-                );
-
-            profile->addAccount(acc);
-
-            displayProfile(profileIndex);
-        }
-    });
-
-    if (ui->accountsListWidget->selectedItems().count() > 0) {
-        menu.addAction("Remove selected accounts", this, [=]
+    if (profileIndex > 0) {
+        menu.addAction("Add account", this, [=]
         {
-            int profileIndex = ui->profileComboBox->currentIndex();
-            QList<QListWidgetItem*> selectedItems = ui->accountsListWidget->selectedItems();
-
-            if (profileIndex <= 0)
-               return;
-
-            Profile* profile = profiles[profileIndex];
-
-            for (auto it = selectedItems.crbegin(); it != selectedItems.crend(); ++it) {
-               int row = ui->accountsListWidget->row(*it);
-               profile->removeAccount(row);
-            }
-
-            displayProfile(profileIndex);
-        });
-    }
-
-    if (ui->accountsListWidget->selectedItems().count() == 1) {
-        menu.addAction("Edit selected account", this, [=]() {
-            int profileIndex = ui->profileComboBox->currentIndex();
-            QList<QListWidgetItem*> selectedItems = ui->accountsListWidget->selectedItems();
-            QListWidgetItem* item = selectedItems.first();
-
             if (profileIndex <= 0)
                 return;
 
-            Profile* profile = profiles[profileIndex];
-            int row = ui->accountsListWidget->row(item);
-
-            if (row < 0)
-                return;
-
-            const GameAccount& gameAcc = profile->getAccounts().at(row);
-
-            AddProfileAccountDialog dialog(gfAccounts, gameAcc, this);
+            AddProfileAccountDialog dialog(gfAccounts, this);
 
             int res = dialog.exec();
 
-            if (res == QDialog::Accepted) {
-                GameAccount newAccount(
-                    dialog.getGfAcc(),
-                    dialog.getAccountName(),
-                    dialog.getId(),
-                    dialog.getPseudonym(),
-                    dialog.getServerLocation(),
-                    dialog.getServer(),
-                    dialog.getChannel(),
-                    dialog.getCharacter(),
-                    dialog.getAutoLogin()
-                    );
+                if (res == QDialog::Accepted) {
+                    Profile* profile = profiles[profileIndex];
 
-                profile->editAccount(row, newAccount);
-                displayProfile(profileIndex);
-            }
+                    GameAccount acc(
+                        dialog.getGfAcc(),
+                        dialog.getAccountName(),
+                        dialog.getId(),
+                        dialog.getPseudonym(),
+                        dialog.getServerLocation(),
+                        dialog.getServer(),
+                        dialog.getChannel(),
+                        dialog.getCharacter(),
+                        dialog.getAutoLogin()
+                        );
+
+                    profile->addAccount(acc);
+
+                    displayProfile(profileIndex);
+                }
         });
 
-        if (ui->profileComboBox->currentIndex() != 0) {
-            menu.addAction("Move up", this, [=]() {
-                int profileIndex = ui->profileComboBox->currentIndex();
+        if (ui->accountsListWidget->selectedItems().count() > 0) {
+            menu.addAction("Remove selected accounts", this, [=]
+            {
+                QList<QListWidgetItem*> selectedItems = ui->accountsListWidget->selectedItems();
+
+                if (profileIndex <= 0)
+                   return;
+
                 Profile* profile = profiles[profileIndex];
 
-                int row = ui->accountsListWidget->currentRow();
+                for (auto it = selectedItems.crbegin(); it != selectedItems.crend(); ++it) {
+                   int row = ui->accountsListWidget->row(*it);
+                   profile->removeAccount(row);
+                }
 
-                if (row <= 0)
-                    return;
-
-                profile->moveAccountUp(row);
                 displayProfile(profileIndex);
-                ui->accountsListWidget->setCurrentRow(row - 1);
-            });
-
-            menu.addAction("Move down", this, [=]() {
-                int profileIndex = ui->profileComboBox->currentIndex();
-                Profile* profile = profiles[profileIndex];
-
-                int row = ui->accountsListWidget->currentRow();
-
-                if (row < 0 || row >= ui->accountsListWidget->count()-1)
-                    return;
-
-                profile->moveAccountDown(row);
-                displayProfile(profileIndex);
-                ui->accountsListWidget->setCurrentRow(row + 1);
-
             });
         }
 
+        if (ui->accountsListWidget->selectedItems().count() == 1) {
+            menu.addAction("Edit selected account", this, [=]() {
+                QList<QListWidgetItem*> selectedItems = ui->accountsListWidget->selectedItems();
+                QListWidgetItem* item = selectedItems.first();
+
+                if (profileIndex <= 0)
+                    return;
+
+                Profile* profile = profiles[profileIndex];
+                int row = ui->accountsListWidget->row(item);
+
+                if (row < 0)
+                    return;
+
+                const GameAccount& gameAcc = profile->getAccounts().at(row);
+
+                AddProfileAccountDialog dialog(gfAccounts, gameAcc, this);
+
+                int res = dialog.exec();
+
+                if (res == QDialog::Accepted) {
+                    GameAccount newAccount(
+                        dialog.getGfAcc(),
+                        dialog.getAccountName(),
+                        dialog.getId(),
+                        dialog.getPseudonym(),
+                        dialog.getServerLocation(),
+                        dialog.getServer(),
+                        dialog.getChannel(),
+                        dialog.getCharacter(),
+                        dialog.getAutoLogin()
+                        );
+
+                    profile->editAccount(row, newAccount);
+                    displayProfile(profileIndex);
+                }
+            });
+
+            if (ui->profileComboBox->currentIndex() != 0) {
+                menu.addAction("Move up", this, [=]() {
+                    Profile* profile = profiles[profileIndex];
+
+                    int row = ui->accountsListWidget->currentRow();
+
+                    if (row <= 0)
+                        return;
+
+                    profile->moveAccountUp(row);
+                    displayProfile(profileIndex);
+                    ui->accountsListWidget->setCurrentRow(row - 1);
+                });
+
+                menu.addAction("Move down", this, [=]() {
+                    Profile* profile = profiles[profileIndex];
+                    int row = ui->accountsListWidget->currentRow();
+
+                    if (row < 0 || row >= ui->accountsListWidget->count()-1)
+                        return;
+
+                    profile->moveAccountDown(row);
+                    displayProfile(profileIndex);
+                    ui->accountsListWidget->setCurrentRow(row + 1);
+
+                });
+            }
+
+        }
     }
-    else if (ui->accountsListWidget->selectedItems().count() > 1) {
+
+    if (ui->accountsListWidget->selectedItems().count() > 1 || profileIndex == 0) {
         menu.addAction("Edit login information of all selected acccounts", this, [=]() {
-            int profileIndex = ui->profileComboBox->currentIndex();
             QList<QListWidgetItem*> selectedItems = ui->accountsListWidget->selectedItems();
-
-            if (profileIndex <= 0)
-                return;
-
             Profile* profile = profiles[profileIndex];
 
 
@@ -594,6 +580,13 @@ void MainWindow::showContextMenu(const QPoint& pos)
                 int character = dialog.getCharacter();
                 bool login = dialog.getAutoLogin();
 
+                if (profileIndex == 0) { // Default profile
+                    defaultAutoLogin = login;
+                    defaultServerLocation = serverLocation;
+                    defaultServer = server;
+                    defaultChannel = channel;
+                    defaultCharacter = character;
+                }
 
                 for (const auto item : selectedItems) {
                     int row = ui->accountsListWidget->row(item);
@@ -603,7 +596,7 @@ void MainWindow::showContextMenu(const QPoint& pos)
                     gameAcc.setServerLocation(serverLocation);
                     gameAcc.setServer(server);
                     gameAcc.setChannel(channel);
-                    gameAcc.setSlot(character);
+                    gameAcc.setSlot(character == 5 ? gameAcc.getSlot() : character);
                     gameAcc.setAutoLogin(login);
 
                     profile->editAccount(row, gameAcc);
@@ -713,11 +706,10 @@ void MainWindow::on_openAccountsButton_clicked()
             }
             else {
                 DWORD pid = 0;
+
                 if (gflessClient->openClient(gameAccount.getName(), token, gamePath, gameLang, gameAccount.getAutoLogin(), pid)) {
                     QString msg = "Launched game with PID " + QString::number(pid);
                     ui->statusbar->showMessage(msg, 10000);
-
-
                     processAccounts.insert(pid, gameAccount);
                 }
                 else {

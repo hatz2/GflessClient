@@ -79,6 +79,43 @@
     </widget>
    </item>
    <item>
+    <widget class="QComboBox" name="serverComboBox">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <item>
+      <property name="text">
+       <string>1</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>2</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>3</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>4</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="channelLabel">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Channel:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QComboBox" name="channelComboBox">
      <property name="enabled">
       <bool>false</bool>
@@ -131,43 +168,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="channelLabel">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="text">
-      <string>Channel:</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QComboBox" name="serverComboBox">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <item>
-      <property name="text">
-       <string>1</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>2</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>3</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>4</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item>
     <widget class="QLabel" name="characterLabel">
      <property name="enabled">
       <bool>false</bool>
@@ -205,6 +205,11 @@
      <item>
       <property name="text">
        <string>Character 4</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Don't change</string>
       </property>
      </item>
     </widget>
