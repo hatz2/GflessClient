@@ -4,12 +4,13 @@
 
 TCharacterSelectWidget* TCharacterSelectWidget::getInstance()
 {
-	DWORD address = PatternScan(
+	static DWORD patternAddress = PatternScan(
 		"\xa1\x00\x00\x00\x00\x8b\x00\x33\xd2\xe8\x00\x00\x00\x00\xa1\x00\x00\x00\x00\x8b\x00\x83\x78\x00\x00\x7d\x00\xa1\x00\x00\x00\x00\x8b\x00\x33\xd2\xe8\x00\x00\x00\x00\x8b\xc3\xe8\x00\x00\x00\x00\xa1\x00\x00\x00\x00\x8b\x00\xb2\x00\xe8\x00\x00\x00\x00\xa1",
 		"x????xxxxx????x????xxxx??x?x????xxxxx????xxx????x????xxx?x????x",
 		1
 	);
 
+	DWORD address = patternAddress;
 	address = READ_PTR(address, 0);
 	address = READ_PTR(address, 0);
 	address = READ_PTR(address, 0);
