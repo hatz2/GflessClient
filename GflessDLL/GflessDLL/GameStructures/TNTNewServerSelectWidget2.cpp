@@ -3,12 +3,13 @@
 
 TNTNewServerSelectWidget2* TNTNewServerSelectWidget2::getInstance()
 {
-	DWORD address = PatternScan(
+	static DWORD patternAddress = PatternScan(
 		"\xa1\x00\x00\x00\x00\x8b\x00\xc6\x40\x00\x00\xa1\x00\x00\x00\x00\xc7\x00",
 		"x????xxxx??x????xx",
 		1
 	);
 
+	DWORD address = patternAddress;
 	address = READ_PTR(address, 0);
 	address = READ_PTR(address, 0);
 	address = READ_PTR(address, 0);
