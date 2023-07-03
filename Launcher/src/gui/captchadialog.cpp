@@ -1,12 +1,12 @@
 #include "captchadialog.h"
 #include "ui_captchadialog.h"
 
-CaptchaDialog::CaptchaDialog(const QString &gfChallengeId, QWidget *parent) :
+CaptchaDialog::CaptchaDialog(const QString &gfChallengeId, SyncNetworAccesskManager *netManager, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::CaptchaDialog)
 {
     ui->setupUi(this);
-    captcha = new CaptchaSolver(gfChallengeId, QLocale().name().replace("_", "-"), this);
+    captcha = new CaptchaSolver(gfChallengeId, QLocale().name().replace("_", "-"), netManager, this);
 
     initImages();
 }

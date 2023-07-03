@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>282</width>
-    <height>228</height>
+    <width>437</width>
+    <height>464</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -39,6 +39,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="showPasswordCheckBox">
+     <property name="text">
+      <string>Show password</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
       <string>Identity path:</string>
@@ -64,9 +71,77 @@
     </layout>
    </item>
    <item>
-    <widget class="QCheckBox" name="showPasswordCheckBox">
+    <widget class="QCheckBox" name="proxyCheckBox">
      <property name="text">
-      <string>Show password</string>
+      <string>Use SOCKS5 proxy (optional)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="proxyIpLabel">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Proxy IP:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="proxyIpLineEdit">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="socksPortLabel">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Proxy port:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="socksPortLineEdit">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="proxyUsernameLabel">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Proxy username:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="proxyUsernameLineEdit">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="proxyPasswordLabel">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Proxy password:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="proxyPasswordLineEdit">
+     <property name="enabled">
+      <bool>false</bool>
      </property>
     </widget>
    </item>

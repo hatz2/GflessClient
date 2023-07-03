@@ -1,9 +1,37 @@
 #include "nostaleauth.h"
+#include "blackbox.h"
+#include <QNetworkProxy>
 
-NostaleAuth::NostaleAuth(const std::shared_ptr<Identity> &id, QObject *parent) : QObject(parent), identity(id)
+NostaleAuth::NostaleAuth(const QString &identityPath, bool proxy, const QString &proxyHost, const QString &proxyPort, const QString &proxyUser, const QString &proxyPasswd, QObject *parent)
+    : QObject(parent)
+    , proxyIp(proxyHost)
+    , socksPort(proxyPort)
+    , proxyUsername(proxyUser)
+    , proxyPassword(proxyPasswd)
+    , useProxy(proxy)
 {
+    identity = std::make_shared<Identity>(identityPath, proxyHost, proxyPort, proxyUser, proxyPasswd, proxy);
+
     this->locale = QLocale().name();
     this->browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
+
+    networkManager = new SyncNetworAccesskManager(this);
+
+    if (useProxy) {
+        QNetworkProxy proxy(
+            QNetworkProxy::ProxyType::Socks5Proxy,
+            proxyIp,
+            socksPort.toUInt()
+        );
+
+        if (!proxyUsername.isEmpty()) {
+            proxy.setUser(proxyUsername);
+            proxy.setPassword(proxyPassword);
+        }
+
+        networkManager->setProxy(proxy);
+    }
+
 
     initGfVersion();
     initCert();
@@ -17,7 +45,6 @@ QMap<QString, QString> NostaleAuth::getAccounts()
     QJsonObject jsonResponse;
     QMap<QString, QString> accounts;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/user/accounts"));
-    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
     if (token.isEmpty())
@@ -29,7 +56,7 @@ QMap<QString, QString> NostaleAuth::getAccounts()
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     request.setRawHeader("Connection", "Keep-Alive");
 
-    reply = networkManager.get(request);
+    reply = networkManager->get(request);
 
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
         return QMap<QString, QString>();
@@ -56,7 +83,6 @@ bool NostaleAuth::authenticate(const QString &email, const QString &password, bo
 {
     QJsonObject content, jsonResponse;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/sessions"));
-    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
@@ -73,7 +99,7 @@ bool NostaleAuth::authenticate(const QString &email, const QString &password, bo
     content["locale"] = locale;
     content["password"] = password;
 
-    reply = networkManager.post(request, QJsonDocument(content).toJson());
+    reply = networkManager->post(request, QJsonDocument(content).toJson());
 
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 201)
     {
@@ -109,7 +135,6 @@ QString NostaleAuth::getToken(const QString &accountId)
 {
     QJsonObject content, jsonResponse;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/thin/codes"));
-    SyncNetworAccesskManager networkManager;
     QNetworkReply* reply = nullptr;
 
     if (token.isEmpty())
@@ -133,7 +158,7 @@ QString NostaleAuth::getToken(const QString &accountId)
     content["blackbox"] = blackbox.encrypted();
     content["gameId"] = "dd4e22d6-00d1-44b9-8126-d8b40e0cd7c9";
 
-    reply = networkManager.post(request, QJsonDocument(content).toJson());
+    reply = networkManager->post(request, QJsonDocument(content).toJson());
 
     QByteArray response = reply->readAll();
 
@@ -192,7 +217,6 @@ bool NostaleAuth::sendStartTime()
     QJsonObject payload, clientVersionInfo;
     QNetworkRequest request(QUrl("https://events.gameforge.com"));
     QSslConfiguration sslConfig = request.sslConfiguration();
-    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
@@ -219,7 +243,7 @@ bool NostaleAuth::sendStartTime()
     sslConfig.setPrivateKey(privateKey);
     request.setSslConfiguration(sslConfig);
 
-    reply = networkManager.post(request, QJsonDocument(payload).toJson());
+    reply = networkManager->post(request, QJsonDocument(payload).toJson());
 
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
         return false;
@@ -235,7 +259,6 @@ bool NostaleAuth::sendIovation(const QString& accountId)
 {
     QJsonObject content, jsonResponse;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/iovation"));
-    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
@@ -253,7 +276,7 @@ bool NostaleAuth::sendIovation(const QString& accountId)
     content["blackbox"] = blackbox.encoded();
     content["type"] = "play_now";
 
-    reply = networkManager.post(request, QJsonDocument(content).toJson());
+    reply = networkManager->post(request, QJsonDocument(content).toJson());
 
     reply->deleteLater();
 
@@ -340,11 +363,9 @@ void NostaleAuth::initGfVersion()
 {
     QJsonObject jsonResponse;
     QNetworkRequest request(QUrl("http://dl.tnt.gameforge.com/tnt/final-ms3/clientversioninfo.json"));
-    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
-
-    reply = networkManager.get(request);
+    reply = networkManager->get(request);
     reply->deleteLater();
 
     QByteArray response = reply->readAll();
@@ -356,4 +377,34 @@ void NostaleAuth::initGfVersion()
 
     this->chromeVersion = "C" + jsonResponse["version"].toString();
     this->gameforgeVersion = jsonResponse["minimumVersionForDelayedUpdate"].toString();
+}
+
+SyncNetworAccesskManager *NostaleAuth::getNetworkManager() const
+{
+    return networkManager;
+}
+
+QString NostaleAuth::getProxyPassword() const
+{
+    return proxyPassword;
+}
+
+QString NostaleAuth::getProxyUsername() const
+{
+    return proxyUsername;
+}
+
+QString NostaleAuth::getProxyIp() const
+{
+    return proxyIp;
+}
+
+QString NostaleAuth::getSocksPort() const
+{
+    return socksPort;
+}
+
+bool NostaleAuth::getUseProxy() const
+{
+    return useProxy;
 }

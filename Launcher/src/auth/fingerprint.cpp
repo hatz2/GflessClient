@@ -1,9 +1,15 @@
 #include "fingerprint.h"
+#include <QNetworkProxy>
 
 const QString Fingerprint::SERVER_FILE_GAME1_FILE = "https://gameforge.com/tra/game1.js";
 
-Fingerprint::Fingerprint(const QJsonObject& fp)
+Fingerprint::Fingerprint(const QJsonObject& fp, const QString &proxyIp, const QString &proxyPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
     : fingerprint(fp)
+    , ip(proxyIp)
+    , port(proxyPort)
+    , username(proxyUsername)
+    , password(proxyPassword)
+    , proxy(useProxy)
 {
 
 }
@@ -86,6 +92,23 @@ QString Fingerprint::getServerDate() const
     QUrl url(SERVER_FILE_GAME1_FILE);
     SyncNetworAccesskManager network;
     QNetworkRequest request(url);
+
+    if (proxy) {
+        QNetworkProxy proxy(
+            QNetworkProxy::ProxyType::Socks5Proxy,
+            ip,
+            port.toUInt()
+        );
+
+        if (!username.isEmpty()) {
+            proxy.setUser(username);
+            proxy.setPassword(password);
+        }
+
+        network.setProxy(proxy);
+    }
+
+
     QNetworkReply* reply = network.get(request);
     QByteArray date = reply->rawHeader("Date").replace("GMT", "UTC");
     QDateTime dateTime = QLocale(QLocale::English).toDateTime(date.replace("GMT", "UTC"), "ddd, d MMM yyyy HH:mm:ss t");

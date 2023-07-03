@@ -1,20 +1,14 @@
 #include "identity.h"
 
-Identity::Identity(const QString &filePath)
+Identity::Identity(const QString &filePath, const QString &proxyIp, const QString &proxyPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
     : filename(filePath)
 {
-    initFingerprint();
+    initFingerprint(proxyIp, proxyPort, proxyUsername, proxyPassword, useProxy);
 }
 
 Identity::~Identity()
 {
     save();
-}
-
-void Identity::load(const QString &filePath)
-{
-    filename = filePath;
-    initFingerprint();
 }
 
 void Identity::update()
@@ -35,14 +29,14 @@ void Identity::setRequest(const QJsonValue &request)
     fingerprint.setRequest(request);
 }
 
-void Identity::initFingerprint()
+void Identity::initFingerprint(const QString &proxyIp, const QString &proxyPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
 {
     QFile file(filename);
 
     if (file.open(QFile::ReadOnly))
     {
         QByteArray content = file.readAll();
-        fingerprint = Fingerprint(QJsonDocument::fromJson(content).object());
+        fingerprint = Fingerprint(QJsonDocument::fromJson(content).object(), proxyIp, proxyPort, proxyUsername, proxyPassword, useProxy);
         file.close();
     }
 }

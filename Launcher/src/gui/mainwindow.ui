@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>460</width>
-    <height>545</height>
+    <width>373</width>
+    <height>511</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,17 +18,17 @@
     <normaloff>:/resources/gfless_icon.png</normaloff>:/resources/gfless_icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <layout class="QFormLayout" name="formLayout">
-      <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
        <widget class="QLabel" name="label_3">
         <property name="text">
          <string>Gameforge account:</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,0">
         <item>
          <widget class="QComboBox" name="gameforgeAccountComboBox"/>
@@ -49,14 +49,14 @@
         </item>
        </layout>
       </item>
-      <item row="1" column="0">
+      <item>
        <widget class="QLabel" name="label">
         <property name="text">
          <string>Profile:</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item>
        <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0">
         <item>
          <widget class="QComboBox" name="profileComboBox">
@@ -140,7 +140,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>460</width>
+     <width>373</width>
      <height>21</height>
     </rect>
    </property>

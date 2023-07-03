@@ -12,7 +12,7 @@ class CaptchaSolver : public QObject
 {
     Q_OBJECT
 public:
-    explicit CaptchaSolver(const QString& challengeId, const QString& lang, QObject *parent = nullptr);
+    explicit CaptchaSolver(const QString& challengeId, const QString& lang, SyncNetworAccesskManager *netManager, QObject *parent = nullptr);
 
     bool getChallenge();
 
@@ -25,6 +25,7 @@ public:
     QImage getDropTargetImage();
 
 private:
+    SyncNetworAccesskManager* networkManager;
     QString gfChallengeId;
     QString language;
     quint64 lastUpdated;

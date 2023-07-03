@@ -1,9 +1,8 @@
 #ifndef NOSTALEAUTH_H
 #define NOSTALEAUTH_H
 
-#include "syncnetworkaccessmanager.h"
-#include "blackbox.h"
 #include "identity.h"
+#include "syncnetworkaccessmanager.h"
 
 #include <QObject>
 #include <QJsonDocument>
@@ -20,13 +19,31 @@ class NostaleAuth : public QObject
 {
     Q_OBJECT
 public:
-    explicit NostaleAuth(const std::shared_ptr<Identity>& id, QObject *parent = nullptr);
+    explicit NostaleAuth(
+        const QString& identityPath,
+        bool proxy,
+        const QString& proxyHost,
+        const QString& proxyPort,
+        const QString& proxyUser,
+        const QString& proxyPasswd,
+        QObject *parent = nullptr
+    );
 
     QMap<QString /* displayName */, QString /* id */> getAccounts();
 
     bool authenticate(const QString& email, const QString& password, bool &captcha, QString &gfChallengeId, bool& wrongCredentials);
 
     QString getToken(const QString& accountId);
+
+    QString getProxyIp() const;
+    QString getSocksPort() const;
+    bool getUseProxy() const;
+
+    QString getProxyUsername() const;
+
+    QString getProxyPassword() const;
+
+    SyncNetworAccesskManager *getNetworkManager() const;
 
 signals:
     void captchaStart();
@@ -63,6 +80,14 @@ private:
     QString browserUserAgent;
     QList<QSslCertificate> allCerts;
     std::shared_ptr<Identity> identity;
+
+    SyncNetworAccesskManager* networkManager;
+
+    QString proxyIp;
+    QString socksPort;
+    QString proxyUsername;
+    QString proxyPassword;
+    bool useProxy;
 };
 
 #endif // NOSTALEAUTH_H

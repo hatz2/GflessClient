@@ -64,8 +64,13 @@ void MainWindow::loadSettings()
         QString email = settings.value("email", "").toString();
         QString password = settings.value("password", "").toString();
         QString identity = settings.value("identity_path", "").toString();
+        QString proxyIp = settings.value("proxy_ip", "").toString();
+        QString socksPort = settings.value("socks_port", "").toString();
+        QString proxyUsername = settings.value("proxy_username", "").toString();
+        QString proxyPassword = settings.value("proxy_password", "").toString();
+        bool useProxy = settings.value("use_proxy", false).toBool();
 
-        addGameforgeAccount(email, password, identity);
+        addGameforgeAccount(email, password, identity, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
     }
 
     settings.endArray();
@@ -101,6 +106,12 @@ void MainWindow::saveSettings()
         settings.setValue("email", acc->getEmail());
         settings.setValue("password", acc->getPassword());
         settings.setValue("identity_path", acc->getIdentityPath());
+
+        settings.setValue("use_proxy", acc->getAuth()->getUseProxy());
+        settings.setValue("proxy_ip", acc->getAuth()->getProxyIp());
+        settings.setValue("socks_port", acc->getAuth()->getSocksPort());
+        settings.setValue("proxy_username", acc->getAuth()->getProxyUsername());
+        settings.setValue("proxy_password", acc->getAuth()->getProxyPassword());
     }
     settings.endArray();
 
@@ -208,20 +219,30 @@ void MainWindow::saveAccountProfiles(const QString &path)
     settings.endGroup();
 }
 
-void MainWindow::addGameforgeAccount(const QString &email, const QString &password, const QString& identityPath)
+void MainWindow::addGameforgeAccount(const QString &email, const QString &password, const QString& identityPath, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
 {
     bool captcha = false;
     bool wrongCredentials = false;
     QString gfChallengeId;
-    GameforgeAccount* gfAcc = new GameforgeAccount(email, password, identityPath, this);
+    GameforgeAccount* gfAcc = new GameforgeAccount(
+        email,
+        password,
+        identityPath,
+        useProxy,
+        proxyIp,
+        socksPort,
+        proxyUsername,
+        proxyPassword,
+        this
+    );
 
     if (!gfAcc->authenticate(captcha, gfChallengeId, wrongCredentials)) {
         if (captcha) {
-            CaptchaDialog captcha(gfChallengeId, this);
+            CaptchaDialog captcha(gfChallengeId, gfAcc->getAuth()->getNetworkManager(), this);
             int res = captcha.exec();
 
             if (res == QDialog::Accepted) {
-                addGameforgeAccount(email, password, identityPath);
+                addGameforgeAccount(email, password, identityPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
             }
         }
         else if (wrongCredentials) {
@@ -249,6 +270,22 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
     }
 
     displayProfile(ui->profileComboBox->currentIndex());
+}
+
+void MainWindow::removeAccountsFromDefaultProfile(const QString &email)
+{
+    if (profiles.count() <= 0)
+        return;
+
+    Profile* defaultProfile = profiles[0];
+
+    auto accs = defaultProfile->getAccounts();
+
+    for (int i = accs.count() - 1; i >= 0; --i) {
+        if (accs[i].getGfAcc()->getEmail() == email) {
+            defaultProfile->removeAccount(i);
+        }
+    }
 }
 
 void MainWindow::displayProfile(int index)
@@ -314,8 +351,13 @@ void MainWindow::on_addGameforgeAccountButton_clicked()
     QString email = addAccountDialog.getEmail();
     QString password = addAccountDialog.getPassword();
     QString identityPath = addAccountDialog.getIdentityPath();
+    QString proxyIp = addAccountDialog.getProxyIp();
+    QString socksPort = addAccountDialog.getSocksPort();
+    QString proxyUsername = addAccountDialog.getProxyUsername();
+    QString proxyPassword = addAccountDialog.getProxyPassword();
+    bool useProxy = addAccountDialog.getUseProxy();
 
-    addGameforgeAccount(email, password, identityPath);
+    addGameforgeAccount(email, password, identityPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
 }
 
 
@@ -330,6 +372,8 @@ void MainWindow::on_removeGameforgeAccountButton_clicked()
 
     if (index < 0)
         return;
+
+    removeAccountsFromDefaultProfile(ui->gameforgeAccountComboBox->currentText());
 
     gfAccounts.remove(index);
     ui->gameforgeAccountComboBox->removeItem(index);
@@ -425,7 +469,10 @@ void MainWindow::handleLocalConnection()
 
         const GameAccount& acc = processAccounts[pid];
 
-        if (message == "ServerLanguage")
+        if (message == "AutoLogin")
+            output = QString::number(acc.getAutoLogin()).toLocal8Bit();
+
+        else if (message == "ServerLanguage")
             output = QString::number(acc.getServerLocation()).toLocal8Bit();
 
         else if (message == "Server")
@@ -436,6 +483,25 @@ void MainWindow::handleLocalConnection()
 
         else if (message == "Character")
             output = QString::number(acc.getSlot()).toLocal8Bit();
+
+        else if (message == "UseProxy")
+            output = QString::number(acc.getGfAcc()->getAuth()->getUseProxy()).toLocal8Bit();
+
+        else if (message == "ProxyIP")
+            output = acc.getGfAcc()->getAuth()->getProxyIp().toLocal8Bit();
+
+        else if (message == "ProxyPort")
+            output = acc.getGfAcc()->getAuth()->getSocksPort().toLocal8Bit();
+
+        else if (message == "ProxyUsername")
+            output = acc.getGfAcc()->getAuth()->getProxyUsername().toLocal8Bit();
+
+        else if (message == "ProxyPassword")
+            output = acc.getGfAcc()->getAuth()->getProxyPassword().toLocal8Bit();
+
+
+        if (output.isEmpty())
+            output = "empty";
 
         sock->write(output);
     });
@@ -748,7 +814,7 @@ void MainWindow::on_openAccountsButton_clicked()
             else {
                 DWORD pid = 0;
 
-                if (gflessClient->openClient(gameAccount.getName(), token, gamePath, gameLang, gameAccount.getAutoLogin(), pid)) {
+                if (gflessClient->openClient(gameAccount.getName(), token, gamePath, gameLang, pid)) {
                     QString msg = "Launched game with PID " + QString::number(pid);
                     ui->statusbar->showMessage(msg, 10000);
                     processAccounts.insert(pid, gameAccount);
@@ -758,6 +824,27 @@ void MainWindow::on_openAccountsButton_clicked()
                 }
             }
         });
+    }
+}
+
+
+void MainWindow::on_gameforgeAccountComboBox_currentIndexChanged(int index)
+{
+    if (index < 0)
+        return;
+
+    GameforgeAccount* gf = gfAccounts.at(index);
+
+    if (gf->getAuth()->getUseProxy()) {
+        QString toolTipText;
+
+        toolTipText += "Proxy IP: " + gf->getAuth()->getProxyIp() + "\n";
+        toolTipText += "Proxy port: " + gf->getAuth()->getSocksPort() + "\n";
+
+        ui->gameforgeAccountComboBox->setToolTip(toolTipText);
+    }
+    else {
+        ui->gameforgeAccountComboBox->setToolTip("No proxy");
     }
 }
 

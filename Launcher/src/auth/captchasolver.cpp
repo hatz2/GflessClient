@@ -1,7 +1,8 @@
 #include "captchasolver.h"
 
-CaptchaSolver::CaptchaSolver(const QString &challengeId, const QString &lang, QObject *parent)
+CaptchaSolver::CaptchaSolver(const QString &challengeId, const QString &lang, SyncNetworAccesskManager* netManager, QObject *parent)
     : QObject{parent}
+    , networkManager(netManager)
     , gfChallengeId(challengeId)
     , language(lang)
     , lastUpdated(0)
@@ -12,7 +13,6 @@ CaptchaSolver::CaptchaSolver(const QString &challengeId, const QString &lang, QO
 bool CaptchaSolver::getChallenge()
 {
     QNetworkRequest request(QUrl("https://image-drop-challenge.gameforge.com/challenge/" + gfChallengeId + "/" + language));
-    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
@@ -21,7 +21,7 @@ bool CaptchaSolver::getChallenge()
     request.setRawHeader("Origin", "spark://www.gameforge.com");
     request.setRawHeader("Connection", "Keep-Alive");
 
-    reply = networkManager.get(request);
+    reply = networkManager->get(request);
     reply->deleteLater();
 
     QByteArray response = reply->readAll();
@@ -40,7 +40,6 @@ bool CaptchaSolver::sendAnswer(int answer)
 {
     QJsonObject content, jsonResponse;
     QNetworkRequest request(QUrl("https://image-drop-challenge.gameforge.com/challenge/" + gfChallengeId + "/" + language));
-    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
@@ -51,7 +50,7 @@ bool CaptchaSolver::sendAnswer(int answer)
 
     content["answer"] = answer;
 
-    reply = networkManager.post(request, QJsonDocument(content).toJson());
+    reply = networkManager->post(request, QJsonDocument(content).toJson());
     reply->deleteLater();
 
     QByteArray response = reply->readAll();
@@ -69,7 +68,6 @@ bool CaptchaSolver::sendAnswer(int answer)
 QImage CaptchaSolver::getTextImage()
 {
     QNetworkRequest request(QUrl("https://image-drop-challenge.gameforge.com/challenge/" + gfChallengeId + "/" + language + "/text?" + QString::number(lastUpdated)));
-    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
@@ -78,7 +76,7 @@ QImage CaptchaSolver::getTextImage()
     request.setRawHeader("Origin", "spark://www.gameforge.com");
     request.setRawHeader("Connection", "Keep-Alive");
 
-    reply = networkManager.get(request);
+    reply = networkManager->get(request);
     reply->deleteLater();
 
     QByteArray response = reply->readAll();
@@ -92,7 +90,6 @@ QImage CaptchaSolver::getTextImage()
 QImage CaptchaSolver::getDragIcons()
 {
     QNetworkRequest request(QUrl("https://image-drop-challenge.gameforge.com/challenge/" + gfChallengeId + "/" + language + "/drag-icons?" + QString::number((quint64)lastUpdated)));
-    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
@@ -101,7 +98,7 @@ QImage CaptchaSolver::getDragIcons()
     request.setRawHeader("Origin", "spark://www.gameforge.com");
     request.setRawHeader("Connection", "Keep-Alive");
 
-    reply = networkManager.get(request);
+    reply = networkManager->get(request);
     reply->deleteLater();
 
     QByteArray response = reply->readAll();
@@ -115,7 +112,6 @@ QImage CaptchaSolver::getDragIcons()
 QImage CaptchaSolver::getDropTargetImage()
 {
     QNetworkRequest request(QUrl("https://image-drop-challenge.gameforge.com/challenge/" + gfChallengeId + "/" + language + "/drop-target?" + QString::number((quint64)lastUpdated)));
-    SyncNetworAccesskManager networkManager(this);
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
@@ -124,7 +120,7 @@ QImage CaptchaSolver::getDropTargetImage()
     request.setRawHeader("Origin", "spark://www.gameforge.com");
     request.setRawHeader("Connection", "Keep-Alive");
 
-    reply = networkManager.get(request);
+    reply = networkManager->get(request);
     reply->deleteLater();
 
     QByteArray response = reply->readAll();

@@ -12,7 +12,7 @@ GflessClient::GflessClient(QObject *parent) : QObject(parent)
     connect(gfServer, &QLocalServer::newConnection, this, &GflessClient::handleNewConnection);
 }
 
-bool GflessClient::openClient(const QString& displayName, const QString& token, const QString &gameClientPath, const int &gameLanguage, bool autoLogin, DWORD& createdPID)
+bool GflessClient::openClient(const QString& displayName, const QString& token, const QString &gameClientPath, const int &gameLanguage, DWORD& createdPID)
 {
     this->displayName = displayName;
     this->token = token;
@@ -51,15 +51,12 @@ bool GflessClient::openClient(const QString& displayName, const QString& token, 
 
     threadId = procInfo->dwThreadId;
 
-    if (autoLogin)
-    {
-        QString dllPath = QDir::currentPath() + "/GflessDLL.dll";
+    QString dllPath = QDir::currentPath() + "/GflessDLL.dll";
 
-        if (!injectDll(pid, dllPath))
-            qDebug() << "Dll injection failed";
-        else
-            qDebug() << "Dll injected successfully";
-    }
+    if (!injectDll(pid, dllPath))
+        qDebug() << "Dll injection failed";
+    else
+        qDebug() << "Dll injected successfully";
 
     // Resume the game
     HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, threadId);

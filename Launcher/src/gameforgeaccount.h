@@ -9,7 +9,17 @@ class GameforgeAccount : public QObject
 {
     Q_OBJECT
 public:
-    explicit GameforgeAccount(const QString& gfEmail, const QString& gfPassword, const QString& identPath, QObject *parent = nullptr);
+    explicit GameforgeAccount(
+        const QString& gfEmail,
+        const QString& gfPassword,
+        const QString& identPath,
+        bool proxy,
+        const QString& proxyHost,
+        const QString& proxyPort,
+        const QString& proxyUsername,
+        const QString& proxyPassword,
+        QObject *parent = nullptr
+    );
 
     bool authenticate(bool& captcha, QString& gfChallengeId, bool& wrongCredentials);
     const QMap<QString, QString>& getGameAccounts() const;
@@ -22,8 +32,7 @@ public:
 
     QString getIdentityPath() const;
 
-signals:
-
+    const NostaleAuth *getAuth() const;
 
 private:
     QString email;

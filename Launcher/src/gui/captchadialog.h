@@ -2,6 +2,7 @@
 #define CAPTCHADIALOG_H
 
 #include "captchasolver.h"
+#include "syncnetworkaccessmanager.h"
 #include <QDialog>
 #include <QPixmap>
 #include <QMessageBox>
@@ -16,7 +17,7 @@ class CaptchaDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit CaptchaDialog(const QString& gfChallengeId, QWidget *parent = nullptr);
+    explicit CaptchaDialog(const QString& gfChallengeId, SyncNetworAccesskManager* netManager,QWidget *parent = nullptr);
     ~CaptchaDialog();
 
 private slots:

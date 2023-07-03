@@ -18,7 +18,7 @@ class GflessClient : public QObject
 public:
     explicit GflessClient(QObject *parent = nullptr);
 
-    bool openClient(const QString& displayName, const QString& token, const QString& gameClientPath, const int& gameLanguage, bool autoLogin, DWORD& createdPID);
+    bool openClient(const QString& displayName, const QString& token, const QString& gameClientPath, const int& gameLanguage, DWORD& createdPID);
 
     bool openClientSettings(const QString& gameClientPath);
 

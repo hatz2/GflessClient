@@ -1,13 +1,20 @@
 #include "gameforgeaccount.h"
-#include "gameaccount.h"
 
-GameforgeAccount::GameforgeAccount(const QString &gfEmail, const QString &gfPassword, const QString& identPath, QObject *parent)
+GameforgeAccount::GameforgeAccount(const QString &gfEmail, const QString &gfPassword, const QString& identPath, bool proxy, const QString &proxyHost, const QString &proxyPort, const QString &proxyUsername, const QString &proxyPassword, QObject *parent)
     : QObject{parent}
     , email(gfEmail)
     , password(gfPassword)
     , identityPath(identPath)
 {
-    auth = new NostaleAuth(std::make_shared<Identity>(identityPath), this);
+    auth = new NostaleAuth(
+        identityPath,
+        proxy,
+        proxyHost,
+        proxyPort,
+        proxyUsername,
+        proxyPassword,
+        this
+    );
 }
 
 bool GameforgeAccount::authenticate(bool &captcha, QString &gfChallengeId, bool &wrongCredentials)
@@ -44,4 +51,9 @@ QString GameforgeAccount::getPassword() const
 QString GameforgeAccount::getIdentityPath() const
 {
     return identityPath;
+}
+
+const NostaleAuth *GameforgeAccount::getAuth() const
+{
+    return auth;
 }

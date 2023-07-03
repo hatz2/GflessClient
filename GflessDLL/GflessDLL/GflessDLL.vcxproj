@@ -141,20 +141,29 @@
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="GameStructures\TCharacterSelectWidget.cpp" />
+    <ClCompile Include="GameStructures\TClientCore.cpp" />
     <ClCompile Include="GameStructures\TEWGraphicButtonWidget.cpp" />
     <ClCompile Include="GameStructures\TLBSWidget.cpp" />
     <ClCompile Include="GameStructures\TLBSWidgetList.cpp" />
     <ClCompile Include="GameStructures\TNTNewServerSelectWidget2.cpp" />
+    <ClCompile Include="Hook.cpp" />
+    <ClCompile Include="NosmallDisabler.cpp" />
     <ClCompile Include="PatternScanner.cpp" />
+    <ClCompile Include="ProxyMod.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GameStructures\NostaleString.h" />
     <ClInclude Include="GameStructures\TCharacterSelectWidget.h" />
+    <ClInclude Include="GameStructures\TClientCore.h" />
     <ClInclude Include="GameStructures\TEWButtonWidget.h" />
     <ClInclude Include="GameStructures\TEWGraphicButtonWidget.h" />
     <ClInclude Include="GameStructures\TLBSWidget.h" />
     <ClInclude Include="GameStructures\TLBSWidgetList.h" />
     <ClInclude Include="GameStructures\TNTNewServerSelectWidget2.h" />
+    <ClInclude Include="Hook.h" />
+    <ClInclude Include="NosmallDisabler.h" />
     <ClInclude Include="PatternScanner.h" />
+    <ClInclude Include="ProxyMod.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

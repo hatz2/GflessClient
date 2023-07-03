@@ -72,6 +72,8 @@ private slots:
 
     void on_openAccountsButton_clicked();
 
+    void on_gameforgeAccountComboBox_currentIndexChanged(int index);
+
 private:
     void createTrayIcon();
     bool checkGameClientPath();
@@ -81,7 +83,17 @@ private:
     void setupDefaultProfile();
     void loadAccountProfiles(const QString& path);
     void saveAccountProfiles(const QString& path);
-    void addGameforgeAccount(const QString& email, const QString& password, const QString &identityPath);
+    void addGameforgeAccount(const QString& email,
+        const QString& password,
+        const QString &identityPath,
+        const QString& proxyIp,
+        const QString& socksPort,
+        const QString& proxyUsername,
+        const QString& proxyPassword,
+        const bool useProxy
+    );
+
+    void removeAccountsFromDefaultProfile(const QString& email);
     void displayProfile(int index);
 
     Ui::MainWindow *ui;

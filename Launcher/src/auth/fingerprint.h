@@ -21,7 +21,14 @@ class Fingerprint
 public:
     Fingerprint() {};
 
-    Fingerprint(const QJsonObject& fp);
+    Fingerprint(
+        const QJsonObject& fp,
+        const QString& proxyIp,
+        const QString& proxyPort,
+        const QString& proxyUsername,
+        const QString& proxyPassword,
+        const bool useProxy
+    );
 
     QJsonObject json() const;
 
@@ -44,6 +51,11 @@ private:
     static const QString SERVER_FILE_GAME1_FILE;
 
     QJsonObject fingerprint;
+    QString ip;
+    QString port;
+    QString username;
+    QString password;
+    bool proxy;
 
     QByteArray generateUuid() const;
 

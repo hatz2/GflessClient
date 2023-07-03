@@ -22,6 +22,14 @@ public:
 
     QString getIdentityPath() const;
 
+    QString getProxyIp() const;
+    QString getSocksPort() const;
+    bool getUseProxy() const;
+
+    QString getProxyUsername() const;
+
+    QString getProxyPassword() const;
+
 private slots:
     void on_showPasswordCheckBox_stateChanged(int arg1);
 
@@ -29,11 +37,18 @@ private slots:
 
     void on_selectIdentityButton_clicked();
 
+    void on_proxyCheckBox_stateChanged(int arg1);
+
 private:
     Ui::AddAccountDialog *ui;
     QString email;
     QString password;
     QString identityPath;
+    QString proxyIp;
+    QString socksPort;
+    QString proxyUsername;
+    QString proxyPassword;
+    bool useProxy;
 };
 
 #endif // ADDACCOUNTDIALOG_H

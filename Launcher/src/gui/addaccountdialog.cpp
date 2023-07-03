@@ -40,10 +40,20 @@ void AddAccountDialog::on_loginButton_clicked()
     email = ui->emailLineEdit->text();
     password = ui->passwordLineEdit->text();
     identityPath = ui->identityPathLineEdit->text();
+    useProxy = ui->proxyCheckBox->isChecked();
+    proxyIp = ui->proxyIpLineEdit->text();
+    socksPort = ui->socksPortLineEdit->text();
+    proxyUsername = ui->proxyUsernameLineEdit->text();
+    proxyPassword = ui->proxyPasswordLineEdit->text();
 
     if (email.isEmpty() || password.isEmpty() || identityPath.isEmpty())
     {
         QMessageBox::critical(this, "Error", "Email, password or identity path field is empty");
+        return;
+    }
+
+    if (useProxy && (proxyIp.isEmpty() || socksPort.isEmpty())) {
+        QMessageBox::critical(this, "Error", "Proxy IP or Port is empty");
         return;
     }
 
@@ -64,5 +74,43 @@ void AddAccountDialog::on_selectIdentityButton_clicked()
         return;
 
     ui->identityPathLineEdit->setText(path);
+}
+
+
+void AddAccountDialog::on_proxyCheckBox_stateChanged(int arg1)
+{
+    ui->proxyIpLabel->setEnabled(arg1);
+    ui->proxyIpLineEdit->setEnabled(arg1);
+    ui->socksPortLabel->setEnabled(arg1);
+    ui->socksPortLineEdit->setEnabled(arg1);
+    ui->proxyUsernameLineEdit->setEnabled(arg1);
+    ui->proxyUsernameLabel->setEnabled(arg1);
+    ui->proxyPasswordLineEdit->setEnabled(arg1);
+    ui->proxyPasswordLabel->setEnabled(arg1);
+}
+
+QString AddAccountDialog::getProxyPassword() const
+{
+    return proxyPassword;
+}
+
+QString AddAccountDialog::getProxyUsername() const
+{
+    return proxyUsername;
+}
+
+QString AddAccountDialog::getProxyIp() const
+{
+    return proxyIp;
+}
+
+QString AddAccountDialog::getSocksPort() const
+{
+    return socksPort;
+}
+
+bool AddAccountDialog::getUseProxy() const
+{
+    return useProxy;
 }
 
