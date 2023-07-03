@@ -2,8 +2,6 @@
 #include "TLBSWidgetList.h"
 #include <cstdint>
 
-#define READ_PTR(ptr, offset) *(uintptr_t*)(ptr + offset); if (ptr == 0) return 0;
-
 class TLBSWidget
 {
 public:
