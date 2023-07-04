@@ -39,9 +39,6 @@
     <ClCompile Include="Hook.cpp">
       <Filter>Archivos de origen</Filter>
     </ClCompile>
-    <ClCompile Include="GameStructures\TClientCore.cpp">
-      <Filter>Archivos de origen</Filter>
-    </ClCompile>
     <ClCompile Include="NosmallDisabler.cpp">
       <Filter>Archivos de origen</Filter>
     </ClCompile>
@@ -69,9 +66,6 @@
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
     <ClInclude Include="Hook.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
-    <ClInclude Include="GameStructures\TClientCore.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
     <ClInclude Include="GameStructures\NostaleString.h">

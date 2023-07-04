@@ -141,7 +141,6 @@
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="GameStructures\TCharacterSelectWidget.cpp" />
-    <ClCompile Include="GameStructures\TClientCore.cpp" />
     <ClCompile Include="GameStructures\TEWGraphicButtonWidget.cpp" />
     <ClCompile Include="GameStructures\TLBSWidget.cpp" />
     <ClCompile Include="GameStructures\TLBSWidgetList.cpp" />
@@ -153,7 +152,6 @@
   <ItemGroup>
     <ClInclude Include="GameStructures\NostaleString.h" />
     <ClInclude Include="GameStructures\TCharacterSelectWidget.h" />
-    <ClInclude Include="GameStructures\TClientCore.h" />
     <ClInclude Include="GameStructures\TEWButtonWidget.h" />
     <ClInclude Include="GameStructures\TEWGraphicButtonWidget.h" />
     <ClInclude Include="GameStructures\TLBSWidget.h" />
