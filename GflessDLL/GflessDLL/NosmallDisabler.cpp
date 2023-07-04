@@ -5,7 +5,6 @@
 #include <stdio.h>
 
 namespace {
-    DWORD openNosmallAddress;
     DWORD nosmallAtStartAddress;
     constexpr int HOOK_SIZE = 5;
 }
@@ -24,12 +23,5 @@ void NosmallDisabler::Initialize()
         0
     );
 
-    openNosmallAddress = PatternScan(
-        "\xa1\x00\x00\x00\x00\x8b\x00\xc6\x80\x00\x00\x00\x00\x00\xa1\x00\x00\x00\x00\x80\x38\x00\x75\x00\xe8\x00\x00\x00\x00\x3c\x00\x75\x00\xa1\x00\x00\x00\x00\x8b\x00\xe8\x00\x00\x00\x00\xc3",
-        "x????xxxx?????x????xx?x?x????x?x?x????xxx????x",
-        0
-    );
-
-    Hook(reinterpret_cast<void*>(openNosmallAddress), reinterpret_cast<void*>(disableNosmall), HOOK_SIZE);
     Hook(reinterpret_cast<void*>(nosmallAtStartAddress), reinterpret_cast<void*>(disableNosmall), HOOK_SIZE);
 }
