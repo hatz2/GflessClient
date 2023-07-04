@@ -1,10 +1,21 @@
 #include "gameforgeaccount.h"
 
-GameforgeAccount::GameforgeAccount(const QString &gfEmail, const QString &gfPassword, const QString& identPath, bool proxy, const QString &proxyHost, const QString &proxyPort, const QString &proxyUsername, const QString &proxyPassword, QObject *parent)
+GameforgeAccount::GameforgeAccount(
+    const QString &gfEmail,
+    const QString &gfPassword,
+    const QString& identPath,
+    const QString& customGamePath,
+    bool proxy,
+    const QString &proxyHost,
+    const QString &proxyPort,
+    const QString &proxyUsername,
+    const QString &proxyPassword, QObject *parent
+)
     : QObject{parent}
     , email(gfEmail)
     , password(gfPassword)
     , identityPath(identPath)
+    , customClientPath(customGamePath)
 {
     auth = new NostaleAuth(
         identityPath,
@@ -56,4 +67,9 @@ QString GameforgeAccount::getIdentityPath() const
 const NostaleAuth *GameforgeAccount::getAuth() const
 {
     return auth;
+}
+
+QString GameforgeAccount::getcustomClientPath() const
+{
+    return customClientPath;
 }

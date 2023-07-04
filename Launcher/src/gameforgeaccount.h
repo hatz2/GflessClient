@@ -13,6 +13,7 @@ public:
         const QString& gfEmail,
         const QString& gfPassword,
         const QString& identPath,
+        const QString& customGamePath,
         bool proxy,
         const QString& proxyHost,
         const QString& proxyPort,
@@ -34,10 +35,13 @@ public:
 
     const NostaleAuth *getAuth() const;
 
+    QString getcustomClientPath() const;
+
 private:
     QString email;
     QString password;
     QString identityPath;
+    QString customClientPath;
     NostaleAuth* auth;
     QMap<QString /* id */, QString /* name */> gameAccounts;
 };

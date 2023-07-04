@@ -30,6 +30,8 @@ public:
 
     QString getProxyPassword() const;
 
+    QString getCustomClientPath() const;
+
 private slots:
     void on_showPasswordCheckBox_stateChanged(int arg1);
 
@@ -38,6 +40,10 @@ private slots:
     void on_selectIdentityButton_clicked();
 
     void on_proxyCheckBox_stateChanged(int arg1);
+
+    void on_removeCustomGamePathButton_clicked();
+
+    void on_selectCustomGamePathButton_clicked();
 
 private:
     Ui::AddAccountDialog *ui;
@@ -48,6 +54,7 @@ private:
     QString socksPort;
     QString proxyUsername;
     QString proxyPassword;
+    QString customClientPath;
     bool useProxy;
 };
 

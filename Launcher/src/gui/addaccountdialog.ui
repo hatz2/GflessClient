@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>437</width>
-    <height>464</height>
+    <width>472</width>
+    <height>518</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -65,6 +65,38 @@
       <widget class="QPushButton" name="selectIdentityButton">
        <property name="text">
         <string>Select</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Custom game path (optional):</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,0">
+     <item>
+      <widget class="QLineEdit" name="customGamePathLineEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="selectCustomGamePathButton">
+       <property name="text">
+        <string>Select</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="removeCustomGamePathButton">
+       <property name="text">
+        <string>Remove</string>
        </property>
       </widget>
      </item>

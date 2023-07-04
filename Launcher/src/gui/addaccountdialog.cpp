@@ -45,6 +45,7 @@ void AddAccountDialog::on_loginButton_clicked()
     socksPort = ui->socksPortLineEdit->text();
     proxyUsername = ui->proxyUsernameLineEdit->text();
     proxyPassword = ui->proxyPasswordLineEdit->text();
+    customClientPath = ui->customGamePathLineEdit->text();
 
     if (email.isEmpty() || password.isEmpty() || identityPath.isEmpty())
     {
@@ -112,5 +113,27 @@ QString AddAccountDialog::getSocksPort() const
 bool AddAccountDialog::getUseProxy() const
 {
     return useProxy;
+}
+
+
+void AddAccountDialog::on_removeCustomGamePathButton_clicked()
+{
+    ui->customGamePathLineEdit->setText(QString());
+}
+
+
+void AddAccountDialog::on_selectCustomGamePathButton_clicked()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Select custom game client", QDir::rootPath(), "(*.exe)");
+
+    if (path.isEmpty())
+        return;
+
+    ui->customGamePathLineEdit->setText(path);
+}
+
+QString AddAccountDialog::getCustomClientPath() const
+{
+    return customClientPath;
 }
 

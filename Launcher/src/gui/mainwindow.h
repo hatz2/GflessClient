@@ -86,6 +86,7 @@ private:
     void addGameforgeAccount(const QString& email,
         const QString& password,
         const QString &identityPath,
+        const QString& customClientPath,
         const QString& proxyIp,
         const QString& socksPort,
         const QString& proxyUsername,

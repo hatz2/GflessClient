@@ -68,9 +68,10 @@ void MainWindow::loadSettings()
         QString socksPort = settings.value("socks_port", "").toString();
         QString proxyUsername = settings.value("proxy_username", "").toString();
         QString proxyPassword = settings.value("proxy_password", "").toString();
+        QString customClientPath = settings.value("custom_client", "").toString();
         bool useProxy = settings.value("use_proxy", false).toBool();
 
-        addGameforgeAccount(email, password, identity, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+        addGameforgeAccount(email, password, identity, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
     }
 
     settings.endArray();
@@ -106,6 +107,7 @@ void MainWindow::saveSettings()
         settings.setValue("email", acc->getEmail());
         settings.setValue("password", acc->getPassword());
         settings.setValue("identity_path", acc->getIdentityPath());
+        settings.setValue("custom_client", acc->getcustomClientPath());
 
         settings.setValue("use_proxy", acc->getAuth()->getUseProxy());
         settings.setValue("proxy_ip", acc->getAuth()->getProxyIp());
@@ -219,7 +221,7 @@ void MainWindow::saveAccountProfiles(const QString &path)
     settings.endGroup();
 }
 
-void MainWindow::addGameforgeAccount(const QString &email, const QString &password, const QString& identityPath, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
+void MainWindow::addGameforgeAccount(const QString &email, const QString &password, const QString& identityPath, const QString &customClientPath, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
 {
     bool captcha = false;
     bool wrongCredentials = false;
@@ -228,6 +230,7 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
         email,
         password,
         identityPath,
+        customClientPath,
         useProxy,
         proxyIp,
         socksPort,
@@ -242,7 +245,7 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
             int res = captcha.exec();
 
             if (res == QDialog::Accepted) {
-                addGameforgeAccount(email, password, identityPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+                addGameforgeAccount(email, password, identityPath, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
             }
         }
         else if (wrongCredentials) {
@@ -355,9 +358,10 @@ void MainWindow::on_addGameforgeAccountButton_clicked()
     QString socksPort = addAccountDialog.getSocksPort();
     QString proxyUsername = addAccountDialog.getProxyUsername();
     QString proxyPassword = addAccountDialog.getProxyPassword();
+    QString customClient = addAccountDialog.getCustomClientPath();
     bool useProxy = addAccountDialog.getUseProxy();
 
-    addGameforgeAccount(email, password, identityPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+    addGameforgeAccount(email, password, identityPath, customClient, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
 }
 
 
@@ -814,7 +818,9 @@ void MainWindow::on_openAccountsButton_clicked()
             else {
                 DWORD pid = 0;
 
-                if (gflessClient->openClient(gameAccount.getName(), token, gamePath, gameLang, pid)) {
+                QString customPath = gameAccount.getGfAcc()->getcustomClientPath();
+
+                if (gflessClient->openClient(gameAccount.getName(), token, customPath.isEmpty() ? gamePath : customPath, gameLang, pid)) {
                     QString msg = "Launched game with PID " + QString::number(pid);
                     ui->statusbar->showMessage(msg, 10000);
                     processAccounts.insert(pid, gameAccount);
@@ -833,18 +839,25 @@ void MainWindow::on_gameforgeAccountComboBox_currentIndexChanged(int index)
     if (index < 0)
         return;
 
+    QString tooltipText;
+
     GameforgeAccount* gf = gfAccounts.at(index);
 
     if (gf->getAuth()->getUseProxy()) {
-        QString toolTipText;
-
-        toolTipText += "Proxy IP: " + gf->getAuth()->getProxyIp() + "\n";
-        toolTipText += "Proxy port: " + gf->getAuth()->getSocksPort() + "\n";
-
-        ui->gameforgeAccountComboBox->setToolTip(toolTipText);
+        tooltipText += "Proxy IP: " + gf->getAuth()->getProxyIp() + "\n";
+        tooltipText += "Proxy port: " + gf->getAuth()->getSocksPort();
     }
     else {
-        ui->gameforgeAccountComboBox->setToolTip("No proxy");
+        tooltipText += "No proxy";
     }
+
+    if (gf->getcustomClientPath().isEmpty()) {
+        tooltipText += "\nUsing default nostale client";
+    }
+    else {
+        tooltipText += "\nCustom client: " + gf->getcustomClientPath().right(gf->getcustomClientPath().size() - gf->getcustomClientPath().lastIndexOf("/") - 1);
+    }
+
+    ui->gameforgeAccountComboBox->setToolTip(tooltipText);
 }
 

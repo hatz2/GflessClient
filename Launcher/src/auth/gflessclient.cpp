@@ -17,7 +17,7 @@ bool GflessClient::openClient(const QString& displayName, const QString& token, 
     this->displayName = displayName;
     this->token = token;
 
-    int index = gameClientPath.lastIndexOf("/NostaleClientX.exe");
+    int index = gameClientPath.lastIndexOf("/");
 
     if (index < 0)
         return false;
