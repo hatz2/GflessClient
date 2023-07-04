@@ -40,6 +40,10 @@ public:
 
     void setThemeComboBox(int index);
 
+    void setDisabledNosmall(bool b);
+
+    bool getDisabledNosmall() const;
+
 signals:
     void profilesPathSelected(QString);
 

@@ -84,6 +84,16 @@ void SettingsDialog::setThemeComboBox(int index)
     ui->themeComboBox->setCurrentIndex(index);
 }
 
+void SettingsDialog::setDisabledNosmall(bool b)
+{
+    ui->disableNosmallChekcbox->setChecked(b);
+}
+
+bool SettingsDialog::getDisabledNosmall() const
+{
+    return ui->disableNosmallChekcbox->isChecked();
+}
+
 void SettingsDialog::on_selectGamePathButton_clicked()
 {
     QString path = QFileDialog::getOpenFileName(this, "Select NostaleClientX.exe", QDir::rootPath(), "NostaleClientX.exe (NostaleClientX.exe)");

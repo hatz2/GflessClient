@@ -46,6 +46,7 @@ void MainWindow::loadSettings()
     settingsDialog->setGameLanguage(settings.value("game language", 0).toInt());
     settingsDialog->setTheme(settings.value("theme", 0).toInt());
     settingsDialog->setThemeComboBox(settings.value("theme", 0).toInt());
+    settingsDialog->setDisabledNosmall(settings.value("disable_nosmall", false).toBool());
 
     defaultAutoLogin = settings.value("default_autologin", false).toBool();
     defaultServerLocation = settings.value("default_serverlocation", 0).toInt();
@@ -91,6 +92,7 @@ void MainWindow::saveSettings()
     settings.setValue("open interval", settingsDialog->getOpenInterval());
     settings.setValue("game language", settingsDialog->getGameLanguageIndex());
     settings.setValue("theme", settingsDialog->getTheme());
+    settings.setValue("disable_nosmall", settingsDialog->getDisabledNosmall());
     settings.setValue("default_autologin", defaultAutoLogin);
     settings.setValue("default_serverlocation", defaultServerLocation);
     settings.setValue("default_server", defaultServer);
@@ -487,6 +489,9 @@ void MainWindow::handleLocalConnection()
 
         else if (message == "Character")
             output = QString::number(acc.getSlot()).toLocal8Bit();
+
+        else if (message == "DisableNosmall")
+            output = QString::number(settingsDialog->getDisabledNosmall()).toLocal8Bit();
 
         sock->write(output);
     });

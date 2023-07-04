@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>352</width>
-    <height>175</height>
+    <width>393</width>
+    <height>203</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -134,6 +134,13 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="disableNosmallChekcbox">
+     <property name="text">
+      <string>Disable first login NosMall pop up</string>
+     </property>
+    </widget>
    </item>
    <item>
     <spacer name="verticalSpacer">
