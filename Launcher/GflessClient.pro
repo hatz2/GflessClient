@@ -18,6 +18,7 @@ INCLUDEPATH += ./src ./src/gui ./src/auth
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    src/auth/gameupdater.cpp \
     src/gameaccount.cpp \
     src/gameforgeaccount.cpp \
     src/gui/addaccountdialog.cpp \
@@ -30,6 +31,7 @@ SOURCES += \
     src/auth/gflessclient.cpp \
     src/auth/identity.cpp \
     src/gui/editmultipleprofileaccountsdialog.cpp \
+    src/gui/gameupdatedialog.cpp \
     src/gui/identitydialog.cpp \
     src/auth/nostaleauth.cpp \
     src/profile.cpp \
@@ -39,6 +41,7 @@ SOURCES += \
     src/gui/mainwindow.cpp
 
 HEADERS += \
+    src/auth/gameupdater.h \
     src/gameaccount.h \
     src/gameforgeaccount.h \
     src/gui/addaccountdialog.h \
@@ -51,6 +54,7 @@ HEADERS += \
     src/auth/gflessclient.h \
     src/auth/identity.h \
     src/gui/editmultipleprofileaccountsdialog.h \
+    src/gui/gameupdatedialog.h \
     src/gui/identitydialog.h \
     src/gui/mainwindow.h \
     src/auth/nostaleauth.h \
@@ -65,6 +69,7 @@ FORMS += \
     src/gui/addprofiledialog.ui \
     src/gui/captchadialog.ui \
     src/gui/editmultipleprofileaccountsdialog.ui \
+    src/gui/gameupdatedialog.ui \
     src/gui/identitydialog.ui \
     src/gui/mainwindow.ui \
     src/gui/settingsdialog.ui

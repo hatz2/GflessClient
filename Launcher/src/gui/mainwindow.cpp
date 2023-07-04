@@ -5,6 +5,7 @@
 #include "captchadialog.h"
 #include "identitydialog.h"
 #include "editmultipleprofileaccountsdialog.h"
+#include "gameupdatedialog.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -26,6 +27,8 @@ MainWindow::MainWindow(QWidget *parent)
     setupDefaultProfile();
     loadSettings();
     loadAccountProfiles(settingsDialog->getProfilesPath());
+
+    updateGame();
 }
 
 MainWindow::~MainWindow()
@@ -312,6 +315,17 @@ void MainWindow::displayProfile(int index)
         item->setText(acc.toString());
         item->setData(Qt::UserRole, acc.getId());
     }
+}
+
+void MainWindow::updateGame()
+{
+    QString gameDir = settingsDialog->getGameClientPath();
+    gameDir = gameDir.left(gameDir.lastIndexOf("/"));
+
+    GameUpdater updater(gfAccounts, gameDir, this);
+
+    GameUpdateDialog updateDialog(&updater, this);
+    updateDialog.exec();
 }
 
 void MainWindow::createTrayIcon()

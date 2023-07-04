@@ -97,6 +97,8 @@ private:
     void removeAccountsFromDefaultProfile(const QString& email);
     void displayProfile(int index);
 
+    void updateGame();
+
     Ui::MainWindow *ui;
     SettingsDialog* settingsDialog;
     GflessClient* gflessClient;
