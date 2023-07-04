@@ -384,6 +384,42 @@ SyncNetworAccesskManager *NostaleAuth::getNetworkManager() const
     return networkManager;
 }
 
+bool NostaleAuth::createGameAccount(const QString &email, const QString& name, const QString &gfLang, QJsonObject &response) const
+{
+    QJsonObject content;
+    QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/user/thin/accounts"));
+    QNetworkReply* reply;
+
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
+    request.setRawHeader("User-Agent", browserUserAgent.toUtf8());
+    request.setRawHeader("TNT-Installation-Id", installationId.toUtf8());
+    request.setRawHeader("Origin", "spark://www.gameforge.com");
+    request.setRawHeader("Connection", "Keep-Alive");
+    request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
+
+    identity->update();
+    BlackBox blackbox(identity, QJsonValue::Null);
+
+    content["blackbox"] = blackbox.encoded();
+    content["displayName"] = name;
+    content["email"] = email;
+    content["gameEnvironmentId"] = "732876de-012f-4e8d-a501-2e0816cf22f2";
+    content["gfLang"] = gfLang;
+    content["platformGameId"] = "dd4e22d6-00d1-44b9-8126-d8b40e0cd7c9";
+    content["region"] = "";
+
+    reply = networkManager->post(request, QJsonDocument(content).toJson());
+
+    response = QJsonDocument::fromJson(reply->readAll()).object();
+
+    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) != 201) {
+        return false;
+    }
+
+
+    return true;
+}
+
 QString NostaleAuth::getProxyPassword() const
 {
     return proxyPassword;

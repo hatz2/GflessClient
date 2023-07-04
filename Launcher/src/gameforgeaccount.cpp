@@ -39,6 +39,11 @@ bool GameforgeAccount::authenticate(bool &captcha, QString &gfChallengeId, bool 
     return res;
 }
 
+bool GameforgeAccount::createGameAccount(const QString &name, const QString &gfLang, QJsonObject& response)
+{
+    return auth->createGameAccount(this->email, name, gfLang, response);
+}
+
 const QMap<QString, QString> &GameforgeAccount::getGameAccounts() const
 {
     return gameAccounts;

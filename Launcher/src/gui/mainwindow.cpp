@@ -5,6 +5,8 @@
 #include "captchadialog.h"
 #include "identitydialog.h"
 #include "editmultipleprofileaccountsdialog.h"
+#include "gameupdatedialog.h"
+#include "creategameaccountdialog.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -26,6 +28,9 @@ MainWindow::MainWindow(QWidget *parent)
     setupDefaultProfile();
     loadSettings();
     loadAccountProfiles(settingsDialog->getProfilesPath());
+
+    if (settingsDialog->getCheckUpdates())
+        updateGame();
 }
 
 MainWindow::~MainWindow()
@@ -47,6 +52,7 @@ void MainWindow::loadSettings()
     settingsDialog->setTheme(settings.value("theme", 0).toInt());
     settingsDialog->setThemeComboBox(settings.value("theme", 0).toInt());
     settingsDialog->setDisabledNosmall(settings.value("disable_nosmall", false).toBool());
+    settingsDialog->setCheckUpdates(settings.value("check_updates", true).toBool());
 
     defaultAutoLogin = settings.value("default_autologin", false).toBool();
     defaultServerLocation = settings.value("default_serverlocation", 0).toInt();
@@ -93,6 +99,7 @@ void MainWindow::saveSettings()
     settings.setValue("game language", settingsDialog->getGameLanguageIndex());
     settings.setValue("theme", settingsDialog->getTheme());
     settings.setValue("disable_nosmall", settingsDialog->getDisabledNosmall());
+    settings.setValue("check_updates", settingsDialog->getCheckUpdates());
     settings.setValue("default_autologin", defaultAutoLogin);
     settings.setValue("default_serverlocation", defaultServerLocation);
     settings.setValue("default_server", defaultServer);
@@ -312,6 +319,17 @@ void MainWindow::displayProfile(int index)
         item->setText(acc.toString());
         item->setData(Qt::UserRole, acc.getId());
     }
+}
+
+void MainWindow::updateGame()
+{
+    QString gameDir = settingsDialog->getGameClientPath();
+    gameDir = gameDir.left(gameDir.lastIndexOf("/"));
+
+    GameUpdater updater(gfAccounts, gameDir, this);
+
+    GameUpdateDialog updateDialog(&updater, this);
+    updateDialog.exec();
 }
 
 void MainWindow::createTrayIcon()
@@ -845,5 +863,29 @@ void MainWindow::on_gameforgeAccountComboBox_currentIndexChanged(int index)
     }
 
     ui->gameforgeAccountComboBox->setToolTip(tooltipText);
+}
+
+
+void MainWindow::on_createGameAccButton_clicked()
+{
+    CreateGameAccountDialog dialog(gfAccounts, settingsDialog->getGameLanguage(), this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QJsonValue accInfo = dialog.getNewAccountInfo();
+
+        QString displayName = accInfo["displayName"].toString();
+        QString id = accInfo["accountId"].toString();
+
+        GameAccount gameAcc(dialog.getGfAcc(), displayName, id, displayName, defaultServerLocation, defaultServer, defaultChannel, defaultCharacter, defaultAutoLogin);
+        profiles.first()->addAccount(gameAcc);
+        profiles.first()->sort();
+
+        displayProfile(ui->profileComboBox->currentIndex());
+    }
+}
+
+
+void MainWindow::on_repairButton_clicked()
+{
+    updateGame();
 }
 

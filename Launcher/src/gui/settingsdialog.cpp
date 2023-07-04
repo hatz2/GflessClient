@@ -94,6 +94,16 @@ bool SettingsDialog::getDisabledNosmall() const
     return ui->disableNosmallChekcbox->isChecked();
 }
 
+void SettingsDialog::setCheckUpdates(bool b)
+{
+    ui->checkUpdatesCheckbox->setChecked(b);
+}
+
+bool SettingsDialog::getCheckUpdates() const
+{
+    return ui->checkUpdatesCheckbox->isChecked();
+}
+
 void SettingsDialog::on_selectGamePathButton_clicked()
 {
     QString path = QFileDialog::getOpenFileName(this, "Select NostaleClientX.exe", QDir::rootPath(), "NostaleClientX.exe (NostaleClientX.exe)");
