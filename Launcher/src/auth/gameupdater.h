@@ -12,7 +12,7 @@ class GameUpdater : public QObject
 public:
     explicit GameUpdater(const QVector<GameforgeAccount*>& gfAccs, const QString& gameDirPath, QObject *parent = nullptr);
 
-    bool updateFiles() const;
+    void updateFiles() const;
 
 signals:
     void setProgress(int value) const;

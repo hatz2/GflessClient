@@ -30,6 +30,7 @@ SOURCES += \
     src/auth/fingerprint.cpp \
     src/auth/gflessclient.cpp \
     src/auth/identity.cpp \
+    src/gui/creategameaccountdialog.cpp \
     src/gui/editmultipleprofileaccountsdialog.cpp \
     src/gui/gameupdatedialog.cpp \
     src/gui/identitydialog.cpp \
@@ -53,6 +54,7 @@ HEADERS += \
     src/auth/fingerprint.h \
     src/auth/gflessclient.h \
     src/auth/identity.h \
+    src/gui/creategameaccountdialog.h \
     src/gui/editmultipleprofileaccountsdialog.h \
     src/gui/gameupdatedialog.h \
     src/gui/identitydialog.h \
@@ -68,6 +70,7 @@ FORMS += \
     src/gui/addprofileaccountdialog.ui \
     src/gui/addprofiledialog.ui \
     src/gui/captchadialog.ui \
+    src/gui/creategameaccountdialog.ui \
     src/gui/editmultipleprofileaccountsdialog.ui \
     src/gui/gameupdatedialog.ui \
     src/gui/identitydialog.ui \

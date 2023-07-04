@@ -23,6 +23,10 @@ public:
     );
 
     bool authenticate(bool& captcha, QString& gfChallengeId, bool& wrongCredentials);
+
+    bool createGameAccount(const QString& name, const QString& gfLang, QJsonObject& response);
+
+
     const QMap<QString, QString>& getGameAccounts() const;
 
     QString getToken(const QString& accountId) const;

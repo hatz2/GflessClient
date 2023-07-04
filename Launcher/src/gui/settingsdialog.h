@@ -44,6 +44,10 @@ public:
 
     bool getDisabledNosmall() const;
 
+    void setCheckUpdates(bool b);
+
+    bool getCheckUpdates() const;
+
 signals:
     void profilesPathSelected(QString);
 

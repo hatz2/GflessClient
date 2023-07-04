@@ -23,23 +23,27 @@ void GameUpdater::updateFiles() const
 
         QJsonObject fileData = filesInfo[i].toObject();
 
-        if (fileData["folder"].toBool()) {
+        bool folder = fileData["folder"].toBool();
+        QString filename = fileData["file"].toString();
+        QString remotePath = fileData["path"].toString();
+        QByteArray remoteHash = fileData["sha1"].toVariant().toByteArray();
+
+        if (folder) {
             continue;
         }
 
-        QString filePath = getFilePath(fileData["file"].toString());
+        QString filePath = getFilePath(filename);
         QByteArray localHash = getLocalHash(filePath);
-        QByteArray remoteHash = fileData["sha1"].toVariant().toByteArray();
 
         if (localHash != remoteHash) {
-            QByteArray fileContent = downloadFile(fileData["path"].toString());
+            QByteArray fileContent = downloadFile(remotePath);
 
             if (!saveFile(fileContent, filePath)) {
                 QMessageBox::critical(nullptr, "Error", "Couldn't save file: " + filePath);
             }
 
             // Update custom clients
-            if (fileData["file"].toString() == "NostaleClientX.exe") {
+            if (filename == "NostaleClientX.exe") {
                 for (const auto& gfAcc : gfAccounts) {
                     if (gfAcc->getcustomClientPath().isEmpty())
                         continue;

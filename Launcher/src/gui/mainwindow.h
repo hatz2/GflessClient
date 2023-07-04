@@ -74,6 +74,10 @@ private slots:
 
     void on_gameforgeAccountComboBox_currentIndexChanged(int index);
 
+    void on_createGameAccButton_clicked();
+
+    void on_repairButton_clicked();
+
 private:
     void createTrayIcon();
     bool checkGameClientPath();
