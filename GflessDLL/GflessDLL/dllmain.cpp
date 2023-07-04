@@ -2,7 +2,6 @@
 #include "GameStructures/TCharacterSelectWidget.h"
 #include "PatternScanner.h"
 #include "NosmallDisabler.h"
-#include "ProxyMod.h"
 #include <Windows.h>
 #include <string>
 #include <iostream>
@@ -18,9 +17,7 @@ int main()
     const int BUFFER_SIZE = 255;
     const char* pipeName = "\\\\.\\pipe\\GflessClient";
     int language, server, channel, character;
-    bool useProxy, autoLogin;
-    std::string proxyIp, proxyUsername, proxyPassword;
-    unsigned short proxyPort;
+    bool autoLogin, disableNosmall;
     HANDLE hPipe;
     DWORD dwMode;
     BOOL fSuccess;
@@ -46,8 +43,8 @@ int main()
     if (!fSuccess)
         return EXIT_FAILURE;
 
-    // Send the use proxy message
-    message = std::to_string(pid) + " UseProxy";
+    // Send the disable nosmall message
+    message = std::to_string(pid) + " DisableNosmall";
     fSuccess = WriteFile(hPipe, message.c_str(), message.size(), NULL, NULL);
 
     if (!fSuccess)
@@ -60,97 +57,15 @@ int main()
         return EXIT_FAILURE;
 
     try {
-        useProxy = std::stoi(std::string(readBuffer));
+        disableNosmall = std::stoi(std::string(readBuffer));
     }
     catch (const std::exception& ex) {
         std::cout << ex.what() << std::endl;
         return EXIT_FAILURE;
     }
 
-    // Send the proxy ip message
-    message = std::to_string(pid) + " ProxyIP";
-    fSuccess = WriteFile(hPipe, message.c_str(), message.size(), NULL, NULL);
-
-    if (!fSuccess)
-        return EXIT_FAILURE;
-
-    ZeroMemory(readBuffer, BUFFER_SIZE);
-    fSuccess = ReadFile(hPipe, readBuffer, BUFFER_SIZE, NULL, NULL);
-
-    if (!fSuccess)
-        return EXIT_FAILURE;
-
-    proxyIp = std::string(readBuffer);
-
-    if (proxyIp == "empty")
-        proxyIp = std::string();
-
-    // Send the proxy port message
-    message = std::to_string(pid) + " ProxyPort";
-    fSuccess = WriteFile(hPipe, message.c_str(), message.size(), NULL, NULL);
-
-    if (!fSuccess)
-        return EXIT_FAILURE;
-
-    ZeroMemory(readBuffer, BUFFER_SIZE);
-    fSuccess = ReadFile(hPipe, readBuffer, BUFFER_SIZE, NULL, NULL);
-
-    if (!fSuccess)
-        return EXIT_FAILURE;
-
-    if (std::string(readBuffer) == "empty") {
-        proxyPort = 0;
-    }
-    else {
-        try {
-            proxyPort = static_cast<unsigned short>(std::stoi(std::string(readBuffer)));
-        }
-        catch (const std::exception& ex) {
-            std::cout << ex.what() << std::endl;
-            return EXIT_FAILURE;
-        }
-    }
-    
-    // Send the proxy username message
-    message = std::to_string(pid) + " ProxyUsername";
-    fSuccess = WriteFile(hPipe, message.c_str(), message.size(), NULL, NULL);
-
-    if (!fSuccess)
-        return EXIT_FAILURE;
-
-    ZeroMemory(readBuffer, BUFFER_SIZE);
-    fSuccess = ReadFile(hPipe, readBuffer, BUFFER_SIZE, NULL, NULL);
-
-    if (!fSuccess)
-        return EXIT_FAILURE;
-
-    proxyUsername = std::string(readBuffer);
-
-    if (proxyUsername == "empty")
-        proxyUsername = std::string();
-
-    // Send the proxy password message
-    message = std::to_string(pid) + " ProxyPassword";
-    fSuccess = WriteFile(hPipe, message.c_str(), message.size(), NULL, NULL);
-
-    if (!fSuccess)
-        return EXIT_FAILURE;
-
-    ZeroMemory(readBuffer, BUFFER_SIZE);
-    fSuccess = ReadFile(hPipe, readBuffer, BUFFER_SIZE, NULL, NULL);
-
-    if (!fSuccess)
-        return EXIT_FAILURE;
-
-    proxyPassword = std::string(readBuffer);
-
-    if (proxyPassword == "empty")
-        proxyPassword = std::string();
-
-    // Initialize proxy modifications
-    if (useProxy) {
+    if (disableNosmall) {
         NosmallDisabler::Initialize();
-        ProxyMod::Initialize(proxyIp, proxyPort, proxyUsername, proxyPassword);
     }
     
     // Send the autologin message
@@ -269,10 +184,6 @@ int main()
             Sleep(1000);
             characterSelectWidget->clickStartButton();
         }
-    }
-
-    while (useProxy) {
-        Sleep(1000);
     }
 
 #ifdef _DEBUG
