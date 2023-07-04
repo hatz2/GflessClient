@@ -488,25 +488,6 @@ void MainWindow::handleLocalConnection()
         else if (message == "Character")
             output = QString::number(acc.getSlot()).toLocal8Bit();
 
-        else if (message == "UseProxy")
-            output = QString::number(acc.getGfAcc()->getAuth()->getUseProxy()).toLocal8Bit();
-
-        else if (message == "ProxyIP")
-            output = acc.getGfAcc()->getAuth()->getProxyIp().toLocal8Bit();
-
-        else if (message == "ProxyPort")
-            output = acc.getGfAcc()->getAuth()->getSocksPort().toLocal8Bit();
-
-        else if (message == "ProxyUsername")
-            output = acc.getGfAcc()->getAuth()->getProxyUsername().toLocal8Bit();
-
-        else if (message == "ProxyPassword")
-            output = acc.getGfAcc()->getAuth()->getProxyPassword().toLocal8Bit();
-
-
-        if (output.isEmpty())
-            output = "empty";
-
         sock->write(output);
     });
 }
