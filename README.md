@@ -5,7 +5,12 @@ This application simulates almost everything that the Gameforge client does allo
 ## Features
 
 * You can have multiple gameforge accounts in the same launcher.
-* Allows you to create profiles and rename your accounts.
+* You can log in with your gameforge accounts through a proxy server.
+* You can use custom game clients for each gameforge account in case you want to proxy the game aswell.
+* The software can check for game updates at startup
+* You can disable the nosmall popup at first daily login.
+* You can create new game accounts.
+* Allows you to create profiles with game accounts that belong to different gameforge accounts and set a custom name for each account.
 * You can selet and open multiple game accounts in one click.
 * The process of selecting the server, channel and the character is fully automated.
 * Allows you to quickly open the game settings by clicking in the wheel button.
@@ -18,11 +23,11 @@ This application simulates almost everything that the Gameforge client does allo
 3. Generate your identity file (See instructions below)
 4. Go to Options > Settings and select your identity file.
 5. Go to Options > Settings and select your NostaleClientX.exe<br> 
-![](https://cdn.discordapp.com/attachments/913546241370112010/993510428070137896/unknown.png)
-4. Add a gameforge account<br>
-![](https://media.discordapp.net/attachments/739413308192325633/898543778627989524/unknown.png)
-5. Select the accounts you want to open and click on Play<br>
-![](https://media.discordapp.net/attachments/739413308192325633/898544878450012200/unknown.png)
+   ![](https://cdn.discordapp.com/attachments/913546241370112010/993510428070137896/unknown.png)
+6. Add a gameforge account<br>
+   ![](https://media.discordapp.net/attachments/739413308192325633/898543778627989524/unknown.png)
+7. Select the accounts you want to open and click on Play<br>
+   ![](https://media.discordapp.net/attachments/739413308192325633/898544878450012200/unknown.png)
 
 ## How to generate identity file
 
