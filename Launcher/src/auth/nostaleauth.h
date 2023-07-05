@@ -21,6 +21,7 @@ class NostaleAuth : public QObject
 public:
     explicit NostaleAuth(
         const QString& identityPath,
+        const QString& installationID,
         bool proxy,
         const QString& proxyHost,
         const QString& proxyPort,
@@ -46,6 +47,8 @@ public:
     SyncNetworAccesskManager *getNetworkManager() const;
 
     bool createGameAccount(const QString& email, const QString& name, const QString& gfLang, QJsonObject& response) const;
+
+    QString getInstallationId() const;
 
 signals:
     void captchaStart();

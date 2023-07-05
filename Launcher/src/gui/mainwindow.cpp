@@ -71,6 +71,7 @@ void MainWindow::loadSettings()
         QString email = settings.value("email", "").toString();
         QString password = settings.value("password", "").toString();
         QString identity = settings.value("identity_path", "").toString();
+        QString installationId = settings.value("installation_id", "").toString();
         QString proxyIp = settings.value("proxy_ip", "").toString();
         QString socksPort = settings.value("socks_port", "").toString();
         QString proxyUsername = settings.value("proxy_username", "").toString();
@@ -78,7 +79,7 @@ void MainWindow::loadSettings()
         QString customClientPath = settings.value("custom_client", "").toString();
         bool useProxy = settings.value("use_proxy", false).toBool();
 
-        addGameforgeAccount(email, password, identity, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+        addGameforgeAccount(email, password, identity, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
     }
 
     settings.endArray();
@@ -116,6 +117,7 @@ void MainWindow::saveSettings()
         settings.setValue("email", acc->getEmail());
         settings.setValue("password", acc->getPassword());
         settings.setValue("identity_path", acc->getIdentityPath());
+        settings.setValue("installation_id", acc->getAuth()->getInstallationId());
         settings.setValue("custom_client", acc->getcustomClientPath());
 
         settings.setValue("use_proxy", acc->getAuth()->getUseProxy());
@@ -124,6 +126,7 @@ void MainWindow::saveSettings()
         settings.setValue("proxy_username", acc->getAuth()->getProxyUsername());
         settings.setValue("proxy_password", acc->getAuth()->getProxyPassword());
     }
+
     settings.endArray();
 
     settings.endGroup();
@@ -230,7 +233,7 @@ void MainWindow::saveAccountProfiles(const QString &path)
     settings.endGroup();
 }
 
-void MainWindow::addGameforgeAccount(const QString &email, const QString &password, const QString& identityPath, const QString &customClientPath, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
+void MainWindow::addGameforgeAccount(const QString &email, const QString &password, const QString& identityPath, const QString &installationId, const QString &customClientPath, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
 {
     bool captcha = false;
     bool wrongCredentials = false;
@@ -239,6 +242,7 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
         email,
         password,
         identityPath,
+        installationId,
         customClientPath,
         useProxy,
         proxyIp,
@@ -254,7 +258,7 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
             int res = captcha.exec();
 
             if (res == QDialog::Accepted) {
-                addGameforgeAccount(email, password, identityPath, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+                addGameforgeAccount(email, password, identityPath, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
             }
         }
         else if (wrongCredentials) {
@@ -374,6 +378,7 @@ void MainWindow::on_addGameforgeAccountButton_clicked()
     QString email = addAccountDialog.getEmail();
     QString password = addAccountDialog.getPassword();
     QString identityPath = addAccountDialog.getIdentityPath();
+    QString installationId = addAccountDialog.getInstallationId();
     QString proxyIp = addAccountDialog.getProxyIp();
     QString socksPort = addAccountDialog.getSocksPort();
     QString proxyUsername = addAccountDialog.getProxyUsername();
@@ -381,7 +386,7 @@ void MainWindow::on_addGameforgeAccountButton_clicked()
     QString customClient = addAccountDialog.getCustomClientPath();
     bool useProxy = addAccountDialog.getUseProxy();
 
-    addGameforgeAccount(email, password, identityPath, customClient, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+    addGameforgeAccount(email, password, identityPath, installationId, customClient, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
 }
 
 

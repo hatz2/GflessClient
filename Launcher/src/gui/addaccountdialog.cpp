@@ -1,6 +1,7 @@
 #include "addaccountdialog.h"
 #include "ui_addaccountdialog.h"
 #include <QFileDialog>
+#include <QUuid>
 
 AddAccountDialog::AddAccountDialog(QWidget *parent) :
     QDialog(parent),
@@ -46,6 +47,7 @@ void AddAccountDialog::on_loginButton_clicked()
     proxyUsername = ui->proxyUsernameLineEdit->text();
     proxyPassword = ui->proxyPasswordLineEdit->text();
     customClientPath = ui->customGamePathLineEdit->text();
+    installationId = ui->installationIdLineEdit->text();
 
     if (email.isEmpty() || password.isEmpty() || identityPath.isEmpty())
     {
@@ -135,5 +137,16 @@ void AddAccountDialog::on_selectCustomGamePathButton_clicked()
 QString AddAccountDialog::getCustomClientPath() const
 {
     return customClientPath;
+}
+
+
+void AddAccountDialog::on_installationIdButton_clicked()
+{
+    ui->installationIdLineEdit->setText(QUuid::createUuid().toString(QUuid::WithoutBraces));
+}
+
+QString AddAccountDialog::getInstallationId() const
+{
+    return installationId;
 }
 

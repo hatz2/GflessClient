@@ -87,9 +87,11 @@ private:
     void setupDefaultProfile();
     void loadAccountProfiles(const QString& path);
     void saveAccountProfiles(const QString& path);
-    void addGameforgeAccount(const QString& email,
+    void addGameforgeAccount(
+        const QString& email,
         const QString& password,
         const QString &identityPath,
+        const QString& installationId,
         const QString& customClientPath,
         const QString& proxyIp,
         const QString& socksPort,

@@ -32,6 +32,8 @@ public:
 
     QString getCustomClientPath() const;
 
+    QString getInstallationId() const;
+
 private slots:
     void on_showPasswordCheckBox_stateChanged(int arg1);
 
@@ -45,6 +47,8 @@ private slots:
 
     void on_selectCustomGamePathButton_clicked();
 
+    void on_installationIdButton_clicked();
+
 private:
     Ui::AddAccountDialog *ui;
     QString email;
@@ -55,6 +59,7 @@ private:
     QString proxyUsername;
     QString proxyPassword;
     QString customClientPath;
+    QString installationId;
     bool useProxy;
 };
 

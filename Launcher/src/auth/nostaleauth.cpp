@@ -2,8 +2,9 @@
 #include "blackbox.h"
 #include <QNetworkProxy>
 
-NostaleAuth::NostaleAuth(const QString &identityPath, bool proxy, const QString &proxyHost, const QString &proxyPort, const QString &proxyUser, const QString &proxyPasswd, QObject *parent)
+NostaleAuth::NostaleAuth(const QString &identityPath, const QString& installationID, bool proxy, const QString &proxyHost, const QString &proxyPort, const QString &proxyUser, const QString &proxyPasswd, QObject *parent)
     : QObject(parent)
+    , installationId(installationID)
     , proxyIp(proxyHost)
     , socksPort(proxyPort)
     , proxyUsername(proxyUser)
@@ -297,6 +298,10 @@ bool NostaleAuth::sendIovation(const QString& accountId)
 
 void NostaleAuth::initInstallationId()
 {
+    if (!installationId.isEmpty()) {
+        return;
+    }
+
     QSettings s("HKEY_CURRENT_USER\\SOFTWARE\\Gameforge4d\\GameforgeClient\\MainApp", QSettings::NativeFormat);
 
     this->installationId = s.value("InstallationId").toString();
@@ -377,6 +382,11 @@ void NostaleAuth::initGfVersion()
 
     this->chromeVersion = "C" + jsonResponse["version"].toString();
     this->gameforgeVersion = jsonResponse["minimumVersionForDelayedUpdate"].toString();
+}
+
+QString NostaleAuth::getInstallationId() const
+{
+    return installationId;
 }
 
 SyncNetworAccesskManager *NostaleAuth::getNetworkManager() const

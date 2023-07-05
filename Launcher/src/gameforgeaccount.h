@@ -13,6 +13,7 @@ public:
         const QString& gfEmail,
         const QString& gfPassword,
         const QString& identPath,
+        const QString& installationId,
         const QString& customGamePath,
         bool proxy,
         const QString& proxyHost,

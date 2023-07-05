@@ -1,9 +1,8 @@
 #include "gameforgeaccount.h"
 
-GameforgeAccount::GameforgeAccount(
-    const QString &gfEmail,
+GameforgeAccount::GameforgeAccount(const QString &gfEmail,
     const QString &gfPassword,
-    const QString& identPath,
+    const QString& identPath, const QString &installationId,
     const QString& customGamePath,
     bool proxy,
     const QString &proxyHost,
@@ -19,6 +18,7 @@ GameforgeAccount::GameforgeAccount(
 {
     auth = new NostaleAuth(
         identityPath,
+        installationId,
         proxy,
         proxyHost,
         proxyPort,
