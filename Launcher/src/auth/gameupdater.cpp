@@ -5,7 +5,7 @@
 #include <QJsonObject>
 #include <QFile>
 #include <QCryptographicHash>
-#include <QMessageBox>
+#include <QDebug>
 
 GameUpdater::GameUpdater(const QVector<GameforgeAccount *> &gfAccs, const QString &gameDirPath, QObject *parent)
     : QObject{parent}
@@ -17,6 +17,9 @@ GameUpdater::GameUpdater(const QVector<GameforgeAccount *> &gfAccs, const QStrin
 
 void GameUpdater::updateFiles() const
 {
+    if (nostaleDirectoryPath.isEmpty())
+        return;
+
     QJsonArray filesInfo = getRemoteFilesInformation();
 
     for (int i = 0; i < filesInfo.size(); ++i) {
@@ -39,7 +42,7 @@ void GameUpdater::updateFiles() const
             QByteArray fileContent = downloadFile(remotePath);
 
             if (!saveFile(fileContent, filePath)) {
-                QMessageBox::critical(nullptr, "Error", "Couldn't save file: " + filePath);
+                qDebug() << "Couldn't save file:" << filePath;
             }
 
             // Update custom clients
@@ -49,7 +52,7 @@ void GameUpdater::updateFiles() const
                         continue;
 
                     if (!saveFile(fileContent, gfAcc->getcustomClientPath())) {
-                        QMessageBox::critical(nullptr, "Error", "Couldn't save file: " + gfAcc->getcustomClientPath());
+                        qDebug() << "Couldn't save file:" << gfAcc->getcustomClientPath();
                     }
                 }
             }

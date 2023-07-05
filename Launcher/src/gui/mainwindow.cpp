@@ -328,6 +328,10 @@ void MainWindow::displayProfile(int index)
 void MainWindow::updateGame()
 {
     QString gameDir = settingsDialog->getGameClientPath();
+
+    if (gameDir.isEmpty())
+        return;
+
     gameDir = gameDir.left(gameDir.lastIndexOf("/"));
 
     GameUpdater updater(gfAccounts, gameDir, this);
