@@ -7,6 +7,7 @@ This application simulates almost everything that the Gameforge client does allo
 * You can have multiple gameforge accounts in the same launcher.
 * You can log in with your gameforge accounts through a proxy server.
 * You can use custom game clients for each gameforge account in case you want to proxy the game aswell.
+* You can use a different identity and installation id for each gameforge account.
 * The software can check for game updates at startup
 * You can disable the nosmall popup at first daily login.
 * You can create new game accounts.
