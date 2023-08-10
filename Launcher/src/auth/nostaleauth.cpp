@@ -384,6 +384,16 @@ void NostaleAuth::initGfVersion()
     this->gameforgeVersion = jsonResponse["minimumVersionForDelayedUpdate"].toString();
 }
 
+void NostaleAuth::setToken(const QString &newToken)
+{
+    token = newToken;
+}
+
+QString NostaleAuth::getToken() const
+{
+    return token;
+}
+
 QString NostaleAuth::getInstallationId() const
 {
     return installationId;

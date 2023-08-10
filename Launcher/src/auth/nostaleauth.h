@@ -50,6 +50,9 @@ public:
 
     QString getInstallationId() const;
 
+    void setToken(const QString &newToken);
+    QString getToken() const;
+
 signals:
     void captchaStart();
     void captchaEnd();

@@ -27,11 +27,13 @@ public:
 
     bool createGameAccount(const QString& name, const QString& gfLang, QJsonObject& response);
 
+    void setToken(const QString& token);
 
     const QMap<QString, QString>& getGameAccounts() const;
 
-    QString getToken(const QString& accountId) const;
+    void updateGameAccounts();
 
+    QString getToken(const QString& accountId) const;
     QString getEmail() const;
 
     QString getPassword() const;

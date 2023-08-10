@@ -33,7 +33,7 @@ bool GameforgeAccount::authenticate(bool &captcha, QString &gfChallengeId, bool 
     bool res = auth->authenticate(email, password, captcha, gfChallengeId, wrongCredentials);
 
     if (res) {
-        gameAccounts = auth->getAccounts();
+        updateGameAccounts();
     }
 
     return res;
@@ -44,9 +44,19 @@ bool GameforgeAccount::createGameAccount(const QString &name, const QString &gfL
     return auth->createGameAccount(this->email, name, gfLang, response);
 }
 
+void GameforgeAccount::setToken(const QString &token)
+{
+    auth->setToken(token);
+}
+
 const QMap<QString, QString> &GameforgeAccount::getGameAccounts() const
 {
     return gameAccounts;
+}
+
+void GameforgeAccount::updateGameAccounts()
+{
+    gameAccounts = auth->getAccounts();
 }
 
 QString GameforgeAccount::getToken(const QString &accountId) const

@@ -70,6 +70,7 @@ void MainWindow::loadSettings()
 
         QString email = settings.value("email", "").toString();
         QString password = settings.value("password", "").toString();
+        QString token = settings.value("token", "").toString();
         QString identity = settings.value("identity_path", "").toString();
         QString installationId = settings.value("installation_id", "").toString();
         QString proxyIp = settings.value("proxy_ip", "").toString();
@@ -79,7 +80,10 @@ void MainWindow::loadSettings()
         QString customClientPath = settings.value("custom_client", "").toString();
         bool useProxy = settings.value("use_proxy", false).toBool();
 
-        addGameforgeAccount(email, password, identity, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+        if (token.isEmpty())
+            addGameforgeAccount(email, password, identity, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+        else
+            addGameforgeAccount(email, password, token, identity, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
     }
 
     settings.endArray();
@@ -116,6 +120,7 @@ void MainWindow::saveSettings()
 
         settings.setValue("email", acc->getEmail());
         settings.setValue("password", acc->getPassword());
+        settings.setValue("token", acc->getAuth()->getToken());
         settings.setValue("identity_path", acc->getIdentityPath());
         settings.setValue("installation_id", acc->getAuth()->getInstallationId());
         settings.setValue("custom_client", acc->getcustomClientPath());
@@ -278,6 +283,41 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
 
 
     // Update default profile
+    QMap<QString, QString> gameAccs = gfAcc->getGameAccounts();
+
+    for (auto it = gameAccs.begin(); it != gameAccs.end(); ++it) {
+        GameAccount gameAccount(gfAcc, it.value(), it.key(), it.value(), defaultServerLocation, defaultServer, defaultChannel, defaultCharacter, defaultAutoLogin);
+        profiles.first()->addAccount(gameAccount);
+    }
+
+    displayProfile(ui->profileComboBox->currentIndex());
+}
+
+void MainWindow::addGameforgeAccount(const QString &email, const QString& password, const QString &token, const QString &identityPath, const QString &installationId, const QString &customClientPath, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
+{
+    GameforgeAccount* gfAcc = new GameforgeAccount(
+        email,
+        password,
+        identityPath,
+        installationId,
+        customClientPath,
+        useProxy,
+        proxyIp,
+        socksPort,
+        proxyUsername,
+        proxyPassword,
+        this
+    );
+
+    gfAcc->setToken(token);
+
+    gfAccounts.push_back(gfAcc);
+
+    ui->gameforgeAccountComboBox->addItem(email);
+
+
+    // Update default profile
+    gfAcc->updateGameAccounts();
     QMap<QString, QString> gameAccs = gfAcc->getGameAccounts();
 
     for (auto it = gameAccs.begin(); it != gameAccs.end(); ++it) {
