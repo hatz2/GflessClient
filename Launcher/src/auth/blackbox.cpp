@@ -1,6 +1,6 @@
 #include "blackbox.h"
 
-const QStringList BlackBox::BLACKBOX_FIELDS = {"v", "tz", "dnt", "product", "osType", "app", "vendor", "mem", "con", "lang", "plugins", "gpu", "fonts", "audioC", "width", "height", "depth", "lStore", "sStore", "video", "audio", "media", "permissions", "audioFP", "webglFP", "canvasFP", "creation", "uuid", "d", "osVersion", "vector", "userAgent", "serverTimeInMS", "request"};
+const QStringList BlackBox::BLACKBOX_FIELDS = {"v", "tz", "dnt", "product", "osType", "app", "vendor", "mem", "con", "lang", "plugins", "gpu", "fonts", "audioC", "width", "height", "depth", "video", "audio", "media", "permissions", "audioFP", "webglFP", "canvasFP", "creation", "uuid", "d", "osVersion", "vector", "userAgent", "serverTimeInMS", "request"};
 
 BlackBox::BlackBox(const std::shared_ptr<Identity> &ident, const QJsonValue &req)
     : identity(ident)
