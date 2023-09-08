@@ -1,6 +1,6 @@
 #include "blackbox.h"
 
-const QStringList BlackBox::BLACKBOX_FIELDS = {"v", "tz", "dnt", "product", "osType", "app", "vendor", "mem", "con", "lang", "plugins", "gpu", "fonts", "audioC", "width", "height", "depth", "video", "audio", "media", "permissions", "audioFP", "webglFP", "canvasFP", "creation", "uuid", "d", "osVersion", "vector", "userAgent", "serverTimeInMS", "request"};
+const QStringList BlackBox::BLACKBOX_FIELDS = {"v", "tz", "dnt", "product", "osType", "app", "vendor", "mem", "con", "lang", "plugins", "gpu", "fonts", "audioC", "width", "height", "depth", "lStore", "sStore", "video", "audio", "media", "permissions", "audioFP", "webglFP", "canvasFP", "creation", "uuid", "d", "osVersion", "vector", "userAgent", "serverTimeInMS", "request"};
 
 BlackBox::BlackBox(const std::shared_ptr<Identity> &ident, const QJsonValue &req)
     : identity(ident)
@@ -23,9 +23,9 @@ QByteArray BlackBox::encode(const QJsonObject &fingerprint) const
 
     for (int i = 1; i < uriEncoded.size(); ++i)
     {
-        const uint8_t a = blackbox.at(i - 1);
-        const uint8_t b = uriEncoded.at(i);
-        const char c = ((a + b) % 0x100);
+        const char a = blackbox.at(i - 1);
+        const char b = uriEncoded.at(i);
+        const char c = a + b;
 
         blackbox.push_back(c);
     }
@@ -46,12 +46,9 @@ QByteArray BlackBox::decode(const QByteArray &blackbox)
 
     for (int i = 1; i < decodedBlackbox.size(); ++i)
     {
-        const uint8_t b = decodedBlackbox[i - 1];
-        uint8_t a = decodedBlackbox[i];
-
-        if (a < b) a += 0x100;
-
-        const char c = (a - b);
+        const char b = decodedBlackbox[i - 1];
+        const char a = decodedBlackbox[i];
+        const char c = a - b;
 
         uriDecoded.push_back(c);
     }
