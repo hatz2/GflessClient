@@ -13,6 +13,7 @@ public:
     QString encoded() const;
 
     static QByteArray decode(const QByteArray& blackbox);
+    static QByteArray encode(const QByteArray& fingerprintArrayStr);
 
 protected:
     static const QStringList BLACKBOX_FIELDS;

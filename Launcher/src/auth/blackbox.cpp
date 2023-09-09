@@ -1,6 +1,6 @@
 #include "blackbox.h"
 
-const QStringList BlackBox::BLACKBOX_FIELDS = {"v", "tz", "dnt", "product", "osType", "app", "vendor", "mem", "con", "lang", "plugins", "gpu", "fonts", "audioC", "width", "height", "depth", "lStore", "sStore", "video", "audio", "media", "permissions", "audioFP", "webglFP", "canvasFP", "creation", "uuid", "d", "osVersion", "vector", "userAgent", "serverTimeInMS", "request"};
+const QStringList BlackBox::BLACKBOX_FIELDS = {"v", "tz", "dnt", "product", "osType", "app", "vendor", "mem", "con", "lang", "plugins", "gpu", "fonts", "audioC", "width", "height", "depth", "video", "audio", "media", "permissions", "audioFP", "webglFP", "canvasFP", "creation", "uuid", "d", "osVersion", "vector", "userAgent", "serverTimeInMS", "request"};
 
 BlackBox::BlackBox(const std::shared_ptr<Identity> &ident, const QJsonValue &req)
     : identity(ident)
@@ -16,23 +16,8 @@ QByteArray BlackBox::encode(const QJsonObject &fingerprint) const
         fingerprintArray.push_back(fingerprint[field]);
 
     QByteArray fingerprintArrayStr = QJsonDocument(fingerprintArray).toJson(QJsonDocument::JsonFormat::Compact);
-    QByteArray uriEncoded = QUrl::toPercentEncoding(fingerprintArrayStr, "-_!~*.'()");
-    QByteArray blackbox;
 
-    blackbox.push_back(uriEncoded.at(0));
-
-    for (int i = 1; i < uriEncoded.size(); ++i)
-    {
-        const char a = blackbox.at(i - 1);
-        const char b = uriEncoded.at(i);
-        const char c = a + b;
-
-        blackbox.push_back(c);
-    }
-
-    blackbox = blackbox.toBase64();
-    blackbox = blackbox.replace('/', '_').replace('+', '-').replace('=', "");
-    return "tra:" + blackbox;
+    return BlackBox::encode(fingerprintArrayStr);
 }
 
 QByteArray BlackBox::decode(const QByteArray &blackbox)
@@ -67,6 +52,27 @@ QByteArray BlackBox::decode(const QByteArray &blackbox)
         fingerprint[BLACKBOX_FIELDS[i]] = fingerprintArray[i];
 
     return QJsonDocument(fingerprint).toJson();
+}
+
+QByteArray BlackBox::encode(const QByteArray &fingerprintArrayStr)
+{
+    QByteArray uriEncoded = QUrl::toPercentEncoding(fingerprintArrayStr, "-_!~*.'()");
+    QByteArray blackbox;
+
+    blackbox.push_back(uriEncoded.at(0));
+
+    for (int i = 1; i < uriEncoded.size(); ++i)
+    {
+        const char a = blackbox.at(i - 1);
+        const char b = uriEncoded.at(i);
+        const char c = a + b;
+
+        blackbox.push_back(c);
+    }
+
+    blackbox = blackbox.toBase64();
+    blackbox = blackbox.replace('/', '_').replace('+', '-').replace('=', "");
+    return "tra:" + blackbox;
 }
 
 QString BlackBox::encoded() const
