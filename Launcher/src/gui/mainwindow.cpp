@@ -35,7 +35,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    saveSettings();
     delete ui;
 }
 
@@ -397,8 +396,9 @@ void MainWindow::createTrayIcon()
 
     connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::iconActivated);
     connect(showAction, &QAction::triggered, this, &MainWindow::show);
-    connect(exitAction, &QAction::triggered, this, [=]
+    connect(exitAction, &QAction::triggered, this, [&]
     {
+        saveSettings();
         QApplication::exit();
     });
 }
