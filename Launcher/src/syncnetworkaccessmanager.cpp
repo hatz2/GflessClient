@@ -12,6 +12,7 @@ QNetworkReply* SyncNetworAccesskManager::post(const QNetworkRequest &request, co
 
     connect(reply, &QNetworkReply::errorOccurred, this, [=]
     {
+        qDebug() << "Error code:" << reply->error();
         QString err = reply->errorString();
         QMessageBox::critical(nullptr, "Error", err);
     });
@@ -28,6 +29,24 @@ QNetworkReply* SyncNetworAccesskManager::get(const QNetworkRequest &request)
 
     connect(reply, &QNetworkReply::errorOccurred, this, [=]
     {
+        qDebug() << "Error code:" << reply->error();
+        QString err = reply->errorString();
+        QMessageBox::critical(nullptr, "Error", err);
+    });
+
+    while (!reply->isFinished())
+        QApplication::processEvents();
+
+    return reply;
+}
+
+QNetworkReply *SyncNetworAccesskManager::sendCustomRequest(const QNetworkRequest &request, const QByteArray &verb, QIODevice *data)
+{
+    QNetworkReply* reply = QNetworkAccessManager::sendCustomRequest(request, verb, data);
+
+    connect(reply, &QNetworkReply::errorOccurred, this, [=]
+    {
+        qDebug() << "Error code:" << reply->error();
         QString err = reply->errorString();
         QMessageBox::critical(nullptr, "Error", err);
     });

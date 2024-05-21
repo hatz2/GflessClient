@@ -26,13 +26,20 @@ QString Fingerprint::toString() const
 
 void Fingerprint::updateVector()
 {
-    QByteArray content = QByteArray::fromBase64(fingerprint["vector"].toString().toLatin1());
-    content = content.left(content.lastIndexOf(' '));
-    content = content.mid(1) + randomAsciiCharacter();
+    qint64 current_time_in_ms = QDateTime::currentMSecsSinceEpoch();
+    QByteArray content = QByteArray::fromBase64(fingerprint["vector"].toString().toLocal8Bit());
+    int last_blank_index = content.lastIndexOf(' ');
+    qlonglong old_time = content.right(content.size() - last_blank_index - 1).toLongLong();
+    content = content.left(last_blank_index);
 
-    QByteArray newVector = content + " " + QString::number(QDateTime::currentMSecsSinceEpoch()).toLocal8Bit();
+    if (old_time + 0x3e8 < current_time_in_ms) {
+        content = content.mid(1) + randomAsciiCharacter();
+    }
+
+    QByteArray newVector = content + " " + QString::number(current_time_in_ms).toLocal8Bit();
     fingerprint["vector"] = QString(newVector.toBase64());
 }
+
 
 void Fingerprint::updateCreation()
 {
@@ -46,7 +53,7 @@ void Fingerprint::updateServerTime()
 
 void Fingerprint::updateTimings()
 {
-    fingerprint["d"] = QRandomGenerator64::global()->bounded(10, 300);
+    fingerprint["d"] = QRandomGenerator64::global()->bounded(150, 300);
 }
 
 void Fingerprint::setRequest(const QJsonValue &request)
@@ -108,10 +115,10 @@ QString Fingerprint::getServerDate() const
         network.setProxy(proxy);
     }
 
-
     QNetworkReply* reply = network.get(request);
+
     QByteArray date = reply->rawHeader("Date").replace("GMT", "UTC");
-    QDateTime dateTime = QLocale(QLocale::English).toDateTime(date.replace("GMT", "UTC"), "ddd, d MMM yyyy HH:mm:ss t");
+    QDateTime dateTime = QLocale(QLocale::English).toDateTime(date, "ddd, d MMM yyyy HH:mm:ss t");
 
     reply->deleteLater();
 

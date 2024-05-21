@@ -1,6 +1,7 @@
 #include "nostaleauth.h"
 #include "blackbox.h"
 #include <QNetworkProxy>
+#include <QtZlib/zlib.h>
 
 NostaleAuth::NostaleAuth(const QString &identityPath, const QString& installationID, bool proxy, const QString &proxyHost, const QString &proxyPort, const QString &proxyUser, const QString &proxyPasswd, QObject *parent)
     : QObject(parent)
@@ -41,6 +42,45 @@ NostaleAuth::NostaleAuth(const QString &identityPath, const QString& installatio
     initPrivateKey();
 }
 
+// Thanks ChatGPT
+QByteArray decompressGzip(const QByteArray &data) {
+    if (data.isEmpty()) {
+        return QByteArray();
+    }
+
+    z_stream strm;
+    memset(&strm, 0, sizeof(strm));
+
+    if (inflateInit2(&strm, 16 + MAX_WBITS) != Z_OK) {
+        return QByteArray();
+    }
+
+    strm.next_in = (Bytef *)data.data();
+    strm.avail_in = data.size();
+
+    int ret;
+    char buffer[16384];
+    QByteArray out;
+
+    do {
+        strm.next_out = reinterpret_cast<Bytef *>(buffer);
+        strm.avail_out = sizeof(buffer);
+
+        ret = inflate(&strm, Z_NO_FLUSH);
+        if (out.size() < static_cast<int>(strm.total_out)) {
+            out.append(buffer, strm.total_out - out.size());
+        }
+    } while (ret == Z_OK);
+
+    inflateEnd(&strm);
+
+    if (ret != Z_STREAM_END) {
+        return QByteArray(); // Failed to decompress
+    }
+
+    return out;
+}
+
 QMap<QString, QString> NostaleAuth::getAccounts()
 {
     QJsonObject jsonResponse;
@@ -56,13 +96,18 @@ QMap<QString, QString> NostaleAuth::getAccounts()
     request.setRawHeader("Origin", "spark://www.gameforge.com");
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     request.setRawHeader("Connection", "Keep-Alive");
+    // request.setRawHeader("Accept", "*/*");
+    // request.setRawHeader("Accept-Language", "en-US,en;q=0.9");
+    // request.setRawHeader("accept-encoding", "gzip, deflate, br");
 
     reply = networkManager->get(request);
 
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
         return QMap<QString, QString>();
 
-    jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
+    QByteArray replyContent = reply->readAll();
+    jsonResponse = QJsonDocument::fromJson(replyContent).object();
+    // jsonResponse = QJsonDocument::fromJson(decompressGzip(replyContent)).object();
 
     for (const auto& key : jsonResponse.keys())
     {
@@ -86,11 +131,14 @@ bool NostaleAuth::authenticate(const QString &email, const QString &password, bo
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/sessions"));
     QNetworkReply* reply = nullptr;
 
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setRawHeader("Accept", "*/*");
+    request.setRawHeader("Accept-Language", "en-US,en;q=0.9");
     request.setRawHeader("User-Agent", browserUserAgent.toUtf8());
     request.setRawHeader("TNT-Installation-Id", installationId.toUtf8());
     request.setRawHeader("Origin", "spark://www.gameforge.com");
-    request.setRawHeader("Connection", "Keep-Alive");
+    request.setRawHeader("Connection", "keep-alive");
+    request.setRawHeader("accept-encoding", "gzip, deflate, br");
 
     identity->update();
     BlackBox blackbox(identity, QJsonValue::Null);
@@ -100,7 +148,9 @@ bool NostaleAuth::authenticate(const QString &email, const QString &password, bo
     content["locale"] = locale;
     content["password"] = password;
 
-    reply = networkManager->post(request, QJsonDocument(content).toJson());
+    reply = networkManager->post(request, QJsonDocument(content).toJson(QJsonDocument::Compact));
+
+    jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
 
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 201)
     {
@@ -108,25 +158,23 @@ bool NostaleAuth::authenticate(const QString &email, const QString &password, bo
         {
             gfChallengeId = reply->rawHeader("gf-challenge-id").split(';').first();
             captcha = true;
+            reply->deleteLater();
             return false;
         }
         else if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 403) // Incorrect username or password
         {
             wrongCredentials = true;
+            reply->deleteLater();
             return false;
         }
         else
         {
+            reply->deleteLater();
             return false;
         }
     }
 
-    jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
-
-    qDebug() << QJsonDocument(jsonResponse).toJson();
-
     token = jsonResponse["token"].toString();
-
     reply->deleteLater();
 
     return true;
@@ -141,6 +189,12 @@ QString NostaleAuth::getToken(const QString &accountId)
     if (token.isEmpty())
         return QByteArray();
 
+    // if (!sendSystemInformation())
+    //     return {};
+
+    // if (!sendStartTime())
+    //     return QByteArray();
+
     if (!sendIovation(accountId))
         return QByteArray();
 
@@ -149,6 +203,7 @@ QString NostaleAuth::getToken(const QString &accountId)
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     request.setRawHeader("Connection", "Keep-Alive");
     request.setRawHeader("tnt-installation-id", installationId.toUtf8());
+    request.setRawHeader("accept-encoding", "gzip, deflate, br");
 
     QString gsid = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces) + "-" + QString::number(QRandomGenerator::global()->bounded(1000, 9999));
     identity->update();
@@ -162,8 +217,6 @@ QString NostaleAuth::getToken(const QString &accountId)
     reply = networkManager->post(request, QJsonDocument(content).toJson());
 
     QByteArray response = reply->readAll();
-
-    qDebug() << response;
 
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 201)
         return QByteArray();
@@ -216,6 +269,62 @@ QByteArray NostaleAuth::generateThirdTypeUserAgentMagic(QString accountId)
 bool NostaleAuth::sendStartTime()
 {
     QJsonObject payload, clientVersionInfo;
+    QNetworkRequest request(QUrl("https://events2.gameforge.com"));
+    QSslConfiguration sslConfig = request.sslConfiguration();
+    QNetworkReply* reply = nullptr;
+
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
+    request.setRawHeader("Host", "events.gameforge.com");
+    request.setRawHeader("User-Agent", "GameforgeClient/" + gameforgeVersion.toUtf8());
+    request.setRawHeader("Connection", "Keep-Alive");
+
+    clientVersionInfo.insert("branch", "2-8-0");
+    clientVersionInfo.insert("commit_id", "2f02b72f");
+    clientVersionInfo.insert("version", chromeVersion.remove('C'));
+
+    payload["client_installation_id"] = installationId;
+    payload["client_locale"] = "gbr_eng";
+    payload["client_session_id"] = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
+    payload["client_version_info"] = clientVersionInfo;
+    payload["id"] = 0;
+    payload["localtime"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+    payload["start_count"] = 1;
+    payload["start_time"] = QRandomGenerator::global()->bounded(1500, 10000);
+    payload["type"] = "start_time";
+
+
+    QFile f(":/resources/client.p12");
+
+    if (f.open(QFile::ReadOnly)) {
+        QSslCertificate cert;
+        QSslKey key;
+        QList<QSslCertificate> caCerts;
+
+        if (QSslCertificate::importPkcs12(&f, &key, &cert, &caCerts, "Iroo1pasaife6Zax9caijiebaHuH9aeh")) {
+            sslConfig.setLocalCertificate(cert);
+            sslConfig.setCaCertificates(caCerts);
+            sslConfig.setPrivateKey(key);
+            request.setSslConfiguration(sslConfig);
+        }
+
+        f.close();
+    }
+
+    reply = networkManager->post(request, QJsonDocument(payload).toJson());
+
+    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
+        return false;
+
+    qDebug() << reply->readAll();
+
+    reply->deleteLater();
+
+    return true;
+}
+
+bool NostaleAuth::sendSystemInformation()
+{
+    QJsonObject payload, clientVersionInfo;
     QNetworkRequest request(QUrl("https://events.gameforge.com"));
     QSslConfiguration sslConfig = request.sslConfiguration();
     QNetworkReply* reply = nullptr;
@@ -225,24 +334,40 @@ bool NostaleAuth::sendStartTime()
     request.setRawHeader("User-Agent", "GameforgeClient/" + gameforgeVersion.toUtf8());
     request.setRawHeader("Connection", "Keep-Alive");
 
-    clientVersionInfo.insert("branch", "master");
-    clientVersionInfo.insert("commit_id", "27942713");
-    clientVersionInfo.insert("version", chromeVersion);
+    clientVersionInfo.insert("branch", "2-8-0");
+    clientVersionInfo.insert("commit_id", "2f02b72f");
+    clientVersionInfo.insert("version", chromeVersion.remove('C'));
 
     payload["client_installation_id"] = installationId;
-    payload["client_locale"] = "pol_pol";
+    payload["client_locale"] = "gbr_eng";
     payload["client_session_id"] = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
     payload["client_version_info"] = clientVersionInfo;
     payload["id"] = 0;
     payload["localtime"] = QDateTime::currentDateTime().toString(Qt::ISODate);
-    payload["start_count"] = 1;
-    payload["start_time"] = QRandomGenerator::global()->bounded(1500, 10000);
-    payload["type"] = "start_time";
+    payload["type"] = "system_information";
+    payload["version"] = "10.0.22621";
+    payload["system_locale"] = "en-en";
+    payload["ram"] = 12341234;
+    payload["os_architecture"] = "x64";
+    payload["frontendVersion"] = "0.468.0";
 
-    sslConfig.setLocalCertificate(allCerts.first());
-    sslConfig.setCaCertificates(allCerts);
-    sslConfig.setPrivateKey(privateKey);
-    request.setSslConfiguration(sslConfig);
+
+    QFile f(":/resources/client.p12");
+
+    if (f.open(QFile::ReadOnly)) {
+        QSslCertificate cert;
+        QSslKey key;
+        QList<QSslCertificate> caCerts;
+
+        if (QSslCertificate::importPkcs12(&f, &key, &cert, &caCerts, "Iroo1pasaife6Zax9caijiebaHuH9aeh")) {
+            sslConfig.setLocalCertificate(cert);
+            sslConfig.setCaCertificates(caCerts);
+            sslConfig.setPrivateKey(key);
+            request.setSslConfiguration(sslConfig);
+        }
+
+        f.close();
+    }
 
     reply = networkManager->post(request, QJsonDocument(payload).toJson());
 
@@ -262,13 +387,15 @@ bool NostaleAuth::sendIovation(const QString& accountId)
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/iovation"));
     QNetworkReply* reply = nullptr;
 
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     request.setRawHeader("Accept", "*/*");
-    request.setRawHeader("User-Agent", browserUserAgent.toUtf8());
-    request.setRawHeader("TNT-Installation-Id", installationId.toUtf8());
+    request.setRawHeader("Accept-Encoding", "gzip, deflate, br");
+    request.setRawHeader("Accept-Language", "en-US,en;q=0.9");
+    request.setRawHeader("User-Agent", browserUserAgent.toLocal8Bit());
+    request.setRawHeader("TNT-Installation-Id", installationId.toLocal8Bit());
     request.setRawHeader("Origin", "spark://www.gameforge.com");
-    request.setRawHeader("Connection", "Keep-Alive");
-    request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
+    request.setRawHeader("Connection", "keep-alive");
+    request.setRawHeader("Authorization", "Bearer " + token.toLocal8Bit());
 
     identity->update();
     BlackBox blackbox(identity, QJsonValue::Null);
@@ -277,7 +404,11 @@ bool NostaleAuth::sendIovation(const QString& accountId)
     content["blackbox"] = blackbox.encoded();
     content["type"] = "play_now";
 
-    reply = networkManager->post(request, QJsonDocument(content).toJson());
+    if (!sendIovationOptions())
+        return false;
+
+    QByteArray body = QJsonDocument(content).toJson(QJsonDocument::JsonFormat::Compact);
+    reply = networkManager->post(request, body);
 
     reply->deleteLater();
 
@@ -292,6 +423,36 @@ bool NostaleAuth::sendIovation(const QString& accountId)
 
     if (jsonResponse["status"] != "ok")
         return false;
+
+    return true;
+}
+
+bool NostaleAuth::sendIovationOptions()
+{
+    QJsonObject content, jsonResponse;
+    QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/iovation"));
+    QNetworkReply* reply = nullptr;
+
+    request.setRawHeader("Accept", "*/*");
+    request.setRawHeader("accept-encoding", "gzip, deflate, br");
+    request.setRawHeader("accept-language", "en-US,en;q=0.9");
+    request.setRawHeader("access-control-request-headers", "authorization,content-type,tnt-installation-id");
+    request.setRawHeader("access-control-request-method", "POST");
+    request.setRawHeader("Origin", "spark://www.gameforge.com");
+    request.setRawHeader("Connection", "keep-alive");
+    request.setRawHeader("User-Agent", browserUserAgent.toLocal8Bit());
+
+
+    reply = networkManager->sendCustomRequest(request, "OPTIONS");
+
+    QByteArray response = reply->readAll();
+
+    qDebug() << response;
+
+    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 204)
+        return false;
+
+    jsonResponse = QJsonDocument::fromJson(response).object();
 
     return true;
 }
@@ -322,7 +483,7 @@ void NostaleAuth::initInstallationId()
 
 void NostaleAuth::initCert()
 {
-    QFile file(":/resources/new_cert.pem");
+    QFile file(":/resources/all_certs.pem");
     QByteArray data;
     int start, end;
 
@@ -361,7 +522,8 @@ void NostaleAuth::initPrivateKey()
     end = certData.indexOf("-----END PRIVATE KEY-----", start);
     key =  certData.mid(start, end - start + strlen("-----END PRIVATE KEY-----") + 1);
 
-    this->privateKey = QSslKey(key, QSsl::Rsa);
+    // this->privateKey = QSslKey(key, QSsl::Rsa);
+    this->privateKey = QSslKey(key, QSsl::Ec, QSsl::Pem, QSsl::PrivateKey, "Iroo1pasaife6Zax9caijiebaHuH9aeh");
 }
 
 void NostaleAuth::initGfVersion()

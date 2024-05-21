@@ -66,7 +66,11 @@ private:
 
     bool sendStartTime();
 
+    bool sendSystemInformation();
+
     bool sendIovation(const QString& accountId);
+
+    bool sendIovationOptions();
 
     void initInstallationId();
 

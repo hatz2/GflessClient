@@ -6,5 +6,6 @@
         <file>resources/new_cert.pem</file>
         <file>resources/create_account_icon.png</file>
         <file>resources/repair_icon.png</file>
+        <file>resources/client.p12</file>
     </qresource>
 </RCC>
