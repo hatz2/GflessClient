@@ -7,5 +7,6 @@
         <file>resources/create_account_icon.png</file>
         <file>resources/repair_icon.png</file>
         <file>resources/client.p12</file>
+        <file>resources/blackbox.html</file>
     </qresource>
 </RCC>

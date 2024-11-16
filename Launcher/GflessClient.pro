@@ -1,4 +1,4 @@
-QT       += core gui network
+QT       += core gui network webenginewidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -20,6 +20,7 @@ INCLUDEPATH += ./src ./src/gui ./src/auth
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    src/auth/blackboxgenerator.cpp \
     src/auth/gameupdater.cpp \
     src/gameaccount.cpp \
     src/gameforgeaccount.cpp \
@@ -44,6 +45,7 @@ SOURCES += \
     src/gui/mainwindow.cpp
 
 HEADERS += \
+    src/auth/blackboxgenerator.h \
     src/auth/gameupdater.h \
     src/gameaccount.h \
     src/gameforgeaccount.h \

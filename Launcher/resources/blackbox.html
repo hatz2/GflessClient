@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+        <script src="https://gameforge.com/tra/game1.js"></script>
+        <script>
+            var callbackHandler;
+            new QWebChannel(qt.webChannelTransport, function(channel) {
+                callbackHandler = channel.objects.callbackHandler;
+            });
+        </script>
+    </head>
+
+	<body>
+	</body>
+</html>
