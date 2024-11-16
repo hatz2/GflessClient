@@ -161,22 +161,23 @@ int main()
     if (autoLogin) {
         // Wait for the login widget to be visible
         // and log into the desired server and channel
-        while (!newServerSelectWidget->isVisible())
-            Sleep(500);
+        while (!characterSelectWidget->isVisible()) {
+            while (!newServerSelectWidget->isVisible())
+                Sleep(500);
 
-        newServerSelectWidget->selectLanguage(language);
-        Sleep(3000);
+            newServerSelectWidget->selectLanguage(language);
+            Sleep(2000);
 
-        while (!newServerSelectWidget->isVisible())
-            Sleep(500);
+            while (!newServerSelectWidget->isVisible())
+                Sleep(500);
 
-        newServerSelectWidget->selectServer(server);
-        Sleep(1000);
-        newServerSelectWidget->selectChannel(channel);
-        Sleep(1000);
+            newServerSelectWidget->selectServer(server);
+            Sleep(1000);
+            newServerSelectWidget->selectChannel(channel);
+            Sleep(4000);
+        }
 
-        while (!characterSelectWidget->isVisible())
-            Sleep(500);
+        Sleep(500);
 
         if (character >= 0)
         {
