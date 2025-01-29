@@ -23,20 +23,17 @@ This application simulates almost everything that the Gameforge client does allo
 2. Extract the folder and open GflessClient.exe
 3. Generate your identity file (See instructions below)
 4. Go to Options > Settings and select your identity file.
-5. Go to Options > Settings and select your NostaleClientX.exe<br> 
-   ![](https://cdn.discordapp.com/attachments/913546241370112010/993510428070137896/unknown.png)
-6. Add a gameforge account<br>
-   ![](https://media.discordapp.net/attachments/739413308192325633/898543778627989524/unknown.png)
-7. Select the accounts you want to open and click on Play<br>
-   ![](https://media.discordapp.net/attachments/739413308192325633/898544878450012200/unknown.png)
+5. Go to Options > Settings and select your NostaleClientX.exe
+6. Add a gameforge account
+7. Select the accounts you want to open and click on Play
 
 ## How to generate identity file
 
 You'll need to extract a valid blackbox from the request to auth/iovation following this steps:
 
 1. Open [Fiddler](https://www.telerik.com/download/fiddler-b) and the Gameforge Client.
-2. Enable HTTPS traffic decryption / Tools > Options > HTTPS > Decrypt HTTPS traffic.<br>![](https://cdn.discordapp.com/attachments/913546241370112010/993508702713823302/unknown.png)
-3. Connect your game account and copy the blackbox from the request to auth/iovation (the blackbox look something like "tra:JVqc0...")<br>![](https://cdn.discordapp.com/attachments/913546241370112010/993509372586106930/unknown.png)
+2. Enable HTTPS traffic decryption / Tools > Options > HTTPS > Decrypt HTTPS traffic.
+3. Connect your game account and copy the blackbox from the request to auth/iovation (the blackbox look something like "tra:JVqc0...")
 4. In the Gfless Client go to Options > Identity generator, paste the blackbox and click on the button that says "Generate and save".
 5. Save the generated identity to a file.
 
