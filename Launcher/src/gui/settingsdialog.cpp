@@ -69,9 +69,12 @@ void SettingsDialog::setTheme(int index)
 {
     switch (index) {
     case 0:
-        QApplication::setStyle("Fusion");
+        QApplication::setStyle("Windows11");
         break;
     case 1:
+        QApplication::setStyle("Fusion");
+        break;
+    case 2:
         QApplication::setStyle("Windowsvista");
         break;
     default:

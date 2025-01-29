@@ -28,7 +28,7 @@ public:
 protected:
 	static constexpr int MAX_CHARACTERS = 4;
 
-	char pad_0024[68]; //0x0024
+	char pad_0024[76]; //0x0024
 	uint8_t selectedIndex; //0x0068
 	char pad_0069[3]; //0x0069
 	uint32_t numberOfCharacters; //0x006C
@@ -68,5 +68,5 @@ protected:
 	uint32_t N00000267; //0x03B4 TEWControlWidgetEX / fourth character (no char widget)
 	uint32_t N00000268; //0x03B8 TLBSWidget / Top main widget
 	TLBSWidget* bottomMenu; //0x03BC TLBSWidget / Bottom menu widget (Select server, Start, Delete character) TEWGraphicButtonWidget
-}; //Size: 0x03C0
-static_assert(sizeof(TCharacterSelectWidget) == 0x3C0);
+}; //Size: 0x03C8
+static_assert(sizeof(TCharacterSelectWidget) == 0x3C8);

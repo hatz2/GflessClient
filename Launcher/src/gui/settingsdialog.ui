@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>393</width>
-    <height>203</height>
+    <height>231</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -102,7 +102,7 @@
         </size>
        </property>
        <property name="alignment">
-        <set>Qt::AlignCenter</set>
+        <set>Qt::AlignmentFlag::AlignCenter</set>
        </property>
        <property name="suffix">
         <string> secs</string>
@@ -121,6 +121,11 @@
      </item>
      <item row="4" column="1">
       <widget class="QComboBox" name="themeComboBox">
+       <item>
+        <property name="text">
+         <string>Modern Windows</string>
+        </property>
+       </item>
        <item>
         <property name="text">
          <string>Fusion</string>
@@ -152,7 +157,7 @@
    <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
-      <enum>Qt::Vertical</enum>
+      <enum>Qt::Orientation::Vertical</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>

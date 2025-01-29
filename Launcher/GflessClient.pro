@@ -1,4 +1,4 @@
-QT       += core gui network webenginewidgets
+QT       += core gui network webenginecore
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -10,7 +10,7 @@ QMAKE_LFLAGS_WINDOWS += "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='f
 
 LIBS += -lkernel32 -luser32 -lgdi32
 
-VERSION = 1.0.10
+VERSION = 1.0.11
 
 INCLUDEPATH += ./src ./src/gui ./src/auth
 
