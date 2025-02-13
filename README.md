@@ -2,6 +2,12 @@
 
 This application simulates almost everything that the Gameforge client does allowing you to have multiple gameforge accounts in the same launcher and open several game clients with just one click.
 
+# Discord
+
+To get help and check out more in depths tutorials you can join the discord server.
+
+[<img src="https://discord.com/api/guilds/1339601581049647136/widget.png?style=banner2">](https://discord.gg/AVs6g3myx3)
+
 ## Features
 
 * You can have multiple gameforge accounts in the same launcher.

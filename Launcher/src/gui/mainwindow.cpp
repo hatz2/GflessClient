@@ -511,7 +511,11 @@ void MainWindow::on_actionGet_help_triggered()
     QString text = "<b>Get help</b><br><br>"
                    "If you have any issue using this application you can contact me here:<br><br>"
                    "Elitepvpers: "
-                   "<a href=https://www.elitepvpers.com/forum/nostale-hacks-bots-cheats-exploits/4956891-open-source-gfless-client.html>Elitepvpers thread</a><br>";
+                   "<a href=https://www.elitepvpers.com/forum/nostale-hacks-bots-cheats-exploits/4956891-open-source-gfless-client.html>Elitepvpers thread</a><br>"
+                   "Discord: "
+                   "<a href=https://discord.gg/AVs6g3myx3>Gfless</a><br>"
+
+        ;
 
     QMessageBox::about(this, "Get help", text);
 }
