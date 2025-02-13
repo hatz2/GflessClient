@@ -513,8 +513,7 @@ void MainWindow::on_actionGet_help_triggered()
                    "Elitepvpers: "
                    "<a href=https://www.elitepvpers.com/forum/nostale-hacks-bots-cheats-exploits/4956891-open-source-gfless-client.html>Elitepvpers thread</a><br>"
                    "Discord: "
-                   "<a href=https://discord.gg/AVs6g3myx3>Gfless</a><br>"
-        ;
+                   "<a href=https://discord.gg/AVs6g3myx3>Gfless</a><br>";
 
     QMessageBox::about(this, "Get help", text);
 }
