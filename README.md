@@ -2,6 +2,10 @@
 
 This application simulates almost everything that the Gameforge client does allowing you to have multiple gameforge accounts in the same launcher and open several game clients with just one click.
 
+**Supported Games:**
+- NosTale (original support)
+- Metin2 (TR region) - [See Metin2 Setup Guide](METIN2_SETUP_GUIDE.md)
+
 # Discord
 
 To get help and check out more in depths tutorials you can join the discord server.
@@ -25,6 +29,8 @@ To get help and check out more in depths tutorials you can join the discord serv
 
 ## Instructions
 
+### For NosTale:
+
 1. Download the latest release version
 2. Extract the folder and open GflessClient.exe
 3. Generate your identity file (See instructions below)
@@ -32,6 +38,17 @@ To get help and check out more in depths tutorials you can join the discord serv
 5. Go to Options > Settings and select your NostaleClientX.exe
 6. Add a gameforge account
 7. Select the accounts you want to open and click on Play
+
+### For Metin2:
+
+**See the [Metin2 Setup Guide](METIN2_SETUP_GUIDE.md) for detailed instructions.**
+
+Quick steps:
+1. Extract blackbox using Fiddler (from `auth/iovation` endpoint)
+2. Generate identity file using the blackbox
+3. Configure GflessClient with identity file and metin2client.exe path
+4. Add your Gameforge account
+5. Launch Metin2 accounts
 
 ## How to generate identity file
 

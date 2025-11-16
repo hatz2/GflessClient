@@ -4,6 +4,12 @@
 #include <QObject>
 #include <QMap>
 #include "nostaleauth.h"
+#include "metin2auth.h"
+
+enum class GameType {
+    NosTale,
+    Metin2
+};
 
 class GameforgeAccount : public QObject
 {
@@ -15,6 +21,7 @@ public:
         const QString& identPath,
         const QString& installationId,
         const QString& customGamePath,
+        GameType gameType,
         bool proxy,
         const QString& proxyHost,
         const QString& proxyPort,
@@ -41,15 +48,22 @@ public:
     QString getIdentityPath() const;
 
     const NostaleAuth *getAuth() const;
+    const Metin2Auth *getMetin2Auth() const;
+
+    SyncNetworAccesskManager *getNetworkManager() const;
 
     QString getcustomClientPath() const;
+
+    GameType getGameType() const;
 
 private:
     QString email;
     QString password;
     QString identityPath;
     QString customClientPath;
-    NostaleAuth* auth;
+    GameType gameType;
+    NostaleAuth* nostaleAuth;
+    Metin2Auth* metin2Auth;
     QMap<QString /* id */, QString /* name */> gameAccounts;
 };
 

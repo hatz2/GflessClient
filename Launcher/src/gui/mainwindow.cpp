@@ -242,12 +242,20 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
     bool captcha = false;
     bool wrongCredentials = false;
     QString gfChallengeId;
+
+    // Auto-detect game type based on client path
+    GameType gameType = GameType::NosTale; // Default to NosTale
+    if (customClientPath.contains("metin2client", Qt::CaseInsensitive)) {
+        gameType = GameType::Metin2;
+    }
+
     GameforgeAccount* gfAcc = new GameforgeAccount(
         email,
         password,
         identityPath,
         installationId,
         customClientPath,
+        gameType,
         useProxy,
         proxyIp,
         socksPort,
@@ -258,7 +266,7 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
 
     if (!gfAcc->authenticate(captcha, gfChallengeId, wrongCredentials)) {
         if (captcha) {
-            CaptchaDialog captcha(gfChallengeId, gfAcc->getAuth()->getNetworkManager(), this);
+            CaptchaDialog captcha(gfChallengeId, gfAcc->getNetworkManager(), this);
             int res = captcha.exec();
 
             if (res == QDialog::Accepted) {
@@ -294,12 +302,19 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
 
 void MainWindow::addGameforgeAccount(const QString &email, const QString& password, const QString &token, const QString &identityPath, const QString &installationId, const QString &customClientPath, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
 {
+    // Auto-detect game type based on client path
+    GameType gameType = GameType::NosTale; // Default to NosTale
+    if (customClientPath.contains("metin2client", Qt::CaseInsensitive)) {
+        gameType = GameType::Metin2;
+    }
+
     GameforgeAccount* gfAcc = new GameforgeAccount(
         email,
         password,
         identityPath,
         installationId,
         customClientPath,
+        gameType,
         useProxy,
         proxyIp,
         socksPort,

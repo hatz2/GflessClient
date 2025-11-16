@@ -81,15 +81,32 @@ bool GflessClient::openClient(const QString& displayName, const QString& token, 
 
 bool GflessClient::openClientSettings(const QString &gameClientPath)
 {
+    // Support both NosTale and Metin2
     int index = gameClientPath.lastIndexOf("/NostaleClientX.exe");
+
+    if (index < 0) {
+        // Try Metin2 client
+        index = gameClientPath.lastIndexOf("/metin2client.exe");
+    }
 
     if (index < 0)
         return false;
 
     QString directory = gameClientPath.left(index);
-    QString settingsPath = directory + "/NtConfig.exe";
 
-    return QProcess::startDetached(settingsPath, {}, directory);
+    // Check if it's NosTale or Metin2
+    if (gameClientPath.contains("NostaleClientX.exe", Qt::CaseInsensitive)) {
+        QString settingsPath = directory + "/NtConfig.exe";
+        return QProcess::startDetached(settingsPath, {}, directory);
+    } else {
+        // Metin2 - settings may vary, check common config executables
+        QString settingsPath = directory + "/metin2config.exe";
+        if (QFile::exists(settingsPath)) {
+            return QProcess::startDetached(settingsPath, {}, directory);
+        }
+        // If no config found, just return false
+        return false;
+    }
 }
 
 void GflessClient::handleNewConnection()

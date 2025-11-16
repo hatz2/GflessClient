@@ -38,6 +38,7 @@ SOURCES += \
     src/gui/gameupdatedialog.cpp \
     src/gui/identitydialog.cpp \
     src/auth/nostaleauth.cpp \
+    src/auth/metin2auth.cpp \
     src/profile.cpp \
     src/gui/settingsdialog.cpp \
     src/syncnetworkaccessmanager.cpp \
@@ -64,6 +65,7 @@ HEADERS += \
     src/gui/identitydialog.h \
     src/gui/mainwindow.h \
     src/auth/nostaleauth.h \
+    src/auth/metin2auth.h \
     src/processchecker.h \
     src/profile.h \
     src/gui/settingsdialog.h \
