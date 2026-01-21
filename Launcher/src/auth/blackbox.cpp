@@ -1,6 +1,6 @@
 #include "blackbox.h"
 
-const QStringList BlackBox::BLACKBOX_FIELDS = {"v", "tz", "osType", "app", "vendor", "mem", "con", "lang", "plugins", "gpu", "fonts", "audioC", "width", "height", "video", "audio", "media", "permissions", "audioFP", "webglFP", "canvasFP", "creation", "uuid", "d", "osVersion", "vector", "userAgent", "serverTimeInMS", "request"};
+const QStringList BlackBox::BLACKBOX_FIELDS = {"v", "tz", "osType", "app", "vendor", "mem", "con", "lang", "plugins", "gpu", "fonts", "audioC", "width", "height", "video", "audio", "media", "permissions", "audioFP", "webglFP", "canvasFP", "creation", "uuid", "d", "osVersion", "vector", "userAgent", "serverTimeInMS", "request", "browserEnvMask"};
 
 BlackBox::BlackBox(const std::shared_ptr<Identity> &ident, const QJsonValue &req)
     : identity(ident)
@@ -23,6 +23,10 @@ QByteArray BlackBox::encode(const QJsonObject &fingerprint) const
 QByteArray BlackBox::decode(const QByteArray &blackbox)
 {
     QByteArray decodedBlackbox = blackbox;
+    if (decodedBlackbox.startsWith("blackbox=")) {
+        decodedBlackbox = decodedBlackbox.right(blackbox.size() - 9);
+    }
+
     decodedBlackbox = decodedBlackbox.replace("tra:", "").replace('_', '/').replace('-', '+');
     decodedBlackbox = QByteArray::fromBase64(decodedBlackbox);
 
