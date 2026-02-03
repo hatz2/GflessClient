@@ -64,9 +64,15 @@ private:
 
     QByteArray generateThirdTypeUserAgentMagic(QString accountId);
 
+    bool getUserInformation();
+
     bool sendStartTime();
 
     bool sendSystemInformation();
+
+    bool sendGameLaunch(const QString &accountId);
+
+    bool sendGameStarted(const QString& accountId);
 
     bool sendIovation(const QString& accountId);
 
@@ -82,6 +88,14 @@ private:
 
     void initGfVersion();
 
+    QString createBlackbox();
+
+    QString createEncryptedBlackbox(const QString &gsid, const QString &installationId, const QString &accountId);
+
+    QSslConfiguration getCustomSslConfig() const;
+
+    const QString commitId = "eda2b413";
+    const QString gameId = "dd4e22d6-00d1-44b9-8126-d8b40e0cd7c9";
     QString locale;
     QString installationId;
     QString chromeVersion;
@@ -90,6 +104,12 @@ private:
     QSslKey privateKey;
     QString token;
     QString browserUserAgent;
+    QString gfAccountId;
+    QString email;
+    QString frontendVersion;
+    QString version;
+    QString gameSessionId;
+    QString eventsSessionId;
     QList<QSslCertificate> allCerts;
     std::shared_ptr<Identity> identity;
 
