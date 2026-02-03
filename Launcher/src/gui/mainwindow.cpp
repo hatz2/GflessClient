@@ -867,34 +867,6 @@ void MainWindow::on_openAccountsButton_clicked()
     }
 
     openAccount(profile, accountIndexes);
-
-    // for (int i = 0; i < ui->accountsListWidget->selectedItems().count(); ++i) {
-    //     int row = ui->accountsListWidget->row(ui->accountsListWidget->selectedItems().at(i));
-
-    //     QTimer::singleShot(openInterval * 1000 * i, this, [=](){
-    //         const GameAccount& gameAccount = profile->getAccounts().at(row);
-
-    //         QString token = gameAccount.getGfAcc()->getToken(gameAccount.getId());
-
-    //         if (token.isEmpty()) {
-    //             ui->statusbar->showMessage("Couldn't get token", 10000);
-    //         }
-    //         else {
-    //             DWORD pid = 0;
-
-    //             QString customPath = gameAccount.getGfAcc()->getcustomClientPath();
-
-    //             if (gflessClient->openClient(gameAccount.getName(), token, customPath.isEmpty() ? gamePath : customPath, gameLang, pid)) {
-    //                 QString msg = "Launched game with PID " + QString::number(pid);
-    //                 ui->statusbar->showMessage(msg, 10000);
-    //                 processAccounts.insert(pid, gameAccount);
-    //             }
-    //             else {
-    //                 ui->statusbar->showMessage("Failed to launch game", 10000);
-    //             }
-    //         }
-    //     });
-    // }
 }
 
 
