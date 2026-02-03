@@ -3,10 +3,8 @@
         <file>resources/all_certs.pem</file>
         <file>resources/settings_icon.png</file>
         <file>resources/gfless_icon.png</file>
-        <file>resources/new_cert.pem</file>
         <file>resources/create_account_icon.png</file>
         <file>resources/repair_icon.png</file>
-        <file>resources/client.p12</file>
         <file>resources/blackbox.html</file>
     </qresource>
 </RCC>
