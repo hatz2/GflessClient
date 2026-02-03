@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>373</width>
-    <height>511</height>
+    <width>376</width>
+    <height>466</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -89,10 +89,10 @@
        <bool>false</bool>
       </property>
       <property name="dragDropMode">
-       <enum>QAbstractItemView::NoDragDrop</enum>
+       <enum>QAbstractItemView::DragDropMode::NoDragDrop</enum>
       </property>
       <property name="selectionMode">
-       <enum>QAbstractItemView::ExtendedSelection</enum>
+       <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
       </property>
       <property name="uniformItemSizes">
        <bool>false</bool>
@@ -177,7 +177,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>373</width>
+     <width>376</width>
      <height>21</height>
     </rect>
    </property>

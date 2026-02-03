@@ -79,6 +79,7 @@ private slots:
     void on_repairButton_clicked();
 
 private:
+    void openAccount(const Profile* profile, QQueue<int> accountIndexes);
     void createTrayIcon();
     bool checkGameClientPath();
     bool checkIdentityPath();

@@ -49,9 +49,9 @@ void AddAccountDialog::on_loginButton_clicked()
     customClientPath = ui->customGamePathLineEdit->text();
     installationId = ui->installationIdLineEdit->text();
 
-    if (email.isEmpty() || password.isEmpty() || identityPath.isEmpty())
+    if (email.isEmpty() || password.isEmpty())
     {
-        QMessageBox::critical(this, "Error", "Email, password or identity path field is empty");
+        QMessageBox::critical(this, "Error", "Email or password field is empty");
         return;
     }
 

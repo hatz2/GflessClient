@@ -7,6 +7,7 @@
 #include "editmultipleprofileaccountsdialog.h"
 #include "gameupdatedialog.h"
 #include "creategameaccountdialog.h"
+#include <QQueue>
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -46,7 +47,7 @@ void MainWindow::loadSettings()
     restoreGeometry(settings.value("geometry").toByteArray());
     settingsDialog->setGameClientPath(settings.value("nostale path").toString());
     settingsDialog->setProfilesPath(settings.value("profiles path").toString());
-    settingsDialog->setOpenInterval(settings.value("open interval", 12).toInt());
+    settingsDialog->setOpenInterval(settings.value("open interval", 3).toInt());
     settingsDialog->setGameLanguage(settings.value("game language", 0).toInt());
     settingsDialog->setTheme(settings.value("theme", 0).toInt());
     settingsDialog->setThemeComboBox(settings.value("theme", 0).toInt());
@@ -858,34 +859,42 @@ void MainWindow::on_openAccountsButton_clicked()
     QString gamePath = settingsDialog->getGameClientPath();
     int gameLang = settingsDialog->getGameLanguage();
 
+    QQueue<int> accountIndexes;
+
     for (int i = 0; i < ui->accountsListWidget->selectedItems().count(); ++i) {
         int row = ui->accountsListWidget->row(ui->accountsListWidget->selectedItems().at(i));
-
-        QTimer::singleShot(openInterval * 1000 * i, this, [=](){
-            const GameAccount& gameAccount = profile->getAccounts().at(row);
-
-            QString token = gameAccount.getGfAcc()->getToken(gameAccount.getId());
-
-            if (token.isEmpty()) {
-                qDebug() << "Error: Couldn't get token";
-                ui->statusbar->showMessage("Couldn't get token", 10000);
-            }
-            else {
-                DWORD pid = 0;
-
-                QString customPath = gameAccount.getGfAcc()->getcustomClientPath();
-
-                if (gflessClient->openClient(gameAccount.getName(), token, customPath.isEmpty() ? gamePath : customPath, gameLang, pid)) {
-                    QString msg = "Launched game with PID " + QString::number(pid);
-                    ui->statusbar->showMessage(msg, 10000);
-                    processAccounts.insert(pid, gameAccount);
-                }
-                else {
-                    ui->statusbar->showMessage("Failed to launch game", 10000);
-                }
-            }
-        });
+        accountIndexes.push_back(row);
     }
+
+    openAccount(profile, accountIndexes);
+
+    // for (int i = 0; i < ui->accountsListWidget->selectedItems().count(); ++i) {
+    //     int row = ui->accountsListWidget->row(ui->accountsListWidget->selectedItems().at(i));
+
+    //     QTimer::singleShot(openInterval * 1000 * i, this, [=](){
+    //         const GameAccount& gameAccount = profile->getAccounts().at(row);
+
+    //         QString token = gameAccount.getGfAcc()->getToken(gameAccount.getId());
+
+    //         if (token.isEmpty()) {
+    //             ui->statusbar->showMessage("Couldn't get token", 10000);
+    //         }
+    //         else {
+    //             DWORD pid = 0;
+
+    //             QString customPath = gameAccount.getGfAcc()->getcustomClientPath();
+
+    //             if (gflessClient->openClient(gameAccount.getName(), token, customPath.isEmpty() ? gamePath : customPath, gameLang, pid)) {
+    //                 QString msg = "Launched game with PID " + QString::number(pid);
+    //                 ui->statusbar->showMessage(msg, 10000);
+    //                 processAccounts.insert(pid, gameAccount);
+    //             }
+    //             else {
+    //                 ui->statusbar->showMessage("Failed to launch game", 10000);
+    //             }
+    //         }
+    //     });
+    // }
 }
 
 
@@ -940,3 +949,44 @@ void MainWindow::on_repairButton_clicked()
     updateGame();
 }
 
+void MainWindow::openAccount(const Profile *profile, QQueue<int> accountIndexes)
+{
+    if (accountIndexes.empty()) {
+        return;
+    }
+
+    int row = accountIndexes.front();
+    accountIndexes.pop_front();
+
+    int openInterval = settingsDialog->getOpenInterval();
+    QString gamePath = settingsDialog->getGameClientPath();
+    int gameLang = settingsDialog->getGameLanguage();
+
+    const GameAccount& gameAccount = profile->getAccounts().at(row);
+
+    ui->statusbar->showMessage("Trying to open account " + gameAccount.getName(), 10000);
+
+    QString token = gameAccount.getGfAcc()->getToken(gameAccount.getId());
+
+    if (token.isEmpty()) {
+        ui->statusbar->showMessage("Couldn't get token for account " + gameAccount.getName(), 10000);
+    }
+    else {
+        DWORD pid = 0;
+
+        QString customPath = gameAccount.getGfAcc()->getcustomClientPath();
+
+        if (gflessClient->openClient(gameAccount.getName(), token, customPath.isEmpty() ? gamePath : customPath, gameLang, pid)) {
+            QString msg = "Launched game with PID " + QString::number(pid);
+            ui->statusbar->showMessage(msg, 10000);
+            processAccounts.insert(pid, gameAccount);
+        }
+        else {
+            ui->statusbar->showMessage("Failed to launch game for account " + gameAccount.getName(), 10000);
+        }
+    }
+
+    QTimer::singleShot(openInterval * 1000, this, [=]() {
+        openAccount(profile, accountIndexes);
+    });
+}
