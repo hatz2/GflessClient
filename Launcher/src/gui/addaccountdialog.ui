@@ -34,7 +34,7 @@
    <item>
     <widget class="QLineEdit" name="passwordLineEdit">
      <property name="echoMode">
-      <enum>QLineEdit::Password</enum>
+      <enum>QLineEdit::EchoMode::Password</enum>
      </property>
     </widget>
    </item>
@@ -48,7 +48,7 @@
    <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Identity path:</string>
+      <string>Identity path (optional):</string>
      </property>
     </widget>
    </item>
@@ -73,7 +73,7 @@
    <item>
     <widget class="QLabel" name="label_4">
      <property name="text">
-      <string>Custom game path(optional):</string>
+      <string>Custom game path (optional):</string>
      </property>
     </widget>
    </item>
@@ -105,7 +105,7 @@
    <item>
     <widget class="QLabel" name="label_5">
      <property name="text">
-      <string>Custom installation id:</string>
+      <string>Custom installation id (optional):</string>
      </property>
     </widget>
    </item>
