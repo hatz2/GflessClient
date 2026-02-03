@@ -16,7 +16,7 @@ public:
 
     static BlackboxGenerator* getInstance();
 
-    static void generate(const QString& gsid = "", const QString& installationId = "");
+    static QString generate(const QString& gsid = "", const QString& installationId = "");
 
     static QByteArray encrypt(const QByteArray &blackbox, const QString& gsid, const QString& accountId);
 
