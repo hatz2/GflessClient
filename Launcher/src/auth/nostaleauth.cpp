@@ -231,7 +231,8 @@ QString NostaleAuth::getToken(const QString &accountId)
 
     content["platformGameAccountId"] = accountId;
     content["gsid"] = gsid;
-    content["blackbox"] = createEncryptedBlackbox(gsid, installationId, accountId);
+    content["blackbox"] = QJsonObject();
+    //content["blackbox"] = createEncryptedBlackbox(gsid, installationId, accountId);
     content["gameId"] = gameId;
 
     reply = networkManager->post(request, QJsonDocument(content).toJson());
@@ -509,7 +510,8 @@ bool NostaleAuth::sendIovation(const QString& accountId)
     request.setRawHeader("Authorization", "Bearer " + token.toLocal8Bit());
 
     content["accountId"] = accountId;
-    content["blackbox"] = createBlackbox();
+    content["blackbox"] = QJsonObject();
+    //["blackbox"] = createBlackbox();
     content["type"] = "play_now";
 
     // if (!sendIovationOptions())
@@ -690,8 +692,9 @@ QSslConfiguration NostaleAuth::getCustomSslConfig() const
 
     // Add system certs to allow fiddler display this requests
     QList<QSslCertificate> trustedCaCerts = QSslConfiguration::systemCaCertificates();
-    trustedCaCerts.append(caCertificates);
-    sslConfig.setCaCertificates(trustedCaCerts);
+    caCertificates.append(trustedCaCerts);
+
+    sslConfig.setCaCertificates(caCertificates);
 
     return sslConfig;
 }
