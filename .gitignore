@@ -442,3 +442,4 @@ FodyWeavers.xsd
 *.sln.iml
 
 Launcher/build
+CertExtractor/build
