@@ -94,13 +94,13 @@ QMap<QString, QString> NostaleAuth::getAccounts()
         return {};
     }
 
-    if (!sendSystemInformation()) {
-        return {};
-    }
+    // if (!sendSystemInformation()) {
+    //     return {};
+    // }
 
-    if (!sendStartTime()) {
-        return {};
-    }
+    // if (!sendStartTime()) {
+    //     return {};
+    // }
 
     QJsonObject jsonResponse;
     QMap<QString, QString> accounts;
@@ -204,6 +204,8 @@ QString NostaleAuth::getToken(const QString &accountId)
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/auth/thin/codes"));
     QNetworkReply* reply = nullptr;
 
+    generateGameSessionId();
+
     if (token.isEmpty()) {
         return {};
     }
@@ -212,13 +214,13 @@ QString NostaleAuth::getToken(const QString &accountId)
         return {};
     }
 
-    if (!sendGameLaunch(accountId)) {
-        return {};
-    }
+    // if (!sendGameLaunch(accountId)) {
+    //     return {};
+    // }
 
-    if (!sendGameStarted(accountId)) {
-        return {};
-    }
+    // if (!sendGameStarted(accountId)) {
+    //     return {};
+    // }
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     request.setRawHeader("User-Agent", "Chrome/" + chromeVersion.toLocal8Bit() + " (" + generateThirdTypeUserAgentMagic(accountId) + ")");
@@ -331,7 +333,7 @@ bool NostaleAuth::sendStartTime()
     request.setRawHeader("Host", "events2.gameforge.com");
     request.setRawHeader("User-Agent", "GameforgeClient/" + gameforgeVersion.toUtf8());
     request.setRawHeader("Connection", "Keep-Alive");
-    request.setSslConfiguration(getCustomSslConfig());
+    request.setSslConfiguration(getCustomSslConfig(sslConfig));
 
     clientVersionInfo["branch"] = "master";
     clientVersionInfo["commit_id"] = commitId;
@@ -370,7 +372,7 @@ bool NostaleAuth::sendSystemInformation()
     request.setRawHeader("Host", "events.gameforge.com");
     request.setRawHeader("User-Agent", "GameforgeClient/" + gameforgeVersion.toUtf8());
     request.setRawHeader("Connection", "Keep-Alive");
-    request.setSslConfiguration(getCustomSslConfig());
+    request.setSslConfiguration(getCustomSslConfig(sslConfig));
 
     clientVersionInfo["branch"] = "master";
     clientVersionInfo["commit_id"] = commitId;
@@ -406,6 +408,7 @@ bool NostaleAuth::sendGameLaunch(const QString& accountId)
 {
     QJsonObject payload;
     QNetworkRequest request(QUrl("https://events.gameforge.com"));
+    QSslConfiguration sslConfig = request.sslConfiguration();
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
@@ -413,7 +416,7 @@ bool NostaleAuth::sendGameLaunch(const QString& accountId)
     request.setRawHeader("User-Agent", "GameforgeClient/" + gameforgeVersion.toUtf8());
     request.setRawHeader("Connection", "Keep-Alive");
 
-    request.setSslConfiguration(getCustomSslConfig());
+    request.setSslConfiguration(getCustomSslConfig(sslConfig));
 
     // Body
     payload["client_installation_id"] = installationId;
@@ -449,10 +452,9 @@ bool NostaleAuth::sendGameLaunch(const QString& accountId)
 
 bool NostaleAuth::sendGameStarted(const QString &accountId)
 {
-    this->gameSessionId = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
-
     QJsonObject payload, clientVersionInfo;
     QNetworkRequest request(QUrl("https://events.gameforge.com"));
+    QSslConfiguration sslConfig = request.sslConfiguration();
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
@@ -460,7 +462,7 @@ bool NostaleAuth::sendGameStarted(const QString &accountId)
     request.setRawHeader("User-Agent", "GameforgeClient/" + gameforgeVersion.toUtf8());
     request.setRawHeader("Connection", "Keep-Alive");
 
-    request.setSslConfiguration(getCustomSslConfig());
+    request.setSslConfiguration(getCustomSslConfig(sslConfig));
 
     // Body
     clientVersionInfo["branch"] = "master";
@@ -511,7 +513,7 @@ bool NostaleAuth::sendIovation(const QString& accountId)
 
     content["accountId"] = accountId;
     content["blackbox"] = QJsonObject();
-    //["blackbox"] = createBlackbox();
+    //content["blackbox"] = createBlackbox();
     content["type"] = "play_now";
 
     // if (!sendIovationOptions())
@@ -679,9 +681,9 @@ QString NostaleAuth::createEncryptedBlackbox(const QString& gsid, const QString&
     }
 }
 
-QSslConfiguration NostaleAuth::getCustomSslConfig() const
+QSslConfiguration NostaleAuth::getCustomSslConfig(const QSslConfiguration &config) const
 {
-    QSslConfiguration sslConfig = QSslConfiguration::defaultConfiguration();
+    QSslConfiguration sslConfig = config;
     sslConfig.setLocalCertificate(allCerts.first());
     sslConfig.setPrivateKey(privateKey);
 
@@ -697,6 +699,11 @@ QSslConfiguration NostaleAuth::getCustomSslConfig() const
     sslConfig.setCaCertificates(caCertificates);
 
     return sslConfig;
+}
+
+void NostaleAuth::generateGameSessionId()
+{
+    this->gameSessionId = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
 }
 
 void NostaleAuth::setToken(const QString &newToken)

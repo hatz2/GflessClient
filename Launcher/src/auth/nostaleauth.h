@@ -92,7 +92,9 @@ private:
 
     QString createEncryptedBlackbox(const QString &gsid, const QString &installationId, const QString &accountId);
 
-    QSslConfiguration getCustomSslConfig() const;
+    QSslConfiguration getCustomSslConfig(const QSslConfiguration &config) const;
+
+    void generateGameSessionId();
 
     const QString commitId = "eda2b413";
     const QString gameId = "dd4e22d6-00d1-44b9-8126-d8b40e0cd7c9";
