@@ -47,7 +47,7 @@ void MainWindow::loadSettings()
     restoreGeometry(settings.value("geometry").toByteArray());
     settingsDialog->setGameClientPath(settings.value("nostale path").toString());
     settingsDialog->setProfilesPath(settings.value("profiles path").toString());
-    settingsDialog->setOpenInterval(settings.value("open interval", 3).toInt());
+    settingsDialog->setOpenInterval(settings.value("open interval", 10).toInt());
     settingsDialog->setGameLanguage(settings.value("game language", 0).toInt());
     settingsDialog->setTheme(settings.value("theme", 0).toInt());
     settingsDialog->setThemeComboBox(settings.value("theme", 0).toInt());
