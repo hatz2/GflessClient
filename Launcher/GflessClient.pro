@@ -86,6 +86,11 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
+win32 {
+    OPENSSL_COPY_SCRIPT = $$shell_path($$PWD/scripts/copy-openssl.ps1)
+    OPENSSL_COPY_CMD = powershell -NoProfile -ExecutionPolicy Bypass -File \"$$OPENSSL_COPY_SCRIPT\" -TargetDir \"$$OUT_PWD/release\" -SourceRoot \"$$PWD\"
+    QMAKE_POST_LINK += $$OPENSSL_COPY_CMD
+}
 
 RESOURCES += \
     resources.qrc
