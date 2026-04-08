@@ -40,7 +40,22 @@ public:
 
     QString getIdentityPath() const;
 
+    NostaleAuth *getAuth();
     const NostaleAuth *getAuth() const;
+
+    void setProxyConfig(
+        bool proxyEnabled,
+        const QString& proxyHost,
+        const QString& proxyPort,
+        const QString& proxyUsername,
+        const QString& proxyPassword
+    );
+
+    void setAdvancedConfig(
+        const QString& identPath,
+        const QString& installationId,
+        const QString& customGamePath
+    );
 
     QString getcustomClientPath() const;
 
