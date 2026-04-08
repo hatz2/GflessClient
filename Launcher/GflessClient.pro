@@ -1,8 +1,13 @@
-QT       += core gui network webenginecore
+QT       += core gui network webenginecore webenginewidgets xml
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
+contains(DEFINES, NO_PROXY_MODE) {
+    TARGET = GflessClientNoIP
+} else {
+    TARGET = GflessClient
+}
 
 RC_ICONS = resources/gfless_icon.ico
 
@@ -29,6 +34,7 @@ SOURCES += \
     src/gui/addprofiledialog.cpp \
     src/auth/blackbox.cpp \
     src/gui/captchadialog.cpp \
+    src/gui/editproxydialog.cpp \
     src/auth/captchasolver.cpp \
     src/auth/fingerprint.cpp \
     src/auth/gflessclient.cpp \
@@ -54,6 +60,7 @@ HEADERS += \
     src/gui/addprofiledialog.h \
     src/auth/blackbox.h \
     src/gui/captchadialog.h \
+    src/gui/editproxydialog.h \
     src/auth/captchasolver.h \
     src/auth/fingerprint.h \
     src/auth/gflessclient.h \
@@ -87,11 +94,13 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 win32 {
+    WINDEPLOYQT = $$shell_path($$[QT_INSTALL_BINS]/windeployqt.exe)
+    WINDEPLOYQT_CMD = \"$$WINDEPLOYQT\" --release --compiler-runtime \"$$OUT_PWD/release/$${TARGET}.exe\"
     OPENSSL_COPY_SCRIPT = $$shell_path($$PWD/scripts/copy-openssl.ps1)
     OPENSSL_COPY_CMD = powershell -NoProfile -ExecutionPolicy Bypass -File \"$$OPENSSL_COPY_SCRIPT\" -TargetDir \"$$OUT_PWD/release\" -SourceRoot \"$$PWD\"
+    QMAKE_POST_LINK += $$WINDEPLOYQT_CMD$$escape_expand(\n\t)
     QMAKE_POST_LINK += $$OPENSSL_COPY_CMD
 }
 
 RESOURCES += \
     resources.qrc
-
