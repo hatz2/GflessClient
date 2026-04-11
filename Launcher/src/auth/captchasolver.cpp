@@ -89,7 +89,7 @@ QImage CaptchaSolver::getTextImage()
 
 QImage CaptchaSolver::getDragIcons()
 {
-    QNetworkRequest request(QUrl("https://image-drop-challenge.gameforge.com/challenge/" + gfChallengeId + "/" + language + "/drag-icons?" + QString::number((quint64)lastUpdated)));
+    QNetworkRequest request(QUrl("https://image-drop-challenge.gameforge.com/challenge/" + gfChallengeId + "/" + language + "/drag-icons?" + QString::number(lastUpdated)));
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
@@ -111,7 +111,7 @@ QImage CaptchaSolver::getDragIcons()
 
 QImage CaptchaSolver::getDropTargetImage()
 {
-    QNetworkRequest request(QUrl("https://image-drop-challenge.gameforge.com/challenge/" + gfChallengeId + "/" + language + "/drop-target?" + QString::number((quint64)lastUpdated)));
+    QNetworkRequest request(QUrl("https://image-drop-challenge.gameforge.com/challenge/" + gfChallengeId + "/" + language + "/drop-target?" + QString::number(lastUpdated)));
     QNetworkReply* reply = nullptr;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");

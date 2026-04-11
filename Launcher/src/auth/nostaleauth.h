@@ -61,7 +61,7 @@ public:
 
     SyncNetworAccesskManager *getNetworkManager() const;
 
-    bool createGameAccount(const QString& email, const QString& name, const QString& gfLang, QJsonObject& response) const;
+    bool createGameAccount(const QString& email, const QString& name, const QString& gfLang, QJsonObject& response);
 
     QString getInstallationId() const;
 
