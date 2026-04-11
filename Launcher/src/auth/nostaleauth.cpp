@@ -167,33 +167,44 @@ bool NostaleAuth::authenticate(const QString &email, const QString &password, bo
     content["password"] = password;
 
     reply = networkManager->post(request, QJsonDocument(content).toJson(QJsonDocument::Compact));
+    reply->deleteLater();
 
     jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
 
+    qDebug() << jsonResponse;
+
     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 201)
     {
-        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 409) // Conflict Captcha
+        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 409) // Conflict Captcha or incorrect username or password
         {
-            gfChallengeId = reply->rawHeader("gf-challenge-id").split(';').first();
-            captcha = true;
-            reply->deleteLater();
+            QJsonArray errorTypes = jsonResponse["errorTypes"].toArray();
+
+            if (errorTypes.contains("CHALLENGE_REQUIRED")) {
+                gfChallengeId = reply->rawHeader("gf-challenge-id").split(';').first();
+                captcha = true;
+                return false;
+            }
+
+            if (errorTypes.contains("CREDENTIALS_INVALID")) {
+                wrongCredentials = true;
+                return false;
+            }
+
             return false;
+
         }
         else if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 403) // Incorrect username or password
         {
             wrongCredentials = true;
-            reply->deleteLater();
             return false;
         }
         else
         {
-            reply->deleteLater();
             return false;
         }
     }
 
     token = jsonResponse["token"].toString();
-    reply->deleteLater();
 
     return true;
 }
@@ -726,7 +737,7 @@ SyncNetworAccesskManager *NostaleAuth::getNetworkManager() const
     return networkManager;
 }
 
-bool NostaleAuth::createGameAccount(const QString &email, const QString& name, const QString &gfLang, QJsonObject &response) const
+bool NostaleAuth::createGameAccount(const QString &email, const QString& name, const QString &gfLang, QJsonObject &response)
 {
     QJsonObject content;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v2/users/me/accounts"));
@@ -740,12 +751,9 @@ bool NostaleAuth::createGameAccount(const QString &email, const QString& name, c
     request.setRawHeader("Connection", "Keep-Alive");
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
 
-    identity->update();
-    BlackBox blackbox(identity, QJsonValue::Null);
-
-    content["blackbox"] = blackbox.encoded();
+    //content["blackbox"] = createBlackbox();
+    content["blackbox"] = QJsonObject();
     content["displayName"] = name;
-    //content["email"] = email;
     content["gameEnvironmentId"] = "732876de-012f-4e8d-a501-2e0816cf22f2";
     content["gfLang"] = gfLang;
     content["gameId"] = gameId;
