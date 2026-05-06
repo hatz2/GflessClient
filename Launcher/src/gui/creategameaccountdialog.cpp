@@ -62,7 +62,12 @@ void CreateGameAccountDialog::on_createAccButton_clicked()
     QJsonObject response;
 
     if (!gfAcc->createGameAccount(nameAccount, gfLang, response)) {
-        QMessageBox::critical(this, "Error", response["error"].toObject()["message"].toString());
+        if (response.contains("message")) {
+            QMessageBox::critical(this, "Error", response["message"].toString());
+        }
+        else {
+            QMessageBox::critical(this, "Error response", QJsonDocument(response).toJson());
+        }
         return;
     }
 

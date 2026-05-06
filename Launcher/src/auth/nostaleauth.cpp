@@ -751,8 +751,7 @@ bool NostaleAuth::createGameAccount(const QString &email, const QString& name, c
     request.setRawHeader("Connection", "Keep-Alive");
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
 
-    //content["blackbox"] = createBlackbox();
-    content["blackbox"] = QJsonObject();
+    content["blackbox"] = createBlackbox();
     content["displayName"] = name;
     content["gameEnvironmentId"] = "732876de-012f-4e8d-a501-2e0816cf22f2";
     content["gfLang"] = gfLang;
