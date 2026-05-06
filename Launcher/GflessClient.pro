@@ -14,6 +14,8 @@ VERSION = 1.0.15
 
 INCLUDEPATH += ./src ./src/gui ./src/auth
 
+DESTDIR = bin
+
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
