@@ -443,3 +443,4 @@ FodyWeavers.xsd
 
 Launcher/build
 CertExtractor/build
+Installer/*.exe

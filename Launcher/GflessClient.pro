@@ -15,9 +15,11 @@ QMAKE_LFLAGS_WINDOWS += "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='f
 
 LIBS += -lkernel32 -luser32 -lgdi32
 
-VERSION = 1.0.14
+VERSION = 1.0.16
 
 INCLUDEPATH += ./src ./src/gui ./src/auth
+
+DESTDIR = bin
 
 
 # You can make your code fail to compile if it uses deprecated APIs.
