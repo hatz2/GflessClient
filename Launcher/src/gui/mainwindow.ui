@@ -29,7 +29,7 @@
        </widget>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,0">
+       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,0,0">
         <item>
          <widget class="QComboBox" name="gameforgeAccountComboBox"/>
         </item>
@@ -44,6 +44,13 @@
          <widget class="QPushButton" name="removeGameforgeAccountButton">
           <property name="text">
            <string>Remove</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="editGameforgeAccountButton">
+          <property name="text">
+           <string>Edit</string>
           </property>
          </widget>
         </item>

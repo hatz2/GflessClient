@@ -19,9 +19,14 @@
 #include <QList>
 #include <QMenu>
 #include <QAction>
+#include <QToolButton>
 #include <QFile>
 #include <QTextStream>
 #include <QVector>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QDomDocument>
 
 
 QT_BEGIN_NAMESPACE
@@ -43,6 +48,7 @@ private slots:
     void on_addGameforgeAccountButton_clicked();
 
     void on_removeGameforgeAccountButton_clicked();
+    void on_editGameforgeAccountButton_clicked();
 
     void on_gameSettingsButton_clicked();
 
@@ -119,6 +125,17 @@ private:
     void displayProfile(int index);
 
     void updateGame();
+    void setupProxyControls();
+    void applyGlobalProxyMode();
+    void updateProxyModeButtonText();
+    void updateGameforgeAccountVisual(int index);
+    void updateAllGameforgeAccountVisuals();
+    void syncProxifierProfile();
+    QString resolveProxifierProfilePath() const;
+    QDomDocument createDefaultProxifierProfile() const;
+    QString getAccountIpsJsonPath() const;
+    void writeAccountIpsJson() const;
+    int patchNewProxiesFromJson();
 
     Ui::MainWindow *ui;
     SettingsDialog* settingsDialog;
@@ -135,6 +152,10 @@ private:
     int defaultServer = 0;
     int defaultChannel = 0;
     int defaultCharacter = 0;
+    bool loadingStoredAccounts = false;
+    bool useProxiesGlobally = true;
+    QToolButton* toggleProxyModeButton = nullptr;
+    QToolButton* patchNewProxiesButton = nullptr;
 };
 
 #endif // MAINWINDOW_H

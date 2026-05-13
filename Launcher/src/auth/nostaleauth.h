@@ -39,10 +39,25 @@ public:
     QString getProxyIp() const;
     QString getSocksPort() const;
     bool getUseProxy() const;
+    bool isProxyActive() const;
 
     QString getProxyUsername() const;
 
     QString getProxyPassword() const;
+
+    void setProxyConfig(
+        bool proxyEnabled,
+        const QString& proxyHost,
+        const QString& proxyPortValue,
+        const QString& proxyUser,
+        const QString& proxyPasswd
+    );
+
+    void setForceNoProxy(bool forceNoProxyValue);
+
+    QString getIdentityPath() const;
+    void setIdentityPath(const QString& newIdentityPath);
+    void setInstallationId(const QString& newInstallationId);
 
     SyncNetworAccesskManager *getNetworkManager() const;
 
@@ -122,6 +137,11 @@ private:
     QString proxyUsername;
     QString proxyPassword;
     bool useProxy;
+    bool forceNoProxy = false;
+    QString identityPath;
+
+    void applyProxyConfiguration();
+    void rebuildIdentity();
 };
 
 #endif // NOSTALEAUTH_H

@@ -12,35 +12,16 @@ NostaleAuth::NostaleAuth(const QString &identityPath, const QString& installatio
     , proxyUsername(proxyUser)
     , proxyPassword(proxyPasswd)
     , useProxy(proxy)
+    , identityPath(identityPath)
 {
-    if (identityPath.isEmpty()) {
-        identity = nullptr;
-    }
-    else {
-        identity = std::make_shared<Identity>(identityPath, proxyHost, proxyPort, proxyUser, proxyPasswd, proxy);
-    }
-
+    rebuildIdentity();
 
     this->locale = QLocale().name().replace("_", "-");
     this->browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
     this->eventsSessionId = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
 
     networkManager = new SyncNetworAccesskManager(this);
-
-    if (useProxy) {
-        QNetworkProxy proxy(
-            QNetworkProxy::ProxyType::Socks5Proxy,
-            proxyIp,
-            socksPort.toUInt()
-        );
-
-        if (!proxyUsername.isEmpty()) {
-            proxy.setUser(proxyUsername);
-            proxy.setPassword(proxyPassword);
-        }
-
-        networkManager->setProxy(proxy);
-    }
+    applyProxyConfiguration();
 
     initGfVersion();
     initCert();
@@ -792,4 +773,96 @@ QString NostaleAuth::getSocksPort() const
 bool NostaleAuth::getUseProxy() const
 {
     return useProxy;
+}
+
+bool NostaleAuth::isProxyActive() const
+{
+    return useProxy && !forceNoProxy;
+}
+
+void NostaleAuth::setProxyConfig(
+    bool proxyEnabled,
+    const QString& proxyHost,
+    const QString& proxyPortValue,
+    const QString& proxyUser,
+    const QString& proxyPasswd
+)
+{
+    useProxy = proxyEnabled;
+    proxyIp = proxyHost;
+    socksPort = proxyPortValue;
+    proxyUsername = proxyUser;
+    proxyPassword = proxyPasswd;
+    rebuildIdentity();
+    applyProxyConfiguration();
+}
+
+void NostaleAuth::setForceNoProxy(bool forceNoProxyValue)
+{
+    forceNoProxy = forceNoProxyValue;
+    applyProxyConfiguration();
+}
+
+void NostaleAuth::applyProxyConfiguration()
+{
+    if (!networkManager) {
+        return;
+    }
+
+    if (!isProxyActive()) {
+        networkManager->setProxy(QNetworkProxy::NoProxy);
+        return;
+    }
+
+    QNetworkProxy proxy(
+        QNetworkProxy::ProxyType::Socks5Proxy,
+        proxyIp,
+        socksPort.toUInt()
+    );
+
+    if (!proxyUsername.isEmpty()) {
+        proxy.setUser(proxyUsername);
+        proxy.setPassword(proxyPassword);
+    }
+
+    networkManager->setProxy(proxy);
+}
+
+QString NostaleAuth::getIdentityPath() const
+{
+    return identityPath;
+}
+
+void NostaleAuth::setIdentityPath(const QString& newIdentityPath)
+{
+    identityPath = newIdentityPath.trimmed();
+    rebuildIdentity();
+}
+
+void NostaleAuth::setInstallationId(const QString& newInstallationId)
+{
+    installationId = newInstallationId.trimmed();
+    if (installationId.isEmpty()) {
+        initInstallationId();
+    }
+    if (installationId.isEmpty()) {
+        installationId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    }
+}
+
+void NostaleAuth::rebuildIdentity()
+{
+    if (identityPath.trimmed().isEmpty()) {
+        identity = nullptr;
+        return;
+    }
+
+    identity = std::make_shared<Identity>(
+        identityPath,
+        proxyIp,
+        socksPort,
+        proxyUsername,
+        proxyPassword,
+        useProxy
+    );
 }
