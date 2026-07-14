@@ -197,7 +197,8 @@ QString NostaleAuth::getToken(const QString &accountId)
     }
 
     // This sleep is a MUST, otherwise the request to thin/codes will fail
-    QThread::sleep(std::chrono::seconds(1));
+    // Qt 5.15: sleep(unsigned long secs). Qt 6 chrono overload is not available here.
+    QThread::sleep(1);
 
     // if (!sendGameLaunch(accountId)) {
     //     return {};
