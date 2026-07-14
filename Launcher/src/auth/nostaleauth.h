@@ -91,6 +91,8 @@ private:
 
     bool sendIovation(const QString& accountId);
 
+    QString sendThinCodes(const QString& accountId);
+
     bool sendIovationOptions();
 
     void initInstallationId();

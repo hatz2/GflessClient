@@ -13,10 +13,11 @@ Identity::~Identity()
 
 void Identity::update()
 {
-    fingerprint.updateVector();
     fingerprint.updateServerTime();
+    fingerprint.updateVector();
     fingerprint.updateCreation();
     fingerprint.updateTimings();
+    save();
 }
 
 Fingerprint Identity::getFingerprint() const
