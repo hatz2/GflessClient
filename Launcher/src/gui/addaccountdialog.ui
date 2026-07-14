@@ -48,7 +48,7 @@
    <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Identity path (optional):</string>
+      <string>Identity path (required):</string>
      </property>
     </widget>
    </item>

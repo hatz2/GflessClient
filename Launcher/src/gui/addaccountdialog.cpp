@@ -60,6 +60,11 @@ void AddAccountDialog::on_loginButton_clicked()
         return;
     }
 
+    if (identityPath.isEmpty()) {
+        QMessageBox::critical(this, "Error", "Identity path cannot be empty");
+        return;
+    }
+
     accept();
 }
 
