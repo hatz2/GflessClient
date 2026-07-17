@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "Gfless Client"
-#define MyAppVersion "1.0.16"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Hatz"
 #define MyAppURL "https://github.com/hatz2/GflessClient"
 #define MyAppExeName "GflessClient.exe"
@@ -46,8 +46,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\root\Github\GflessClient\Launcher\build\Desktop_Qt_6_10_1_MSVC2022_64bit-Release\bin\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\root\Github\GflessClient\Launcher\build\Desktop_Qt_6_10_1_MSVC2022_64bit-Release\bin\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\root\Github\GflessClient\Launcher\build\Desktop_Qt_6_11_1_MSVC2022_64bit-Release\bin\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\root\Github\GflessClient\Launcher\build\Desktop_Qt_6_11_1_MSVC2022_64bit-Release\bin\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
