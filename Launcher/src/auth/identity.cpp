@@ -2,13 +2,18 @@
 
 Identity::Identity(const QString &filePath, const QString &proxyIp, const QString &proxyPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
     : filename(filePath)
+    , proxyIp(proxyIp)
+    , proxyPort(proxyPort)
+    , proxyUsername(proxyUsername)
+    , proxyPassword(proxyPassword)
+    , useProxy(useProxy)
 {
     initFingerprint(proxyIp, proxyPort, proxyUsername, proxyPassword, useProxy);
 }
 
-Identity::~Identity()
+void Identity::loadFromDisk()
 {
-    save();
+    initFingerprint(proxyIp, proxyPort, proxyUsername, proxyPassword, useProxy);
 }
 
 void Identity::update()

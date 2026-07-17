@@ -691,6 +691,13 @@ void NostaleAuth::generateGameSessionId()
     this->gameSessionId = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
 }
 
+void NostaleAuth::refreshIdentity()
+{
+    if (identity) {
+        identity->loadFromDisk();
+    }
+}
+
 void NostaleAuth::setToken(const QString &newToken)
 {
     token = newToken;

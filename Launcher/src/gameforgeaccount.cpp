@@ -84,6 +84,11 @@ const NostaleAuth *GameforgeAccount::getAuth() const
     return auth;
 }
 
+void GameforgeAccount::refreshIdentity()
+{
+    auth->refreshIdentity();
+}
+
 QString GameforgeAccount::getcustomClientPath() const
 {
     return customClientPath;
