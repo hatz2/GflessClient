@@ -48,6 +48,10 @@ public:
 
     bool getCheckUpdates() const;
 
+    void setConfirmRemoveAccount(bool b);
+
+    bool getConfirmRemoveAccount() const;
+
 signals:
     void profilesPathSelected(QString);
 

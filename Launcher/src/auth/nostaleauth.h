@@ -68,6 +68,8 @@ public:
     void setToken(const QString &newToken);
     QString getToken() const;
 
+    QString getLastError() const;
+
 signals:
     void captchaStart();
     void captchaEnd();
@@ -141,6 +143,8 @@ private:
     bool useProxy;
     bool forceNoProxy = false;
     QString identityPath;
+    QString lastError;
+    qint64 lastTokenRequestMs = 0;
 
     void applyProxyConfiguration();
     void rebuildIdentity();

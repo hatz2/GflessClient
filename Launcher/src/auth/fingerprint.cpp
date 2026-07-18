@@ -122,5 +122,11 @@ QString Fingerprint::getServerDate() const
 
     reply->deleteLater();
 
+    // If the Date header is missing/unparseable (proxy blip, timeout), fall back to UTC now.
+    // An empty serverTimeInMS produces a bad blackbox and can cause intermittent iovation 403s.
+    if (!dateTime.isValid()) {
+        dateTime = QDateTime::currentDateTimeUtc();
+    }
+
     return dateTime.toString(Qt::DateFormat::ISODateWithMs);
 }

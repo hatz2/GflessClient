@@ -9,6 +9,7 @@
 #include "gameupdatedialog.h"
 #include "creategameaccountdialog.h"
 #include <QBrush>
+#include <QCheckBox>
 #include <QColor>
 #include <QCoreApplication>
 #include <QDateTime>
@@ -68,6 +69,7 @@ void MainWindow::loadSettings()
     settingsDialog->setThemeComboBox(settings.value("theme", 0).toInt());
     settingsDialog->setDisabledNosmall(settings.value("disable_nosmall", false).toBool());
     settingsDialog->setCheckUpdates(settings.value("check_updates", true).toBool());
+    settingsDialog->setConfirmRemoveAccount(settings.value("confirm_remove_account", true).toBool());
 
     defaultAutoLogin = settings.value("default_autologin", false).toBool();
     defaultServerLocation = settings.value("default_serverlocation", 0).toInt();
@@ -132,6 +134,7 @@ void MainWindow::saveSettings()
     settings.setValue("theme", settingsDialog->getTheme());
     settings.setValue("disable_nosmall", settingsDialog->getDisabledNosmall());
     settings.setValue("check_updates", settingsDialog->getCheckUpdates());
+    settings.setValue("confirm_remove_account", settingsDialog->getConfirmRemoveAccount());
     settings.setValue("default_autologin", defaultAutoLogin);
     settings.setValue("default_serverlocation", defaultServerLocation);
     settings.setValue("default_server", defaultServer);
@@ -543,22 +546,41 @@ void MainWindow::on_addGameforgeAccountButton_clicked()
 
 void MainWindow::on_removeGameforgeAccountButton_clicked()
 {
-    int res = QMessageBox::warning(this, "Warning", "Do you want to remove this account?\n(This will not delete your real account)", QMessageBox::Yes | QMessageBox::No);
-
-    if (res == QMessageBox::No)
-        return;
-
     int index = ui->gameforgeAccountComboBox->currentIndex();
 
     if (index < 0)
         return;
 
-    removeAccountsFromDefaultProfile(ui->gameforgeAccountComboBox->currentText());
+    const QString email = ui->gameforgeAccountComboBox->currentText();
+
+    if (settingsDialog->getConfirmRemoveAccount()) {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle("Warning");
+        box.setText("Do you want to remove the account " + email + "?\n(This will not delete your real account)");
+        box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        box.setDefaultButton(QMessageBox::No);
+
+        QCheckBox* dontAskCheckBox = new QCheckBox("Don't ask me again", &box);
+        box.setCheckBox(dontAskCheckBox);
+
+        const int res = box.exec();
+
+        if (res != QMessageBox::Yes)
+            return;
+
+        if (dontAskCheckBox->isChecked()) {
+            settingsDialog->setConfirmRemoveAccount(false);
+        }
+    }
+
+    removeAccountsFromDefaultProfile(email);
 
     gfAccounts.remove(index);
     ui->gameforgeAccountComboBox->removeItem(index);
 
     writeAccountIpsJson();
+    saveSettings();
     displayProfile(ui->profileComboBox->currentIndex());
 }
 
@@ -943,6 +965,297 @@ void MainWindow::on_actionSave_profiles_triggered()
         return;
 
     saveAccountProfiles(path);
+}
+
+void MainWindow::on_actionExport_triggered()
+{
+    const QString path = QDir(QCoreApplication::applicationDirPath()).filePath("accounts.json");
+
+    if (exportData(path)) {
+        QMessageBox::information(this, "Export", "Exported to:\n" + QDir::toNativeSeparators(path));
+    }
+    else {
+        QMessageBox::critical(this, "Export", "Could not write the export file.");
+    }
+}
+
+void MainWindow::on_actionImport_triggered()
+{
+    const QString defaultPath = QDir(QCoreApplication::applicationDirPath()).filePath("accounts.json");
+    QString path = QFileDialog::getOpenFileName(this, "Import accounts and profiles", defaultPath, "(*.json)");
+
+    if (path.isEmpty())
+        return;
+
+    int res = QMessageBox::question(
+        this,
+        "Import",
+        "This will load all accounts and profiles from the file.\n"
+        "It may take a while if there are many accounts. Continue?",
+        QMessageBox::Yes | QMessageBox::No
+    );
+
+    if (res != QMessageBox::Yes)
+        return;
+
+    setCursor(Qt::WaitCursor);
+    importData(path);
+    unsetCursor();
+}
+
+bool MainWindow::exportData(const QString &path)
+{
+    QJsonArray accountsArray;
+
+    for (const GameforgeAccount* acc : gfAccounts) {
+        const NostaleAuth* auth = acc->getAuth();
+
+        QJsonObject obj;
+        obj["email"] = acc->getEmail();
+        obj["password"] = acc->getPassword();
+        obj["token"] = auth->getToken();
+        obj["identity_path"] = acc->getIdentityPath();
+        obj["custom_game_path"] = acc->getcustomClientPath();
+        obj["custom_installation_id"] = auth->getInstallationId();
+        obj["use_proxy"] = auth->getUseProxy();
+        obj["proxy_ip"] = auth->getProxyIp();
+        obj["socks_port"] = auth->getSocksPort();
+        obj["proxy_username"] = auth->getProxyUsername();
+        obj["proxy_password"] = auth->getProxyPassword();
+        accountsArray.append(obj);
+    }
+
+    QJsonArray profilesArray;
+
+    // Skip the default profile (index 0); it is auto-populated from the accounts.
+    for (int i = 1; i < profiles.size(); ++i) {
+        Profile* profile = profiles[i];
+
+        QJsonObject profileObj;
+        profileObj["profile_name"] = profile->getProfileName();
+
+        QJsonArray gameAccountsArray;
+        for (const GameAccount& ga : profile->getAccounts()) {
+            if (ga.getGfAcc() == nullptr)
+                continue;
+
+            QJsonObject gaObj;
+            gaObj["email"] = ga.getGfAcc()->getEmail();
+            gaObj["account_name"] = ga.getName();
+            gaObj["id"] = ga.getId();
+            gaObj["display_name"] = ga.getDisplayName();
+            gaObj["server_location"] = ga.getServerLocation();
+            gaObj["server"] = ga.getServer();
+            gaObj["channel"] = ga.getChannel();
+            gaObj["character"] = ga.getSlot();
+            gaObj["auto_login"] = ga.getAutoLogin();
+            gameAccountsArray.append(gaObj);
+        }
+        profileObj["game_accounts"] = gameAccountsArray;
+        profilesArray.append(profileObj);
+    }
+
+    QJsonObject root;
+    root["version"] = 1;
+    root["generated_at"] = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+    root["gameforge_accounts"] = accountsArray;
+    root["profiles"] = profilesArray;
+
+    QFile out(path);
+    if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        return false;
+    }
+
+    out.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+    out.close();
+    return true;
+}
+
+QString MainWindow::resolveImportedCustomClientPath(const QString &originalCustomPath)
+{
+    const QString original = originalCustomPath.trimmed();
+    if (original.isEmpty())
+        return QString();
+
+    // The exported machine path most likely does not exist here. Keep only the
+    // exe file name and derive a local copy inside the current nostale directory.
+    const QString fileName = QFileInfo(original).fileName();
+    if (fileName.isEmpty())
+        return QString();
+
+    const QString nostalePath = settingsDialog->getGameClientPath();
+    if (nostalePath.isEmpty())
+        return QString();
+
+    const QFileInfo nostaleInfo(nostalePath);
+    const QString nostaleDir = nostaleInfo.absolutePath();
+    if (nostaleDir.isEmpty())
+        return QString();
+
+    // Forward slashes are required by openClient(), which splits on '/'.
+    const QString newPath = QDir(nostaleDir).filePath(fileName);
+
+    // If the derived path is the base client itself, no copy is required.
+    if (QFileInfo(newPath).absoluteFilePath().compare(nostaleInfo.absoluteFilePath(), Qt::CaseInsensitive) == 0) {
+        return newPath;
+    }
+
+    if (!QFile::exists(newPath)) {
+        if (!QFile::exists(nostalePath)) {
+            return QString();
+        }
+        QFile::copy(nostalePath, newPath);
+    }
+
+    return newPath;
+}
+
+bool MainWindow::importData(const QString &path)
+{
+    QFile in(path);
+    if (!in.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, "Import", "Could not open the selected file.");
+        return false;
+    }
+
+    QJsonParseError error;
+    const QJsonDocument doc = QJsonDocument::fromJson(in.readAll(), &error);
+    in.close();
+
+    if (error.error != QJsonParseError::NoError || !doc.isObject()) {
+        QMessageBox::critical(this, "Import", "The selected file is not a valid Gfless export.");
+        return false;
+    }
+
+    const QJsonObject root = doc.object();
+    const QJsonArray accountsArray = root.value("gameforge_accounts").toArray();
+    const QJsonArray profilesArray = root.value("profiles").toArray();
+
+    QSet<QString> existingEmails;
+    for (GameforgeAccount* acc : gfAccounts) {
+        existingEmails.insert(acc->getEmail());
+    }
+
+    int importedAccounts = 0;
+    int skippedAccounts = 0;
+
+    for (const QJsonValue& value : accountsArray) {
+        const QJsonObject obj = value.toObject();
+        const QString email = obj.value("email").toString().trimmed();
+
+        if (email.isEmpty() || existingEmails.contains(email)) {
+            ++skippedAccounts;
+            continue;
+        }
+
+        const QString password = obj.value("password").toString();
+        const QString token = obj.value("token").toString();
+        const QString identityPath = obj.value("identity_path").toString().trimmed();
+        const QString installationId = obj.value("custom_installation_id").toString().trimmed();
+        const QString customGamePath = resolveImportedCustomClientPath(obj.value("custom_game_path").toString());
+        const bool useProxy = obj.value("use_proxy").toBool();
+        const QString proxyIp = obj.value("proxy_ip").toString().trimmed();
+        const QString socksPort = obj.value("socks_port").toString().trimmed();
+        const QString proxyUsername = obj.value("proxy_username").toString();
+        const QString proxyPassword = obj.value("proxy_password").toString();
+
+        ui->statusbar->showMessage("Importing account " + email + "...", 5000);
+        QCoreApplication::processEvents();
+
+        const int before = gfAccounts.size();
+
+        if (!token.isEmpty()) {
+            addGameforgeAccount(email, password, token, identityPath, installationId, customGamePath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+        }
+        else {
+            addGameforgeAccount(email, password, identityPath, installationId, customGamePath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+        }
+
+        if (gfAccounts.size() > before) {
+            existingEmails.insert(email);
+            ++importedAccounts;
+        }
+        else {
+            ++skippedAccounts;
+        }
+    }
+
+    int importedProfiles = 0;
+
+    for (const QJsonValue& value : profilesArray) {
+        const QJsonObject profileObj = value.toObject();
+        const QString profileName = profileObj.value("profile_name").toString().trimmed();
+
+        if (profileName.isEmpty())
+            continue;
+
+        Profile* profile = nullptr;
+        for (int i = 1; i < profiles.size(); ++i) {
+            if (profiles[i]->getProfileName() == profileName) {
+                profile = profiles[i];
+                break;
+            }
+        }
+
+        if (profile == nullptr) {
+            profile = new Profile(profileName, this);
+            profiles.push_back(profile);
+            ui->profileComboBox->addItem(profileName);
+            ++importedProfiles;
+        }
+
+        const QJsonArray gameAccountsArray = profileObj.value("game_accounts").toArray();
+        for (const QJsonValue& gaValue : gameAccountsArray) {
+            const QJsonObject gaObj = gaValue.toObject();
+            const QString email = gaObj.value("email").toString();
+
+            GameforgeAccount* gfacc = nullptr;
+            for (GameforgeAccount* candidate : gfAccounts) {
+                if (candidate->getEmail() == email) {
+                    gfacc = candidate;
+                    break;
+                }
+            }
+
+            if (gfacc == nullptr)
+                continue;
+
+            GameAccount gameAcc(
+                gfacc,
+                gaObj.value("account_name").toString(),
+                gaObj.value("id").toString(),
+                gaObj.value("display_name").toString(),
+                gaObj.value("server_location").toInt(),
+                gaObj.value("server").toInt(),
+                gaObj.value("channel").toInt(),
+                gaObj.value("character").toInt(),
+                gaObj.value("auto_login").toBool()
+            );
+
+            profile->addAccount(gameAcc);
+        }
+    }
+
+    writeAccountIpsJson();
+    saveSettings();
+#ifdef NO_PROXY_MODE
+    syncProxifierProfile();
+#endif
+    updateAllGameforgeAccountVisuals();
+    displayProfile(ui->profileComboBox->currentIndex());
+    on_gameforgeAccountComboBox_currentIndexChanged(ui->gameforgeAccountComboBox->currentIndex());
+    ui->statusbar->clearMessage();
+
+    QMessageBox::information(
+        this,
+        "Import",
+        QString("Imported %1 account(s), skipped %2.\nImported %3 new profile(s).")
+            .arg(importedAccounts)
+            .arg(skippedAccounts)
+            .arg(importedProfiles)
+    );
+
+    return true;
 }
 
 void MainWindow::on_actionIdentity_generator_triggered()
@@ -1787,7 +2100,11 @@ void MainWindow::openAccount(const Profile *profile, QQueue<int> accountIndexes)
     QString token = gameAccount.getGfAcc()->getToken(gameAccount.getId());
 
     if (token.isEmpty()) {
-        ui->statusbar->showMessage("Couldn't get token for account " + gameAccount.getName(), 10000);
+        QString detail = gameAccount.getGfAcc()->getAuth()->getLastError();
+        if (detail.isEmpty()) {
+            detail = "Couldn't get token";
+        }
+        ui->statusbar->showMessage(detail + " (" + gameAccount.getName() + ")", 12000);
     }
     else {
         DWORD pid = 0;

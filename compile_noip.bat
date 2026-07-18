@@ -74,6 +74,24 @@ if not defined EXE (
 echo.
 echo === Done ===
 echo EXE: %EXE%
+
+REM Copy Injector + GflessDLL next to the exe (required at Play time)
+set "BIN_DIR=%BUILD_DIR%\bin"
+set "RUNTIME=%ROOT%runtime"
+if not exist "%BIN_DIR%" mkdir "%BIN_DIR%"
+if exist "%RUNTIME%\Injector.exe" (
+    copy /Y "%RUNTIME%\Injector.exe" "%BIN_DIR%\Injector.exe" >nul
+    echo Copied Injector.exe
+) else (
+    echo [WARN] runtime\Injector.exe missing - Play will fail until you add it.
+)
+if exist "%RUNTIME%\GflessDLL.dll" (
+    copy /Y "%RUNTIME%\GflessDLL.dll" "%BIN_DIR%\GflessDLL.dll" >nul
+    echo Copied GflessDLL.dll
+) else (
+    echo [WARN] runtime\GflessDLL.dll missing - Play will fail until you add it.
+)
+
 popd
 echo Build dir: "%BUILD_DIR%"
 echo Log: "%LOG%"

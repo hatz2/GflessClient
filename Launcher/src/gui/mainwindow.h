@@ -68,6 +68,10 @@ private slots:
 
     void on_actionSave_profiles_triggered();
 
+    void on_actionExport_triggered();
+
+    void on_actionImport_triggered();
+
     void on_actionIdentity_generator_triggered();
 
     void on_addProfileButton_clicked();
@@ -123,6 +127,10 @@ private:
 
     void removeAccountsFromDefaultProfile(const QString& email);
     void displayProfile(int index);
+
+    bool exportData(const QString& path);
+    bool importData(const QString& path);
+    QString resolveImportedCustomClientPath(const QString& originalCustomPath);
 
     void updateGame();
     void setupProxyControls();

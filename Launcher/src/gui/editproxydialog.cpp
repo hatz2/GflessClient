@@ -32,6 +32,16 @@ EditProxyDialog::EditProxyDialog(QWidget* parent)
     formLayout->addRow("Port:", socksPortLineEdit);
     formLayout->addRow("Username:", proxyUsernameLineEdit);
     formLayout->addRow("Password:", proxyPasswordLineEdit);
+    QWidget* identityPathWidget = new QWidget(this);
+    QHBoxLayout* identityPathLayout = new QHBoxLayout(identityPathWidget);
+    identityPathLayout->setContentsMargins(0, 0, 0, 0);
+    identityPathLayout->setSpacing(6);
+    QPushButton* browseIdentityPathButton = new QPushButton("...", identityPathWidget);
+    browseIdentityPathButton->setToolTip("Select identity file (.json)");
+    browseIdentityPathButton->setFixedWidth(32);
+    identityPathLayout->addWidget(identityPathLineEdit);
+    identityPathLayout->addWidget(browseIdentityPathButton);
+
     QWidget* customGamePathWidget = new QWidget(this);
     QHBoxLayout* customGamePathLayout = new QHBoxLayout(customGamePathWidget);
     customGamePathLayout->setContentsMargins(0, 0, 0, 0);
@@ -42,7 +52,7 @@ EditProxyDialog::EditProxyDialog(QWidget* parent)
     customGamePathLayout->addWidget(customGamePathLineEdit);
     customGamePathLayout->addWidget(browseCustomGamePathButton);
 
-    formLayout->addRow("Identity path (optional):", identityPathLineEdit);
+    formLayout->addRow("Identity path (optional):", identityPathWidget);
     formLayout->addRow("Custom game path (optional):", customGamePathWidget);
     formLayout->addRow("Custom installation id (optional):", installationIdLineEdit);
 
@@ -58,6 +68,18 @@ EditProxyDialog::EditProxyDialog(QWidget* parent)
     setLayout(mainLayout);
 
     connect(useProxyCheckBox, &QCheckBox::toggled, this, &EditProxyDialog::updateProxyFieldsEnabled);
+    connect(browseIdentityPathButton, &QPushButton::clicked, this, [this]() {
+        const QString path = QFileDialog::getOpenFileName(
+            this,
+            "Select identity file",
+            QDir::rootPath(),
+            "(*.json)"
+        );
+
+        if (!path.isEmpty()) {
+            identityPathLineEdit->setText(path);
+        }
+    });
     connect(browseCustomGamePathButton, &QPushButton::clicked, this, [this]() {
         const QString path = QFileDialog::getOpenFileName(
             this,

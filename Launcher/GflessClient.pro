@@ -97,10 +97,13 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 win32 {
+    # DESTDIR=bin puts the exe in $$OUT_PWD/bin, not release/
     WINDEPLOYQT = $$shell_path($$[QT_INSTALL_BINS]/windeployqt.exe)
-    WINDEPLOYQT_CMD = \"$$WINDEPLOYQT\" --release --compiler-runtime \"$$OUT_PWD/release/$${TARGET}.exe\"
+    TARGET_EXE = $$shell_path($$OUT_PWD/$$DESTDIR/$${TARGET}.exe)
+    DEPLOY_DIR = $$shell_path($$OUT_PWD/$$DESTDIR)
+    WINDEPLOYQT_CMD = \"$$WINDEPLOYQT\" --release --compiler-runtime \"$$TARGET_EXE\"
     OPENSSL_COPY_SCRIPT = $$shell_path($$PWD/scripts/copy-openssl.ps1)
-    OPENSSL_COPY_CMD = powershell -NoProfile -ExecutionPolicy Bypass -File \"$$OPENSSL_COPY_SCRIPT\" -TargetDir \"$$OUT_PWD/release\" -SourceRoot \"$$PWD\"
+    OPENSSL_COPY_CMD = powershell -NoProfile -ExecutionPolicy Bypass -File \"$$OPENSSL_COPY_SCRIPT\" -TargetDir \"$$DEPLOY_DIR\" -SourceRoot \"$$PWD\"
     QMAKE_POST_LINK += $$WINDEPLOYQT_CMD$$escape_expand(\n\t)
     QMAKE_POST_LINK += $$OPENSSL_COPY_CMD
 }

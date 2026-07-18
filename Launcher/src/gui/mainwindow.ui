@@ -41,16 +41,16 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="removeGameforgeAccountButton">
+         <widget class="QPushButton" name="editGameforgeAccountButton">
           <property name="text">
-           <string>Remove</string>
+           <string>Edit</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="editGameforgeAccountButton">
+         <widget class="QPushButton" name="removeGameforgeAccountButton">
           <property name="text">
-           <string>Edit</string>
+           <string>Remove</string>
           </property>
          </widget>
         </item>
@@ -193,6 +193,9 @@
      <string>Options</string>
     </property>
     <addaction name="actionSave_profiles"/>
+    <addaction name="actionExport"/>
+    <addaction name="actionImport"/>
+    <addaction name="separator"/>
     <addaction name="actionIdentity_generator"/>
     <addaction name="actionSettings"/>
    </widget>
@@ -237,6 +240,16 @@
   <action name="actionIdentity_generator">
    <property name="text">
     <string>Identity generator</string>
+   </property>
+  </action>
+  <action name="actionExport">
+   <property name="text">
+    <string>Export</string>
+   </property>
+  </action>
+  <action name="actionImport">
+   <property name="text">
+    <string>Import</string>
    </property>
   </action>
  </widget>
