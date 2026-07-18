@@ -9,8 +9,8 @@ class Identity
 public:
     Identity() {}
     Identity(const QString& filePath, const QString& proxyIp, const QString& proxyPort, const QString& proxyUsername, const QString& proxyPassword, const bool useProxy);
-    ~Identity();
 
+    void loadFromDisk();
     void update();
 
     Fingerprint getFingerprint() const;
@@ -20,7 +20,11 @@ public:
 private:
     QString filename;
     Fingerprint fingerprint;
-
+    QString proxyIp;
+    QString proxyPort;
+    QString proxyUsername;
+    QString proxyPassword;
+    bool useProxy;
 
     void initFingerprint(const QString& proxyIp, const QString& proxyPort, const QString& proxyUsername, const QString& proxyPassword, const bool useProxy);
 

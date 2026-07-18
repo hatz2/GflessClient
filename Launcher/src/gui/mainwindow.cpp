@@ -1261,7 +1261,11 @@ bool MainWindow::importData(const QString &path)
 void MainWindow::on_actionIdentity_generator_triggered()
 {
     IdentityDialog dialog(this);
-    dialog.exec();
+    if (dialog.exec() == QDialog::Accepted) {
+        for (auto* acc : gfAccounts) {
+            acc->refreshIdentity();
+        }
+    }
 }
 
 

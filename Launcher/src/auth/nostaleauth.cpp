@@ -207,8 +207,8 @@ QString NostaleAuth::getToken(const QString &accountId)
 
     for (int attempt = 0; attempt < 3; ++attempt) {
         if (attempt > 0) {
-            // Fresh identity state + pause before retrying a forbidden/failed iovation.
-            rebuildIdentity();
+            // Reload identity from disk (upstream fix) + pause before retrying a forbidden/failed iovation.
+            refreshIdentity();
             QThread::sleep(2);
         }
 
@@ -705,6 +705,13 @@ QSslConfiguration NostaleAuth::getCustomSslConfig(const QSslConfiguration &confi
 void NostaleAuth::generateGameSessionId()
 {
     this->gameSessionId = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
+}
+
+void NostaleAuth::refreshIdentity()
+{
+    if (identity) {
+        identity->loadFromDisk();
+    }
 }
 
 void NostaleAuth::setToken(const QString &newToken)

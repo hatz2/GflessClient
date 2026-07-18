@@ -15,7 +15,7 @@ QMAKE_LFLAGS_WINDOWS += "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='f
 
 LIBS += -lkernel32 -luser32 -lgdi32
 
-VERSION = 1.1.0
+VERSION = 1.1.1
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 INCLUDEPATH += ./src ./src/gui ./src/auth

@@ -112,6 +112,11 @@ void GameforgeAccount::setAdvancedConfig(
     auth->setInstallationId(installationId.trimmed());
 }
 
+void GameforgeAccount::refreshIdentity()
+{
+    auth->refreshIdentity();
+}
+
 QString GameforgeAccount::getcustomClientPath() const
 {
     return customClientPath;
