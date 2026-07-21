@@ -18,6 +18,7 @@ void Identity::loadFromDisk()
 
 void Identity::update()
 {
+    loadFromDisk();
     fingerprint.updateServerTime();
     fingerprint.updateVector();
     fingerprint.updateCreation();
