@@ -155,6 +155,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="confirmRemoveAccountCheckbox">
+     <property name="text">
+      <string>Ask for confirmation before removing an account</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Orientation::Vertical</enum>

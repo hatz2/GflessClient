@@ -1,6 +1,7 @@
 #include "nostaleauth.h"
 #include "blackbox.h"
 #include "blackboxgenerator.h"
+#include <QDateTime>
 #include <QNetworkProxy>
 #include <QtZlib/zlib.h>
 #include <QThread>
@@ -13,35 +14,16 @@ NostaleAuth::NostaleAuth(const QString &identityPath, const QString& installatio
     , proxyUsername(proxyUser)
     , proxyPassword(proxyPasswd)
     , useProxy(proxy)
+    , identityPath(identityPath)
 {
-    if (identityPath.isEmpty()) {
-        identity = nullptr;
-    }
-    else {
-        identity = std::make_shared<Identity>(identityPath, proxyHost, proxyPort, proxyUser, proxyPasswd, proxy);
-    }
-
+    rebuildIdentity();
 
     this->locale = QLocale().name().replace("_", "-");
     this->browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
     this->eventsSessionId = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
 
     networkManager = new SyncNetworAccesskManager(this);
-
-    if (useProxy) {
-        QNetworkProxy proxy(
-            QNetworkProxy::ProxyType::Socks5Proxy,
-            proxyIp,
-            socksPort.toUInt()
-        );
-
-        if (!proxyUsername.isEmpty()) {
-            proxy.setUser(proxyUsername);
-            proxy.setPassword(proxyPassword);
-        }
-
-        networkManager->setProxy(proxy);
-    }
+    applyProxyConfiguration();
 
     initGfVersion();
     initCert();
@@ -206,27 +188,55 @@ bool NostaleAuth::authenticate(const QString &email, const QString &password, bo
 QString NostaleAuth::getToken(const QString &accountId)
 {
     if (token.isEmpty()) {
+        lastError = "Missing auth token. Re-add the Gameforge account.";
         return {};
     }
 
-    generateGameSessionId();
-
-    if (!sendIovation(accountId)) {
-        return {};
+    // Space out rapid token requests on the same Gameforge session (same mail / identity).
+    // Upstream now sends a real blackbox, so GF can reject bursts per accountId with 403.
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+    if (lastTokenRequestMs > 0) {
+        const qint64 elapsedMs = nowMs - lastTokenRequestMs;
+        const qint64 minGapMs = 3000;
+        if (elapsedMs < minGapMs) {
+            QThread::msleep(static_cast<unsigned long>(minGapMs - elapsedMs));
+        }
     }
 
-    // This sleep is a MUST, otherwise the request to thin/codes will fail
-    QThread::sleep(std::chrono::seconds(1));
+    lastError.clear();
 
-    // if (!sendGameLaunch(accountId)) {
-    //     return {};
-    // }
+    for (int attempt = 0; attempt < 3; ++attempt) {
+        if (attempt > 0) {
+            // Reload identity from disk (upstream fix) + pause before retrying a forbidden/failed iovation.
+            refreshIdentity();
+            QThread::sleep(2);
+        }
 
-    // if (!sendGameStarted(accountId)) {
-    //     return {};
-    // }
+        generateGameSessionId();
+        lastTokenRequestMs = QDateTime::currentMSecsSinceEpoch();
 
-    return sendThinCodes(accountId);
+        if (!sendIovation(accountId)) {
+            continue;
+        }
+
+        // This sleep is a MUST, otherwise the request to thin/codes will fail
+        // Qt 5.15: sleep(unsigned long secs). Qt 6 chrono overload is not available here.
+        QThread::sleep(1);
+
+        const QString code = sendThinCodes(accountId);
+        if (!code.isEmpty()) {
+            lastError.clear();
+            return code;
+        }
+
+        lastError = "thin/codes failed for account " + accountId;
+    }
+
+    if (lastError.isEmpty()) {
+        lastError = "auth/iovation failed for account " + accountId;
+    }
+
+    return {};
 }
 
 QChar NostaleAuth::getFirstNumber(QString uuid)
@@ -479,19 +489,25 @@ bool NostaleAuth::sendIovation(const QString& accountId)
     QByteArray body = QJsonDocument(content).toJson(QJsonDocument::JsonFormat::Compact);
     reply = networkManager->post(request, body);
 
+    const QByteArray response = reply->readAll();
+    const int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     reply->deleteLater();
 
-    QByteArray response = reply->readAll();
+    qDebug() << "NostaleAuth::sendIovation" << statusCode << response;
 
-    qDebug() << "NostaleAuth::sendIovation" << response;
-
-    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
+    if (statusCode != 200) {
+        lastError = QString("auth/iovation server replied: %1").arg(
+            statusCode == 403 ? "forbidden" : QString::number(statusCode)
+        );
         return false;
+    }
 
     jsonResponse = QJsonDocument::fromJson(response).object();
 
-    if (jsonResponse["status"] != "ok")
+    if (jsonResponse["status"] != "ok") {
+        lastError = "auth/iovation status not ok";
         return false;
+    }
 
     return true;
 }
@@ -708,6 +724,11 @@ QString NostaleAuth::getToken() const
     return token;
 }
 
+QString NostaleAuth::getLastError() const
+{
+    return lastError;
+}
+
 QString NostaleAuth::getInstallationId() const
 {
     return installationId;
@@ -773,4 +794,96 @@ QString NostaleAuth::getSocksPort() const
 bool NostaleAuth::getUseProxy() const
 {
     return useProxy;
+}
+
+bool NostaleAuth::isProxyActive() const
+{
+    return useProxy && !forceNoProxy;
+}
+
+void NostaleAuth::setProxyConfig(
+    bool proxyEnabled,
+    const QString& proxyHost,
+    const QString& proxyPortValue,
+    const QString& proxyUser,
+    const QString& proxyPasswd
+)
+{
+    useProxy = proxyEnabled;
+    proxyIp = proxyHost;
+    socksPort = proxyPortValue;
+    proxyUsername = proxyUser;
+    proxyPassword = proxyPasswd;
+    rebuildIdentity();
+    applyProxyConfiguration();
+}
+
+void NostaleAuth::setForceNoProxy(bool forceNoProxyValue)
+{
+    forceNoProxy = forceNoProxyValue;
+    applyProxyConfiguration();
+}
+
+void NostaleAuth::applyProxyConfiguration()
+{
+    if (!networkManager) {
+        return;
+    }
+
+    if (!isProxyActive()) {
+        networkManager->setProxy(QNetworkProxy::NoProxy);
+        return;
+    }
+
+    QNetworkProxy proxy(
+        QNetworkProxy::ProxyType::Socks5Proxy,
+        proxyIp,
+        socksPort.toUInt()
+    );
+
+    if (!proxyUsername.isEmpty()) {
+        proxy.setUser(proxyUsername);
+        proxy.setPassword(proxyPassword);
+    }
+
+    networkManager->setProxy(proxy);
+}
+
+QString NostaleAuth::getIdentityPath() const
+{
+    return identityPath;
+}
+
+void NostaleAuth::setIdentityPath(const QString& newIdentityPath)
+{
+    identityPath = newIdentityPath.trimmed();
+    rebuildIdentity();
+}
+
+void NostaleAuth::setInstallationId(const QString& newInstallationId)
+{
+    installationId = newInstallationId.trimmed();
+    if (installationId.isEmpty()) {
+        initInstallationId();
+    }
+    if (installationId.isEmpty()) {
+        installationId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    }
+}
+
+void NostaleAuth::rebuildIdentity()
+{
+    if (identityPath.trimmed().isEmpty()) {
+        identity = nullptr;
+        return;
+    }
+
+    identity = std::make_shared<Identity>(
+        identityPath,
+        proxyIp,
+        socksPort,
+        proxyUsername,
+        proxyPassword,
+        useProxy
+    );
 }

@@ -79,9 +79,37 @@ QString GameforgeAccount::getIdentityPath() const
     return identityPath;
 }
 
+NostaleAuth *GameforgeAccount::getAuth()
+{
+    return auth;
+}
+
 const NostaleAuth *GameforgeAccount::getAuth() const
 {
     return auth;
+}
+
+void GameforgeAccount::setProxyConfig(
+    bool proxyEnabled,
+    const QString& proxyHost,
+    const QString& proxyPort,
+    const QString& proxyUsername,
+    const QString& proxyPassword
+)
+{
+    auth->setProxyConfig(proxyEnabled, proxyHost, proxyPort, proxyUsername, proxyPassword);
+}
+
+void GameforgeAccount::setAdvancedConfig(
+    const QString& identPath,
+    const QString& installationId,
+    const QString& customGamePath
+)
+{
+    identityPath = identPath.trimmed();
+    customClientPath = customGamePath.trimmed();
+    auth->setIdentityPath(identityPath);
+    auth->setInstallationId(installationId.trimmed());
 }
 
 void GameforgeAccount::refreshIdentity()
