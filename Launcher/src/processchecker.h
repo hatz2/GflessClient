@@ -4,7 +4,7 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 
-bool isProcessRunning(const wchar_t* processName)
+inline bool isProcessRunning(const wchar_t* processName)
 {
     bool exists = false;
     PROCESSENTRY32W entry;
@@ -33,7 +33,7 @@ bool isProcessRunning(const wchar_t* processName)
     return exists;
 }
 
-void killProcess(const wchar_t* processName)
+inline void killProcess(const wchar_t* processName)
 {
     PROCESSENTRY32W entry;
     entry.dwSize = sizeof(PROCESSENTRY32W);

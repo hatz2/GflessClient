@@ -48,6 +48,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "C:\Users\root\Github\GflessClient\Launcher\build\Desktop_Qt_6_11_1_MSVC2022_64bit-Release\bin\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\root\Github\GflessClient\Launcher\build\Desktop_Qt_6_11_1_MSVC2022_64bit-Release\bin\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\root\Github\GflessClient\PowCaptchaSolver\dist\PowCaptchaSolver.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\root\Github\GflessClient\BlackboxExtractor\dist\BlackboxExtractor.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

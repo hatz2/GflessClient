@@ -8,7 +8,12 @@
 #include "gameupdatedialog.h"
 #include "creategameaccountdialog.h"
 #include "otpdialog.h"
+#include "powcaptchasolver.h"
+#include "deviceidentity.h"
+#include "identitycapture.h"
+#include "processchecker.h"
 #include <QQueue>
+#include <QThread>
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -241,6 +246,52 @@ void MainWindow::saveAccountProfiles(const QString &path)
     settings.endGroup();
 }
 
+// Handles the challenge Gameforge answered the login with. Returns true when
+// it was passed and the login can be retried.
+bool MainWindow::solveCaptcha(const QString &gfChallengeId, SyncNetworAccesskManager *netManager, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
+{
+    QJsonObject captchaInfo = CaptchaSolver::getCaptchaInfo(gfChallengeId, netManager);
+    QString type = captchaInfo.value("type").toString();
+    QString script = captchaInfo.value("script").toString();
+
+    if (type == "gf-image-drop-captcha") {
+        CaptchaDialog captcha(gfChallengeId, netManager, this);
+
+        return captcha.exec() == QDialog::Accepted;
+    }
+
+    if (type == "gf-pow-captcha") {
+        // Nothing to answer: Gameforge's own script runs the check in a browser.
+        PowCaptchaSolver solver(gfChallengeId, script, this);
+
+        if (useProxy) {
+            solver.setProxy(proxyIp, socksPort, proxyUsername, proxyPassword);
+        }
+
+        PowCaptchaSolver::Result result = solver.run(this);
+
+        if (!result.solved) {
+            QMessageBox::warning(
+                this,
+                "Gameforge login check failed",
+                "Gameforge's login check did not pass: " + result.detail
+                    + "\n\nYou can try to add the account again, or log in once with the Gameforge client or your browser."
+            );
+        }
+
+        return result.solved;
+    }
+
+    QMessageBox::critical(
+        this,
+        "Unsupported type of captcha",
+        "Unsupported type of captcha\n\nType: " + type + "\nScript: " + script
+            + "\n\nYou need to resolve it using the gameforge client or your browser."
+    );
+
+    return false;
+}
+
 void MainWindow::addGameforgeAccount(const QString &email, const QString &password, const QString& identityPath, const QString &installationId, const QString &customClientPath, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy, const QString &otpCode)
 {
     bool captcha = false;
@@ -266,34 +317,8 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
 
     if (!gfAcc->authenticate(captcha, gfChallengeId, wrongCredentials)) {
         if (captcha) {
-            SyncNetworAccesskManager* netManager = gfAcc->getAuth()->getNetworkManager();
-
-            QJsonObject captchaInfo = CaptchaSolver::getCaptchaInfo(gfChallengeId, netManager);
-            QString type = captchaInfo.value("type").toString();
-            QString script = captchaInfo.value("script").toString();
-
-            if (type == "gf-image-drop-captcha") {
-                CaptchaDialog captcha(gfChallengeId, netManager, this);
-                int res = captcha.exec();
-
-                if (res == QDialog::Accepted) {
-                    addGameforgeAccount(email, password, identityPath, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
-                }
-            }
-            else if (type == "gf-pow-captcha") {
-                QMessageBox::warning(
-                    this,
-                    "Unsupported type of captcha",
-                    "The type of captcha you received is not supported\nYou need to resolve it using the gameforge client or your browser."
-                );
-            }
-            else {
-                QMessageBox::critical(
-                    this,
-                    "Unsupported type of captcha",
-                    "Unsupported type of captcha\n\nType: " + type + "\nScript: " + script
-                        + "\n\nYou need to resolve it using the gameforge client or your browser."
-                );
+            if (solveCaptcha(gfChallengeId, gfAcc->getAuth()->getNetworkManager(), proxyIp, socksPort, proxyUsername, proxyPassword, useProxy)) {
+                addGameforgeAccount(email, password, identityPath, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
             }
         }
         else if (gfAcc->getOtpRequired()) {
@@ -468,6 +493,21 @@ void MainWindow::on_addGameforgeAccountButton_clicked()
     QString proxyPassword = addAccountDialog.getProxyPassword();
     QString customClient = addAccountDialog.getCustomClientPath();
     bool useProxy = addAccountDialog.getUseProxy();
+
+    if (addAccountDialog.useDeviceIdentity()) {
+        // The device identity is captured once per PC; every account then
+        // gets its own copy of it.
+        if (!DeviceIdentity::exists() && !captureDeviceIdentity())
+            return;
+
+        QString error;
+        identityPath = DeviceIdentity::createForAccount(email, error);
+
+        if (identityPath.isEmpty()) {
+            QMessageBox::critical(this, "Error", "Could not create the account's identity: " + error);
+            return;
+        }
+    }
 
     addGameforgeAccount(email, password, identityPath, installationId, customClient, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
 }
@@ -824,6 +864,78 @@ void MainWindow::on_actionSave_profiles_triggered()
         return;
 
     saveAccountProfiles(path);
+}
+
+bool MainWindow::captureDeviceIdentity()
+{
+    // The Gameforge client will not start while Gfless serves its pipe.
+    gflessClient->releaseGameforgePipe();
+
+    IdentityCapture capture(this);
+    IdentityCapture::Result result = capture.run(this);
+    QString error;
+    bool saved = false;
+
+    if (!result.captured) {
+        QMessageBox::warning(this, "Device identity", "Could not capture the device identity: " + result.detail);
+    }
+    else if (!DeviceIdentity::saveFromBlackbox(result.blackbox, error)) {
+        QMessageBox::critical(this, "Device identity", "Could not save the device identity: " + error);
+    }
+    else {
+        saved = true;
+    }
+
+    const wchar_t *gameforgeClientName = L"gfclient.exe";
+
+    if (isProcessRunning(gameforgeClientName)) {
+        int res = QMessageBox::question(
+            this,
+            "Device identity",
+            QString(saved ? "The device identity was captured. " : "")
+                + "Close the Gameforge client now? It must be closed before Gfless opens game clients.",
+            QMessageBox::Yes | QMessageBox::No
+        );
+
+        if (res == QMessageBox::Yes) {
+            // killProcess stops one process per call, and the pipe is only
+            // free once every gfclient.exe is gone.
+            for (int i = 0; i < 50 && isProcessRunning(gameforgeClientName); ++i) {
+                killProcess(gameforgeClientName);
+                QThread::msleep(100);
+            }
+        }
+    }
+
+    if (!gflessClient->restoreGameforgePipe()) {
+        QMessageBox::warning(
+            this,
+            "Device identity",
+            "Close the Gameforge client before opening game clients with Gfless."
+        );
+    }
+
+    return saved;
+}
+
+void MainWindow::on_actionCapture_device_identity_triggered()
+{
+    if (DeviceIdentity::exists()) {
+        int res = QMessageBox::question(
+            this,
+            "Device identity",
+            "A device identity was captured on " + DeviceIdentity::capturedAt().toString("yyyy-MM-dd") + ". Capture a new one and replace it? Accounts already added keep their own copies.",
+            QMessageBox::Yes | QMessageBox::No
+        );
+
+        if (res != QMessageBox::Yes)
+            return;
+    }
+
+    if (!captureDeviceIdentity())
+        return;
+
+    QMessageBox::information(this, "Device identity", "Device identity saved to " + QDir::toNativeSeparators(DeviceIdentity::devicePath()));
 }
 
 void MainWindow::on_actionIdentity_generator_triggered()

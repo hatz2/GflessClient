@@ -14,6 +14,8 @@ For help and more in-depth tutorials, join the Discord server.
 * Store multiple Gameforge accounts in the same launcher.
 * Log in with Gameforge credentials or an existing authentication token.
 * Use a different identity (fingerprint) and installation ID for each Gameforge account.
+* One device identity per PC, captured once from the Gameforge client with a single manual step (`Options > Capture device identity...`); every account gets its own copy of it.
+* Add an account with just email, password and proxy: the identity file is optional and a random installation ID is pre-filled (editable).
 * Add accounts with SOCKS5 proxy support (per-account IP, port, username, password).
 
 ### Profile System
@@ -44,8 +46,9 @@ For help and more in-depth tutorials, join the Discord server.
 ### Captcha Handling
 * Built-in captcha dialog supporting image-drop captchas.
 * Retry loop for incorrect answers.
+* The `gf-pow-captcha` check (Gameforge's own script doing a proof of work in a browser) runs by itself through the bundled `PowCaptchaSolver.exe`, in a small Edge/Chrome window routed through the account's proxy.
 
-### Identity Generator
+### Identity Generator (manual fallback)
 * Generate identity files from iovation blackbox strings.
 * Decode blackbox data into a JSON identity file.
 
@@ -58,22 +61,31 @@ For help and more in-depth tutorials, join the Discord server.
 
 1. Download and run the latest release installer.
 2. Follow the installer prompts — it will create start menu entries and desktop shortcuts.
-3. Generate your identity file (see instructions below).
-4. Go to `Options > Settings` and select your identity file.
-5. Go to `Options > Settings` and select your `NostaleClientX.exe`.
-6. Add a Gameforge account.
-7. Select the accounts you want to open and click **Play**.
+3. Go to `Options > Settings` and select your `NostaleClientX.exe`.
+4. Add a Gameforge account with your email, password and, optionally, a SOCKS5 proxy. The first time, Gfless captures this PC's device identity (see below).
+5. Select the accounts you want to open and click **Play**.
 
-## How to generate identity file
+## How the device identity works
 
-You need to extract a valid blackbox from a request to `auth/iovation`. The easiest way is to use `BlackboxExtractor.exe`, which is bundled in the installation directory:
+Gameforge expects the identity (fingerprint) of your PC as the Gameforge client reports it. Gfless captures it once per PC through the bundled `BlackboxExtractor.exe`, with a single manual step:
+
+1. Go to `Options > Capture device identity...`, or just add an account with **Use this PC's device identity** selected (the default) while no identity was captured yet.
+2. Gfless starts the capture and attaches to the Gameforge client (it starts the client when it is not running).
+3. Press **Play** in the Gameforge client (log in first if it asks you to). That is all you have to do.
+4. Gfless saves the identity to `%APPDATA%\Hatz Nostale\Gfless Client\identities\device.json` and offers to close the Gameforge client, which must be closed before Gfless opens game clients.
+
+Every account added with the device identity gets its own copy of it (`identities\<email>.json`), so capturing a new device identity later does not change the accounts already added. Choosing an identity file in the **Add account** dialog is optional now.
+
+### Manual identity file (fallback)
+
+You can still create an identity file by hand from a blackbox captured with `BlackboxExtractor.exe`:
 
 1. The official Gameforge client can be running already — BlackboxExtractor will attach to it. If it's not running, BlackboxExtractor will launch it automatically.
 2. Run `BlackboxExtractor.exe` from the installation folder (default: `C:\Program Files\Gfless Client`).
-3. It will automatically launch the Gameforge client and capture the blackbox from the `auth/iovation` request.
+3. Press **Play** in the Gameforge client. BlackboxExtractor captures the blackbox from the `auth/iovation` or `auth/thin/codes` request it sends.
 4. The blackbox string is copied to your clipboard automatically. You should see it in the console output.
 5. In GflessClient, go to `Options > Identity generator`, paste the blackbox, and click **Generate and save**.
-6. Save the generated identity JSON file to a location of your choice.
+6. Save the generated identity JSON file to a location of your choice, then select it with **Use an identity file** when you add the account.
 
 > **Note:** If you prefer to capture the blackbox manually with Fiddler, you can still do so — but the bundled BlackboxExtractor is the recommended method.
 

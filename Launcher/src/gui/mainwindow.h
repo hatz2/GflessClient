@@ -62,6 +62,8 @@ private slots:
 
     void on_actionSave_profiles_triggered();
 
+    void on_actionCapture_device_identity_triggered();
+
     void on_actionIdentity_generator_triggered();
 
     void on_addProfileButton_clicked();
@@ -115,6 +117,20 @@ private:
         const QString& proxyPassword,
         const bool useProxy
         );
+
+    bool solveCaptcha(
+        const QString& gfChallengeId,
+        SyncNetworAccesskManager* netManager,
+        const QString& proxyIp,
+        const QString& socksPort,
+        const QString& proxyUsername,
+        const QString& proxyPassword,
+        const bool useProxy
+    );
+
+    // Captures this PC's device identity from the Gameforge client and
+    // stores it. Returns false (after telling the user why) when it failed.
+    bool captureDeviceIdentity();
 
     void removeAccountsFromDefaultProfile(const QString& email);
     void displayProfile(int index);

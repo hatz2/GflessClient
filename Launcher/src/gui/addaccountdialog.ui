@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>362</width>
-    <height>572</height>
+    <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,14 +48,41 @@
    <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Identity path (required):</string>
+      <string>Identity:</string>
      </property>
     </widget>
    </item>
    <item>
+    <layout class="QVBoxLayout" name="identitySourceLayout">
+     <item>
+      <widget class="QRadioButton" name="deviceIdentityRadio">
+       <property name="text">
+        <string>Use this PC's device identity (recommended)</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="identityFileRadio">
+       <property name="text">
+        <string>Use an identity file:</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0">
+     <property name="leftMargin">
+      <number>20</number>
+     </property>
      <item>
       <widget class="QLineEdit" name="identityPathLineEdit">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="readOnly">
         <bool>true</bool>
        </property>
@@ -63,6 +90,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="selectIdentityButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Select</string>
        </property>
