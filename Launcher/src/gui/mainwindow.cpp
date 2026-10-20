@@ -13,6 +13,7 @@
 #include "identitycapture.h"
 #include "processchecker.h"
 #include <QQueue>
+#include <QThread>
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -867,19 +868,22 @@ void MainWindow::on_actionSave_profiles_triggered()
 
 bool MainWindow::captureDeviceIdentity()
 {
+    // The Gameforge client will not start while Gfless serves its pipe.
+    gflessClient->releaseGameforgePipe();
+
     IdentityCapture capture(this);
     IdentityCapture::Result result = capture.run(this);
+    QString error;
+    bool saved = false;
 
     if (!result.captured) {
         QMessageBox::warning(this, "Device identity", "Could not capture the device identity: " + result.detail);
-        return false;
     }
-
-    QString error;
-
-    if (!DeviceIdentity::saveFromBlackbox(result.blackbox, error)) {
+    else if (!DeviceIdentity::saveFromBlackbox(result.blackbox, error)) {
         QMessageBox::critical(this, "Device identity", "Could not save the device identity: " + error);
-        return false;
+    }
+    else {
+        saved = true;
     }
 
     const wchar_t *gameforgeClientName = L"gfclient.exe";
@@ -888,15 +892,30 @@ bool MainWindow::captureDeviceIdentity()
         int res = QMessageBox::question(
             this,
             "Device identity",
-            "The device identity was captured. Close the Gameforge client now? It must be closed before Gfless opens game clients.",
+            QString(saved ? "The device identity was captured. " : "")
+                + "Close the Gameforge client now? It must be closed before Gfless opens game clients.",
             QMessageBox::Yes | QMessageBox::No
         );
 
-        if (res == QMessageBox::Yes)
-            killProcess(gameforgeClientName);
+        if (res == QMessageBox::Yes) {
+            // killProcess stops one process per call, and the pipe is only
+            // free once every gfclient.exe is gone.
+            for (int i = 0; i < 50 && isProcessRunning(gameforgeClientName); ++i) {
+                killProcess(gameforgeClientName);
+                QThread::msleep(100);
+            }
+        }
     }
 
-    return true;
+    if (!gflessClient->restoreGameforgePipe()) {
+        QMessageBox::warning(
+            this,
+            "Device identity",
+            "Close the Gameforge client before opening game clients with Gfless."
+        );
+    }
+
+    return saved;
 }
 
 void MainWindow::on_actionCapture_device_identity_triggered()
