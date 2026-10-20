@@ -8,6 +8,7 @@
 #include "gameupdatedialog.h"
 #include "creategameaccountdialog.h"
 #include "otpdialog.h"
+#include "powcaptchasolver.h"
 #include <QQueue>
 #include "ui_mainwindow.h"
 
@@ -241,6 +242,52 @@ void MainWindow::saveAccountProfiles(const QString &path)
     settings.endGroup();
 }
 
+// Handles the challenge Gameforge answered the login with. Returns true when
+// it was passed and the login can be retried.
+bool MainWindow::solveCaptcha(const QString &gfChallengeId, SyncNetworAccesskManager *netManager, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
+{
+    QJsonObject captchaInfo = CaptchaSolver::getCaptchaInfo(gfChallengeId, netManager);
+    QString type = captchaInfo.value("type").toString();
+    QString script = captchaInfo.value("script").toString();
+
+    if (type == "gf-image-drop-captcha") {
+        CaptchaDialog captcha(gfChallengeId, netManager, this);
+
+        return captcha.exec() == QDialog::Accepted;
+    }
+
+    if (type == "gf-pow-captcha") {
+        // Nothing to answer: Gameforge's own script runs the check in a browser.
+        PowCaptchaSolver solver(gfChallengeId, script, this);
+
+        if (useProxy) {
+            solver.setProxy(proxyIp, socksPort, proxyUsername, proxyPassword);
+        }
+
+        PowCaptchaSolver::Result result = solver.run(this);
+
+        if (!result.solved) {
+            QMessageBox::warning(
+                this,
+                "Gameforge login check failed",
+                "Gameforge's login check did not pass: " + result.detail
+                    + "\n\nYou can try to add the account again, or log in once with the Gameforge client or your browser."
+            );
+        }
+
+        return result.solved;
+    }
+
+    QMessageBox::critical(
+        this,
+        "Unsupported type of captcha",
+        "Unsupported type of captcha\n\nType: " + type + "\nScript: " + script
+            + "\n\nYou need to resolve it using the gameforge client or your browser."
+    );
+
+    return false;
+}
+
 void MainWindow::addGameforgeAccount(const QString &email, const QString &password, const QString& identityPath, const QString &installationId, const QString &customClientPath, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy, const QString &otpCode)
 {
     bool captcha = false;
@@ -266,34 +313,8 @@ void MainWindow::addGameforgeAccount(const QString &email, const QString &passwo
 
     if (!gfAcc->authenticate(captcha, gfChallengeId, wrongCredentials)) {
         if (captcha) {
-            SyncNetworAccesskManager* netManager = gfAcc->getAuth()->getNetworkManager();
-
-            QJsonObject captchaInfo = CaptchaSolver::getCaptchaInfo(gfChallengeId, netManager);
-            QString type = captchaInfo.value("type").toString();
-            QString script = captchaInfo.value("script").toString();
-
-            if (type == "gf-image-drop-captcha") {
-                CaptchaDialog captcha(gfChallengeId, netManager, this);
-                int res = captcha.exec();
-
-                if (res == QDialog::Accepted) {
-                    addGameforgeAccount(email, password, identityPath, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
-                }
-            }
-            else if (type == "gf-pow-captcha") {
-                QMessageBox::warning(
-                    this,
-                    "Unsupported type of captcha",
-                    "The type of captcha you received is not supported\nYou need to resolve it using the gameforge client or your browser."
-                );
-            }
-            else {
-                QMessageBox::critical(
-                    this,
-                    "Unsupported type of captcha",
-                    "Unsupported type of captcha\n\nType: " + type + "\nScript: " + script
-                        + "\n\nYou need to resolve it using the gameforge client or your browser."
-                );
+            if (solveCaptcha(gfChallengeId, gfAcc->getAuth()->getNetworkManager(), proxyIp, socksPort, proxyUsername, proxyPassword, useProxy)) {
+                addGameforgeAccount(email, password, identityPath, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
             }
         }
         else if (gfAcc->getOtpRequired()) {

@@ -42,6 +42,7 @@ SOURCES += \
     src/gui/identitydialog.cpp \
     src/gui/otpdialog.cpp \
     src/auth/nostaleauth.cpp \
+    src/auth/powcaptchasolver.cpp \
     src/profile.cpp \
     src/gui/settingsdialog.cpp \
     src/syncnetworkaccessmanager.cpp \
@@ -69,6 +70,7 @@ HEADERS += \
     src/gui/otpdialog.h \
     src/gui/mainwindow.h \
     src/auth/nostaleauth.h \
+    src/auth/powcaptchasolver.h \
     src/processchecker.h \
     src/profile.h \
     src/gui/settingsdialog.h \

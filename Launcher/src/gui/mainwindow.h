@@ -116,6 +116,16 @@ private:
         const bool useProxy
         );
 
+    bool solveCaptcha(
+        const QString& gfChallengeId,
+        SyncNetworAccesskManager* netManager,
+        const QString& proxyIp,
+        const QString& socksPort,
+        const QString& proxyUsername,
+        const QString& proxyPassword,
+        const bool useProxy
+    );
+
     void removeAccountsFromDefaultProfile(const QString& email);
     void displayProfile(int index);
 
