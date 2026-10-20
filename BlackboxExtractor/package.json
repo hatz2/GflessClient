@@ -6,7 +6,8 @@
   "scripts": {
     "build": "frida-compile src/agent.ts -o build/agent.js",
     "watch": "frida-compile src/agent.ts -o build/agent.js -w",
-    "launch": "python src/client.py"
+    "launch": "python src/client.py",
+    "test": "tsc src/collector.ts --outDir build/test --module es2022 --target es2020 --moduleResolution bundler --lib es2022 --types node --skipLibCheck && node tests/collector.test.mjs"
   },
   "devDependencies": {
     "@types/frida-gum": "^19.0.1",
