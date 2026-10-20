@@ -71,7 +71,7 @@ Gameforge expects the identity (fingerprint) of your PC as the Gameforge client 
 
 1. Go to `Options > Capture device identity...`, or just add an account with **Use this PC's device identity** selected (the default) while no identity was captured yet.
 2. Gfless starts the capture and attaches to the Gameforge client (it starts the client when it is not running).
-3. Log in to the Gameforge client, or press **Play** in it if it is already logged in. That is all you have to do.
+3. Press **Play** in the Gameforge client (log in first if it asks you to). That is all you have to do.
 4. Gfless saves the identity to `%APPDATA%\Hatz Nostale\Gfless Client\identities\device.json` and offers to close the Gameforge client, which must be closed before Gfless opens game clients.
 
 Every account added with the device identity gets its own copy of it (`identities\<email>.json`), so capturing a new device identity later does not change the accounts already added. Choosing an identity file in the **Add account** dialog is optional now.
@@ -82,7 +82,7 @@ You can still create an identity file by hand from a blackbox captured with `Bla
 
 1. The official Gameforge client can be running already — BlackboxExtractor will attach to it. If it's not running, BlackboxExtractor will launch it automatically.
 2. Run `BlackboxExtractor.exe` from the installation folder (default: `C:\Program Files\Gfless Client`).
-3. Log in to the Gameforge client, or press **Play** if it is already logged in. BlackboxExtractor captures the blackbox from the client's login (`auth/sessions`), `auth/iovation` or `auth/thin/codes` request.
+3. Press **Play** in the Gameforge client. BlackboxExtractor captures the blackbox from the `auth/iovation` or `auth/thin/codes` request it sends.
 4. The blackbox string is copied to your clipboard automatically. You should see it in the console output.
 5. In GflessClient, go to `Options > Identity generator`, paste the blackbox, and click **Generate and save**.
 6. Save the generated identity JSON file to a location of your choice, then select it with **Use an identity file** when you add the account.

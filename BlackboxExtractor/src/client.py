@@ -280,7 +280,7 @@ def main() -> int:
         return EXIT_FAILED
 
     out.log("[+] Script loaded successfully")
-    out.log("[*] Waiting for auth requests: log in to the Gameforge client, or press Play if it is already logged in...")
+    out.log("[*] Waiting for auth requests: press Play in the Gameforge client...")
     out.log("[*] Press Ctrl+C to exit\n")
     out.event("waiting")
 

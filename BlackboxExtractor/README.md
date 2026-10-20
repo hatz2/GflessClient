@@ -7,13 +7,13 @@ Hooks `SSL_write` in the OpenSSL library the client loads (`libssl-1_1.dll` sinc
 `POST /api/v1/auth/<endpoint>` request (the current client sends headers and body in separate writes). The blackbox
 is taken from any of them:
 
-- `auth/sessions`: the Gameforge client login (plain `tra:...` value),
 - `auth/iovation`: the device check (plain `tra:...` value),
-- `auth/thin/codes`: sent when a game is started (base64, XORed with a key derived from `gsid` and
+- `auth/thin/codes`: the game code request (base64, XORed with a key derived from `gsid` and
   `platformGameAccountId`; decoded by the host).
 
-So logging in to the Gameforge client is enough; pressing Play is only needed when the client is already logged in.
-The account password in the login request is dropped inside the target process and never reaches the host.
+Both are sent when **Play** is pressed in the Gameforge client. The client's own login runs in its embedded
+browser, which has its own TLS library, so it is not seen here. Any `password` field of a captured request is
+dropped inside the target process and never reaches the host.
 
 ## Prerequisites
 

@@ -48,7 +48,7 @@ IdentityCapture::Result IdentityCapture::run(QWidget *parent)
 
     QProgressDialog dialog(
         "Waiting for the Gameforge client to send its device fingerprint.\n\n"
-        "Log in to the Gameforge client, or press Play if it is already logged in.\n"
+        "Press Play in the Gameforge client (log in first if it asks you to).\n"
         "This window closes by itself.",
         "Cancel", 0, 0, parent
     );
