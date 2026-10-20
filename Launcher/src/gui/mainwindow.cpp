@@ -9,6 +9,9 @@
 #include "creategameaccountdialog.h"
 #include "otpdialog.h"
 #include "powcaptchasolver.h"
+#include "deviceidentity.h"
+#include "identitycapture.h"
+#include "processchecker.h"
 #include <QQueue>
 #include "ui_mainwindow.h"
 
@@ -490,6 +493,21 @@ void MainWindow::on_addGameforgeAccountButton_clicked()
     QString customClient = addAccountDialog.getCustomClientPath();
     bool useProxy = addAccountDialog.getUseProxy();
 
+    if (addAccountDialog.useDeviceIdentity()) {
+        // The device identity is captured once per PC; every account then
+        // gets its own copy of it.
+        if (!DeviceIdentity::exists() && !captureDeviceIdentity())
+            return;
+
+        QString error;
+        identityPath = DeviceIdentity::createForAccount(email, error);
+
+        if (identityPath.isEmpty()) {
+            QMessageBox::critical(this, "Error", "Could not create the account's identity: " + error);
+            return;
+        }
+    }
+
     addGameforgeAccount(email, password, identityPath, installationId, customClient, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
 }
 
@@ -845,6 +863,60 @@ void MainWindow::on_actionSave_profiles_triggered()
         return;
 
     saveAccountProfiles(path);
+}
+
+bool MainWindow::captureDeviceIdentity()
+{
+    IdentityCapture capture(this);
+    IdentityCapture::Result result = capture.run(this);
+
+    if (!result.captured) {
+        QMessageBox::warning(this, "Device identity", "Could not capture the device identity: " + result.detail);
+        return false;
+    }
+
+    QString error;
+
+    if (!DeviceIdentity::saveFromBlackbox(result.blackbox, error)) {
+        QMessageBox::critical(this, "Device identity", "Could not save the device identity: " + error);
+        return false;
+    }
+
+    const wchar_t *gameforgeClientName = L"gfclient.exe";
+
+    if (isProcessRunning(gameforgeClientName)) {
+        int res = QMessageBox::question(
+            this,
+            "Device identity",
+            "The device identity was captured. Close the Gameforge client now? It must be closed before Gfless opens game clients.",
+            QMessageBox::Yes | QMessageBox::No
+        );
+
+        if (res == QMessageBox::Yes)
+            killProcess(gameforgeClientName);
+    }
+
+    return true;
+}
+
+void MainWindow::on_actionCapture_device_identity_triggered()
+{
+    if (DeviceIdentity::exists()) {
+        int res = QMessageBox::question(
+            this,
+            "Device identity",
+            "A device identity was captured on " + DeviceIdentity::capturedAt().toString("yyyy-MM-dd") + ". Capture a new one and replace it? Accounts already added keep their own copies.",
+            QMessageBox::Yes | QMessageBox::No
+        );
+
+        if (res != QMessageBox::Yes)
+            return;
+    }
+
+    if (!captureDeviceIdentity())
+        return;
+
+    QMessageBox::information(this, "Device identity", "Device identity saved to " + QDir::toNativeSeparators(DeviceIdentity::devicePath()));
 }
 
 void MainWindow::on_actionIdentity_generator_triggered()

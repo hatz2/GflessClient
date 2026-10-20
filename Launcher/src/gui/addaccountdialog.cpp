@@ -1,5 +1,6 @@
 #include "addaccountdialog.h"
 #include "ui_addaccountdialog.h"
+#include "deviceidentity.h"
 #include <QFileDialog>
 #include <QUuid>
 
@@ -9,6 +10,20 @@ AddAccountDialog::AddAccountDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
+
+    if (DeviceIdentity::exists())
+        ui->deviceIdentityRadio->setText("Use this PC's device identity (captured " + DeviceIdentity::capturedAt().toString("yyyy-MM-dd") + ")");
+    else
+        ui->deviceIdentityRadio->setText("Use this PC's device identity (will be captured now from the Gameforge client)");
+
+    // The radios are exclusive, so one toggled signal covers both.
+    ui->deviceIdentityRadio->setChecked(true);
+    connect(ui->identityFileRadio, &QRadioButton::toggled, this, &AddAccountDialog::updateIdentitySource);
+    updateIdentitySource();
+
+    // Every account gets its own installation id; clearing the field falls
+    // back to the Gameforge client's own id.
+    ui->installationIdLineEdit->setText(QUuid::createUuid().toString(QUuid::WithoutBraces));
 }
 
 AddAccountDialog::~AddAccountDialog()
@@ -48,6 +63,7 @@ void AddAccountDialog::on_loginButton_clicked()
     proxyPassword = ui->proxyPasswordLineEdit->text();
     customClientPath = ui->customGamePathLineEdit->text();
     installationId = ui->installationIdLineEdit->text();
+    deviceIdentity = ui->deviceIdentityRadio->isChecked();
 
     if (email.isEmpty() || password.isEmpty())
     {
@@ -60,8 +76,13 @@ void AddAccountDialog::on_loginButton_clicked()
         return;
     }
 
-    if (identityPath.isEmpty()) {
-        QMessageBox::critical(this, "Error", "Identity path cannot be empty");
+    if (deviceIdentity) {
+        // The account gets its own copy of the device identity later on.
+        identityPath.clear();
+    }
+
+    else if (identityPath.isEmpty()) {
+        QMessageBox::critical(this, "Error", "Select an identity file or use this PC's device identity");
         return;
     }
 
@@ -71,6 +92,19 @@ void AddAccountDialog::on_loginButton_clicked()
 QString AddAccountDialog::getIdentityPath() const
 {
     return identityPath;
+}
+
+bool AddAccountDialog::useDeviceIdentity() const
+{
+    return deviceIdentity;
+}
+
+void AddAccountDialog::updateIdentitySource()
+{
+    bool useFile = ui->identityFileRadio->isChecked();
+
+    ui->identityPathLineEdit->setEnabled(useFile);
+    ui->selectIdentityButton->setEnabled(useFile);
 }
 
 

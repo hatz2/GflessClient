@@ -31,6 +31,8 @@ SOURCES += \
     src/gui/addprofileaccountdialog.cpp \
     src/gui/addprofiledialog.cpp \
     src/auth/blackbox.cpp \
+    src/auth/deviceidentity.cpp \
+    src/auth/identitycapture.cpp \
     src/gui/captchadialog.cpp \
     src/auth/captchasolver.cpp \
     src/auth/fingerprint.cpp \
@@ -58,6 +60,8 @@ HEADERS += \
     src/gui/addprofileaccountdialog.h \
     src/gui/addprofiledialog.h \
     src/auth/blackbox.h \
+    src/auth/deviceidentity.h \
+    src/auth/identitycapture.h \
     src/gui/captchadialog.h \
     src/auth/captchasolver.h \
     src/auth/fingerprint.h \
