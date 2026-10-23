@@ -44,6 +44,7 @@ For help and more in-depth tutorials, join the Discord server.
 ### Captcha Handling
 * Built-in captcha dialog supporting image-drop captchas.
 * Retry loop for incorrect answers.
+* The `gf-pow-captcha` check (Gameforge's own script doing a proof of work in a browser) runs by itself through the bundled `PowCaptchaSolver.exe`, in a small Edge/Chrome window routed through the account's proxy.
 
 ### Identity Generator
 * Generate identity files from iovation blackbox strings.
