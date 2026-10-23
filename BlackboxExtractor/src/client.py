@@ -44,11 +44,26 @@ def on_message(message, data):
 
     payload: dict = message["payload"]
     request: dict = payload["request"]
-    blackbox: str = request["blackbox"]
-    blackbox_bytes: bytes = base64.b64decode(blackbox.encode())
-    key: bytes = f"{request["gsid"]}-{request["platformGameAccountId"]}".encode()
-    key = hashlib.sha512(key).hexdigest().encode()
-    blackbox = xorBlackbox(blackbox_bytes, key).decode()
+    blackbox = request.get("blackbox")
+    if not isinstance(blackbox, str) or not blackbox:
+        print(f"[-] The request has no 'blackbox' string; fields: {sorted(request)}")
+        return
+    if "gsid" not in request or "platformGameAccountId" not in request:
+        print(f"[-] Cannot decode: missing gsid/platformGameAccountId; fields: {sorted(request)}")
+        return
+    try:
+        blackbox_bytes: bytes = base64.b64decode(blackbox.encode())
+        # Single quotes inside the f-string: nested double quotes need Python 3.12+.
+        key: bytes = f"{request['gsid']}-{request['platformGameAccountId']}".encode()
+        key = hashlib.sha512(key).hexdigest().encode()
+        blackbox = xorBlackbox(blackbox_bytes, key).decode()
+    except (ValueError, UnicodeDecodeError) as e:
+        # The encoding changed: show the raw value so the format can be studied.
+        print(f"[-] Could not decode the blackbox ({type(e).__name__}: {e}); raw value:")
+        print(request["blackbox"])
+        return
+    if not blackbox.startswith("tra:"):
+        print("[!] Decoded value does not start with 'tra:' - check it before using it")
     print(f"\n[🔑] Blackbox: {blackbox}\n")
     copy_to_clipboard(blackbox)
 

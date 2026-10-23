@@ -2,7 +2,9 @@
 
 Extracts the `blackbox` field from auth/iovation HTTPS requests in `gfclient.exe` using Frida.
 
-Hooks `SSL_write` / `SSL_read` in `libeay32.dll` to capture decrypted traffic, parses the JSON body, and copies the blackbox value to clipboard.
+Hooks `SSL_write` in the OpenSSL library the client loads (`libssl-1_1.dll` since the 3.0.0.2198 client of 2026-10,
+`ssleay32.dll` before) to capture decrypted traffic, reassembles the JSON body of the `thin/codes` request
+(the current client sends headers and body in separate writes), and copies the blackbox value to clipboard.
 
 ## Prerequisites
 
@@ -25,6 +27,12 @@ python src/client.py --spawn
 
 # Or specify a custom path
 python src/client.py "C:/path/to/gfclient.exe"
+```
+
+## Tests
+
+```bash
+npm test   # the request reassembly, no Frida or game client needed
 ```
 
 ## Building a self-contained .exe
