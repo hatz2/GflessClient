@@ -22,6 +22,10 @@ public:
 
     QString getIdentityPath() const;
 
+    // True when the account should use a copy of this PC's device identity
+    // instead of an identity file chosen by the user.
+    bool useDeviceIdentity() const;
+
     QString getProxyIp() const;
     QString getSocksPort() const;
     bool getUseProxy() const;
@@ -49,6 +53,8 @@ private slots:
 
     void on_installationIdButton_clicked();
 
+    void updateIdentitySource();
+
 private:
     Ui::AddAccountDialog *ui;
     QString email;
@@ -61,6 +67,7 @@ private:
     QString customClientPath;
     QString installationId;
     bool useProxy;
+    bool deviceIdentity = true;
 };
 
 #endif // ADDACCOUNTDIALOG_H

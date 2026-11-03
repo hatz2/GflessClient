@@ -22,6 +22,15 @@ public:
 
     bool openClientSettings(const QString& gameClientPath);
 
+    // The real Gameforge client refuses to start ("already running") while
+    // this pipe exists, so it is released while the Gameforge client has to
+    // run (the device identity capture) and taken back afterwards.
+    void releaseGameforgePipe();
+
+    // Listens on the pipe again; false while another process still owns it
+    // (the Gameforge client is still open). openClient retries by itself.
+    bool restoreGameforgePipe();
+
 private slots:
     void handleNewConnection();
 
