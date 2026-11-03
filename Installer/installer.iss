@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "Gfless Client"
-#define MyAppVersion "1.1.3"
+#define MyAppVersion "1.2.0"
 #define MyAppPublisher "Hatz"
 #define MyAppURL "https://github.com/hatz2/GflessClient"
 #define MyAppExeName "GflessClient.exe"
