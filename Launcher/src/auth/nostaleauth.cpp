@@ -226,18 +226,17 @@ QString NostaleAuth::getToken(const QString &accountId)
         return {};
     }
 
-    // This sleep is a MUST, otherwise the request to thin/codes will fail
-    QThread::sleep(std::chrono::seconds(1));
+    for (int attempt = 0; attempt < 3; ++attempt) {
+        // This sleep is a MUST, otherwise the request to thin/codes will fail
+        QThread::sleep(std::chrono::seconds(1));
+        QString code = sendThinCodes(accountId);
 
-    // if (!sendGameLaunch(accountId)) {
-    //     return {};
-    // }
+        if (!code.isEmpty()) {
+            return code;
+        }
+    }
 
-    // if (!sendGameStarted(accountId)) {
-    //     return {};
-    // }
-
-    return sendThinCodes(accountId);
+    return {};
 }
 
 QChar NostaleAuth::getFirstNumber(QString uuid)
