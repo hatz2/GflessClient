@@ -211,6 +211,47 @@ class PageTest(unittest.TestCase):
         self.assertIn("window.close()", solver.PAGE)
         self.assertIn('fetch("/ping"', solver.PAGE)
 
+    def test_page_fetches_the_widget_script_after_the_pings_start(self):
+        # A stalled script download must not keep the page from pinging and
+        # from reporting progress.
+        self.assertLess(solver.PAGE.index('fetch("/ping"'), solver.PAGE.index('script.src = "{script}"'))
+        self.assertIn('"/progress"', solver.PAGE)
+        self.assertIn("script.onerror", solver.PAGE)
+
+    def test_page_progress_is_recorded_and_summarised(self):
+        html = solver.PAGE.format(script=solver.WIDGET_ORIGIN + "/widget.js", origin=solver.WIDGET_ORIGIN,
+                                  challenge="abc", locale="en-GB")
+        page = solver.Page(html)
+        try:
+            self.assertEqual(page.summary(), "the browser never asked for the page")
+            conn = http.client.HTTPConnection("127.0.0.1", page.port, timeout=5)
+            conn.request("GET", "/")
+            conn.getresponse().read()
+            self.assertEqual(page.summary(), "the page was served but its script never ran")
+            conn.request("POST", "/ping", body="")
+            conn.getresponse().read()
+            self.assertEqual(page.summary(), "the page is alive but reported no progress")
+            conn.request("POST", "/progress", body=json.dumps({"event": "downloading the widget script"}),
+                         headers={"Content-Type": "application/json"})
+            self.assertEqual(conn.getresponse().status, 204)
+            self.assertEqual(page.progress, ["downloading the widget script"])
+            self.assertEqual(page.summary(), "last progress: downloading the widget script")
+        finally:
+            page.close()
+
+
+class LogTest(unittest.TestCase):
+    def test_log_never_raises(self):
+        class Broken(io.StringIO):
+            def write(self, _text):
+                # What a pipe whose other end is gone raises on Windows.
+                raise OSError(22, "Invalid argument")
+
+        with patch.object(solver.sys, "stderr", Broken()):
+            solver.log("hello")
+        with patch.object(solver.sys, "stderr", None):
+            solver.log("hello")
+
 
 class FakeBrowserTest(unittest.TestCase):
     """run_check with a "browser" that exits at once (python with unknown
