@@ -12,10 +12,27 @@ GflessClient::GflessClient(QObject *parent) : QObject(parent)
     connect(gfServer, &QLocalServer::newConnection, this, &GflessClient::handleNewConnection);
 }
 
+void GflessClient::releaseGameforgePipe()
+{
+    gfServer->close();
+}
+
+bool GflessClient::restoreGameforgePipe()
+{
+    if (gfServer->isListening())
+        return true;
+
+    return gfServer->listen("GameforgeClientJSONRPC");
+}
+
 bool GflessClient::openClient(const QString& displayName, const QString& token, const QString &gameClientPath, const int &gameLanguage, DWORD& createdPID)
 {
     this->displayName = displayName;
     this->token = token;
+
+    // The game asks this pipe for its login code: make sure it is served
+    // (it is released while a device identity capture runs).
+    restoreGameforgePipe();
 
     int index = gameClientPath.lastIndexOf("/");
 

@@ -186,6 +186,7 @@
      <string>Options</string>
     </property>
     <addaction name="actionSave_profiles"/>
+    <addaction name="actionCapture_device_identity"/>
     <addaction name="actionIdentity_generator"/>
     <addaction name="actionSettings"/>
    </widget>
@@ -225,6 +226,11 @@
   <action name="actionSave_profiles">
    <property name="text">
     <string>Save profiles</string>
+   </property>
+  </action>
+  <action name="actionCapture_device_identity">
+   <property name="text">
+    <string>Capture device identity...</string>
    </property>
   </action>
   <action name="actionIdentity_generator">

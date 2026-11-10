@@ -11,6 +11,21 @@ const SSL_MODULE_CANDIDATES = ["libssl-1_1.dll", "libssl-3.dll", "ssleay32.dll"]
 const MODULE_POLL_MS = 500;
 const MODULE_POLL_LIMIT = 240; // 2 minutes
 
+// The client login request (auth/sessions) carries the account password next
+// to the blackbox; it never leaves the target process.
+function withoutSecrets(body: any): any {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return body;
+  }
+  const copy: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (!/password/i.test(key)) {
+      copy[key] = value;
+    }
+  }
+  return copy;
+}
+
 class BlackboxExtractor {
   private hooked = false;
   private polls = 0;
@@ -77,9 +92,9 @@ class BlackboxExtractor {
       return;
     }
     try {
-      const request = this.collector.feed(data);
-      if (request !== null) {
-        send({ request: request });
+      const captured = this.collector.feed(data);
+      if (captured !== null) {
+        send({ path: captured.path, request: withoutSecrets(captured.body) });
       }
     } catch (e) {
       console.log(`[-] Error while reading the request: ${e}`);
