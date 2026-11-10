@@ -19,7 +19,7 @@ dropped inside the target process and never reaches the host.
 
 - [Node.js](https://nodejs.org/) (for compiling the Frida agent)
 - [Python](https://python.org/) 3.10+
-- [Frida](https://frida.re/) (`pip install frida`)
+- [Frida](https://frida.re/) (`pip install frida`; 16.x and 17.x both work, the helper never relies on 17-only bindings)
 
 ## Quick Start (development)
 

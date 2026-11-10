@@ -44,8 +44,12 @@ class FakeScript:
 
 
 class FakeSession:
+    """Like frida-python 16.x's Session: NO `pid` attribute (only the 17.x
+    generated bindings have one; reading it killed hatz2's build, 2026-10-29).
+    The fake device knows the pid; client.py must ask it, never the session."""
+
     def __init__(self, pid: int, on_load=None, create_error: Exception | None = None, gone: bool = False) -> None:
-        self.pid = pid
+        self._pid = pid
         self.on_load = on_load
         self.create_error = create_error
         self.is_detached = gone
@@ -77,8 +81,15 @@ class FakeSession:
             handler(reason, None)
 
 
+class FakeProcess:
+    def __init__(self, pid: int) -> None:
+        self.pid = pid
+
+
 class FakeFrida(types.ModuleType):
-    """frida.attach returns the queued results in order (a session or an exception)."""
+    """The device's process lookup returns the queued results in order (a
+    session's process, or an exception); frida.attach(pid) then returns that
+    session. Attaching is by pid only, as the real client does."""
 
     ProcessNotFoundError = ProcessNotFoundError
 
@@ -86,24 +97,33 @@ class FakeFrida(types.ModuleType):
         super().__init__("frida")
         self.attach_results = list(attach_results)
         self.spawn_session = spawn_session
-        self.attach_calls = 0
+        self.attach_calls = 0            # process lookups (the re-attach polls)
         self.spawn_calls = 0
+        self._by_pid = {}
+        if spawn_session is not None:
+            self._by_pid[spawn_session._pid] = spawn_session
 
-    def attach(self, target):
+    def get_local_device(self):
+        return self
+
+    def get_process(self, name: str) -> FakeProcess:
+        assert name == "gfclient.exe"
         self.attach_calls += 1
-        if isinstance(target, int):
-            # Attach to the process spawned just before.
-            return self.spawn_session
         if not self.attach_results:
             raise ProcessNotFoundError("unable to find process with name 'gfclient.exe'")
         result = self.attach_results.pop(0)
         if isinstance(result, Exception):
             raise result
-        return result
+        self._by_pid[result._pid] = result
+        return FakeProcess(result._pid)
+
+    def attach(self, target):
+        assert isinstance(target, int), "client.py must attach by pid (frida 16.x has no Session.pid)"
+        return self._by_pid[target]
 
     def spawn(self, path):
         self.spawn_calls += 1
-        return self.spawn_session.pid
+        return self.spawn_session._pid
 
     def resume(self, pid) -> None:
         pass

@@ -136,23 +136,39 @@ def find_gfclient(gfclient_path: str | None) -> str | None:
     return gfclient_path
 
 
-def try_attach(out: Output) -> tuple[Session | None, str | None]:
-    """Return (session, None) or (None, reason)."""
+GFCLIENT_PROCESS = "gfclient.exe"
+
+
+def _gfclient_pid() -> int:
+    """The pid of the running gfclient.exe, from the device's process list
+    (frida.ProcessNotFoundError when there is none).
+
+    The pid is never read from the session: `Session.pid` only exists in
+    frida-python 17 (generated bindings); the hand-written 16.x wrapper has
+    no such attribute, and a helper built on it died with "'Session' object
+    has no attribute 'pid'" right after the spawn (hatz2, 2026-10-29).
+    """
+    return frida.get_local_device().get_process(GFCLIENT_PROCESS).pid
+
+
+def try_attach(out: Output) -> tuple[Session | None, int | None, str | None]:
+    """Return (session, pid, None) or (None, None, reason)."""
     try:
-        session = frida.attach("gfclient.exe")
-        out.log(f"[+] Attached to existing gfclient.exe process (PID: {session.pid})")
-        return session, None
+        pid = _gfclient_pid()
+        session = frida.attach(pid)
+        out.log(f"[+] Attached to existing gfclient.exe process (PID: {pid})")
+        return session, pid, None
     except frida.ProcessNotFoundError as e:
-        return None, f"gfclient.exe is not running ({e})"
+        return None, None, f"gfclient.exe is not running ({e})"
     except Exception as e:
         out.log(f"[-] Error attaching: {e}")
-        return None, f"could not attach to gfclient.exe ({e})"
+        return None, None, f"could not attach to gfclient.exe ({e})"
 
 
-def try_spawn(out: Output, gfclient_path: str | None) -> tuple[Session | None, str | None]:
-    """Return (session, None) or (None, reason)."""
+def try_spawn(out: Output, gfclient_path: str | None) -> tuple[Session | None, int | None, str | None]:
+    """Return (session, pid, None) or (None, None, reason)."""
     if not gfclient_path or not os.path.exists(gfclient_path):
-        return None, f"gfclient.exe not found at: {gfclient_path}"
+        return None, None, f"gfclient.exe not found at: {gfclient_path}"
 
     try:
         out.log(f"[*] Spawning {gfclient_path}...")
@@ -160,10 +176,10 @@ def try_spawn(out: Output, gfclient_path: str | None) -> tuple[Session | None, s
         session = frida.attach(pid)
         frida.resume(pid)
         out.log(f"[+] Spawned and attached to PID: {pid}")
-        return session, None
+        return session, pid, None
     except Exception as e:
         out.log(f"[-] Error spawning: {e}")
-        return None, f"could not spawn gfclient.exe ({e})"
+        return None, None, f"could not spawn gfclient.exe ({e})"
 
 
 def _find_script() -> str | None:
@@ -311,7 +327,8 @@ def _reattach(capture: Capture, script_code: str, out: Output, deadline: float |
 
     while True:
         try:
-            session = frida.attach("gfclient.exe")
+            pid = _gfclient_pid()
+            session = frida.attach(pid)
         except Exception:
             session = None
 
@@ -319,8 +336,8 @@ def _reattach(capture: Capture, script_code: str, out: Output, deadline: float |
             # A detach of the new client while the agent loads sets it again.
             capture.detach_reason = None
             if _attach_script(session, script_code, capture, out):
-                out.log(f"[+] Attached to the new gfclient.exe process (PID: {session.pid})")
-                out.event("attached", pid=session.pid)
+                out.log(f"[+] Attached to the new gfclient.exe process (PID: {pid})")
+                out.event("attached", pid=pid)
                 _announce_waiting(out)
                 return session
             reason = capture.detach_reason or reason
@@ -345,22 +362,22 @@ def _run(args: argparse.Namespace, out: Output) -> int:
     with open(script_path, "r", encoding="utf-8") as f:
         script_code = f.read()
 
-    session = None
+    session = pid = None
 
     if not args.spawn:
-        session, attach_error = try_attach(out)
+        session, pid, attach_error = try_attach(out)
         if session:
-            out.event("attached", pid=session.pid)
+            out.event("attached", pid=pid)
         elif args.no_spawn:
             out.error(attach_error or "could not attach to gfclient.exe")
             return EXIT_FAILED
 
     if not session:
-        session, spawn_error = try_spawn(out, find_gfclient(args.gfclient_path))
+        session, pid, spawn_error = try_spawn(out, find_gfclient(args.gfclient_path))
         if not session:
             out.error(f"Could not attach to or spawn gfclient.exe: {spawn_error}")
             return EXIT_FAILED
-        out.event("spawned", pid=session.pid)
+        out.event("spawned", pid=pid)
 
     capture = Capture(out)
     if _attach_script(session, script_code, capture, out):
