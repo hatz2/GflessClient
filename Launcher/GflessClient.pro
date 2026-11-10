@@ -25,6 +25,7 @@ DESTDIR = bin
 SOURCES += \
     src/auth/blackboxgenerator.cpp \
     src/auth/gameupdater.cpp \
+    src/auth/identityrandomizer.cpp \
     src/gameaccount.cpp \
     src/gameforgeaccount.cpp \
     src/gui/addaccountdialog.cpp \
@@ -52,6 +53,7 @@ SOURCES += \
 HEADERS += \
     src/auth/blackboxgenerator.h \
     src/auth/gameupdater.h \
+    src/auth/identityrandomizer.h \
     src/gameaccount.h \
     src/gameforgeaccount.h \
     src/gui/addaccountdialog.h \

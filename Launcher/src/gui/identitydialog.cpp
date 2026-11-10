@@ -1,5 +1,10 @@
 #include "identitydialog.h"
 #include "ui_identitydialog.h"
+#include "identityrandomizer.h"
+
+#include <QJsonDocument>
+#include <QJsonObject>
+
 
 IdentityDialog::IdentityDialog(QWidget *parent) :
     QDialog(parent),
@@ -31,6 +36,12 @@ void IdentityDialog::on_generateButton_clicked()
         return;
     }
 
+    // Re-roll every machine-stable fingerprint field so each generated file is a
+    // distinct device (uuid, memory, cores, screen, gpu, profile hashes...).
+    // Only locale-descriptive fields (tz, lang, os, user agent) are kept.
+    QJsonObject identityJson = QJsonDocument::fromJson(identity).object();
+    QJsonObject uniqueIdentity = IdentityRandomizer::randomize(identityJson);
+
     QString path = QFileDialog::getSaveFileName(this, "Save identity", QDir::rootPath(), "(*.json)");
 
     if (path.isEmpty())
@@ -44,11 +55,14 @@ void IdentityDialog::on_generateButton_clicked()
         return;
     }
 
-    file.write(identity);
+    file.write(QJsonDocument(uniqueIdentity).toJson());
 
     file.close();
 
-    QMessageBox::information(this, "Success", "Identity file was generated successfully");
+    QMessageBox::information(this, "Success",
+        "Identity file was generated successfully.\n\n"
+        "All device-identifying fields were randomized,\n"
+        "so every identity you generate is unique.");
 
     accept();
 }
