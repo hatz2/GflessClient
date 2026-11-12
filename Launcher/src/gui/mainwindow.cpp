@@ -500,6 +500,75 @@ void MainWindow::on_addGameforgeAccountButton_clicked()
 }
 
 
+void MainWindow::on_editGameforgeAccountButton_clicked()
+{
+    int index = ui->gameforgeAccountComboBox->currentIndex();
+    if (index < 0 || index >= gfAccounts.size())
+        return;
+
+    GameforgeAccount* acc = gfAccounts.at(index);
+    const NostaleAuth* auth = acc->getAuth();
+
+    AddAccountDialog dialog(this);
+    dialog.setValues(acc->getEmail(), acc->getPassword(), acc->getIdentityPath(),
+        auth->getInstallationId(), acc->getcustomClientPath(), auth->getProxyIp(),
+        auth->getSocksPort(), auth->getProxyUsername(), auth->getProxyPassword(),
+        auth->getUseProxy());
+
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+
+    // Snapshot for rollback if the new settings don't log in.
+    const QString oldEmail = acc->getEmail(), oldPassword = acc->getPassword();
+    const QString oldIdentity = acc->getIdentityPath(), oldClient = acc->getcustomClientPath();
+    const QString oldIid = auth->getInstallationId();
+    const bool oldUseProxy = auth->getUseProxy();
+    const QString oldIp = auth->getProxyIp(), oldPort = auth->getSocksPort();
+    const QString oldUser = auth->getProxyUsername(), oldPass = auth->getProxyPassword();
+
+    acc->update(dialog.getEmail(), dialog.getPassword(), dialog.getIdentityPath(),
+        dialog.getInstallationId(), dialog.getCustomClientPath(), dialog.getUseProxy(),
+        dialog.getProxyIp(), dialog.getSocksPort(), dialog.getProxyUsername(),
+        dialog.getProxyPassword());
+    ui->gameforgeAccountComboBox->setItemText(index, acc->getEmail());
+
+    // Validate with a fresh login (same captcha/OTP handling as the add
+    // flow): the new proxy/identity is exercised now, not at Play time.
+    bool ok = false;
+    QString otp;
+    for (int attempt = 0; attempt < 3 && !ok; ++attempt) {
+        if (!otp.isEmpty())
+            acc->setOtpCode(otp);
+        bool captcha = false, wrongCreds = false;
+        QString challenge;
+        if (acc->authenticate(captcha, challenge, wrongCreds)) { ok = true; break; }
+        if (captcha) {
+            if (!solveCaptcha(challenge, acc->getAuth()->getNetworkManager(), dialog.getProxyIp(),
+                    dialog.getSocksPort(), dialog.getProxyUsername(),
+                    dialog.getProxyPassword(), dialog.getUseProxy()))
+                break;
+        }
+        else if (acc->getOtpRequired()) {
+            OtpDialog otpDialog(this);
+            if (otpDialog.exec() != QDialog::Accepted)
+                break;
+            otp = otpDialog.getOtpCode();
+        }
+        else {
+            QMessageBox::critical(this, "Error",
+                wrongCreds ? "Incorrect username or password" : "Authentication failed");
+            break;
+        }
+    }
+
+    if (!ok) {
+        acc->update(oldEmail, oldPassword, oldIdentity, oldIid, oldClient, oldUseProxy,
+            oldIp, oldPort, oldUser, oldPass);
+        ui->gameforgeAccountComboBox->setItemText(index, oldEmail);
+        ui->statusbar->showMessage("Edit reverted: new settings failed to log in", 10000);
+    }
+}
+
 void MainWindow::on_removeGameforgeAccountButton_clicked()
 {
     int res = QMessageBox::warning(this, "Warning", "Do you want to remove this account?\n(This will not delete your real account)", QMessageBox::Yes | QMessageBox::No);

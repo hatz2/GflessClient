@@ -28,6 +28,39 @@ GameforgeAccount::GameforgeAccount(const QString &gfEmail,
     );
 }
 
+void GameforgeAccount::update(
+    const QString &gfEmail,
+    const QString &gfPassword,
+    const QString& identPath,
+    const QString &installationId,
+    const QString& customGamePath,
+    bool proxy,
+    const QString &proxyHost,
+    const QString &proxyPort,
+    const QString &proxyUsername,
+    const QString &proxyPassword)
+{
+    const QString sessionToken = auth ? auth->getToken() : QString();
+
+    email = gfEmail;
+    password = gfPassword;
+    identityPath = identPath;
+    customClientPath = customGamePath;
+
+    delete auth;
+    auth = new NostaleAuth(
+        identityPath,
+        installationId,
+        proxy,
+        proxyHost,
+        proxyPort,
+        proxyUsername,
+        proxyPassword,
+        this
+    );
+    auth->setToken(sessionToken);
+}
+
 bool GameforgeAccount::authenticate(bool &captcha, QString &gfChallengeId, bool &wrongCredentials)
 {
     bool res = auth->authenticate(email, password, captcha, gfChallengeId, wrongCredentials);

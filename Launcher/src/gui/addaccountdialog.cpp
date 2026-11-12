@@ -155,3 +155,22 @@ QString AddAccountDialog::getInstallationId() const
     return installationId;
 }
 
+void AddAccountDialog::setValues(const QString& email, const QString& password, const QString& identityPath,
+    const QString& installationId, const QString& customClientPath, const QString& proxyIp,
+    const QString& socksPort, const QString& proxyUsername, const QString& proxyPassword,
+    bool useProxy)
+{
+    ui->emailLineEdit->setText(email);
+    ui->passwordLineEdit->setText(password);
+    ui->identityPathLineEdit->setText(identityPath);
+    ui->installationIdLineEdit->setText(installationId);
+    ui->customGamePathLineEdit->setText(customClientPath);
+    ui->proxyCheckBox->setChecked(useProxy);
+    ui->proxyIpLineEdit->setText(proxyIp);
+    ui->socksPortLineEdit->setText(socksPort);
+    ui->proxyUsernameLineEdit->setText(proxyUsername);
+    ui->proxyPasswordLineEdit->setText(proxyPassword);
+    ui->loginButton->setText("Save");
+    setWindowTitle("Edit Gameforge account");
+}
+

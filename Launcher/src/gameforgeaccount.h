@@ -23,6 +23,22 @@ public:
         QObject *parent = nullptr
     );
 
+    // Replace all connection settings in place (profile game accounts keep
+    // pointing at this object). The session token is carried over; callers
+    // should re-authenticate afterwards to validate the new settings.
+    void update(
+        const QString& gfEmail,
+        const QString& gfPassword,
+        const QString& identPath,
+        const QString& installationId,
+        const QString& customGamePath,
+        bool proxy,
+        const QString& proxyHost,
+        const QString& proxyPort,
+        const QString& proxyUsername,
+        const QString& proxyPassword
+    );
+
     bool authenticate(bool& captcha, QString& gfChallengeId, bool& wrongCredentials);
 
     bool createGameAccount(const QString& name, const QString& gfLang, QJsonObject& response);
