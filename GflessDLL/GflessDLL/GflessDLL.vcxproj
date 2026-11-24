@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="GameStructures\TCharacterSelectWidget.cpp" />
+    <ClCompile Include="GameStructures\TClientCore.cpp" />
     <ClCompile Include="GameStructures\TEWGraphicButtonWidget.cpp" />
     <ClCompile Include="GameStructures\TLBSWidget.cpp" />
     <ClCompile Include="GameStructures\TLBSWidgetList.cpp" />
@@ -148,10 +149,13 @@
     <ClCompile Include="Hook.cpp" />
     <ClCompile Include="NosmallDisabler.cpp" />
     <ClCompile Include="PatternScanner.cpp" />
+    <ClCompile Include="ProxyMod.cpp" />
+    <ClCompile Include="Socks5.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameStructures\NostaleString.h" />
     <ClInclude Include="GameStructures\TCharacterSelectWidget.h" />
+    <ClInclude Include="GameStructures\TClientCore.h" />
     <ClInclude Include="GameStructures\TEWButtonWidget.h" />
     <ClInclude Include="GameStructures\TEWGraphicButtonWidget.h" />
     <ClInclude Include="GameStructures\TLBSWidget.h" />
@@ -160,6 +164,8 @@
     <ClInclude Include="Hook.h" />
     <ClInclude Include="NosmallDisabler.h" />
     <ClInclude Include="PatternScanner.h" />
+    <ClInclude Include="ProxyMod.h" />
+    <ClInclude Include="Socks5.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

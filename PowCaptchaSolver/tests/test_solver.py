@@ -180,6 +180,27 @@ class RelayTest(unittest.TestCase):
             relay.close()
             echo.close()
 
+    def test_relay_serves_loopback_directly_despite_a_dead_proxy(self):
+        echo = EchoServer()
+        dead = socket.socket()
+        dead.bind(("127.0.0.1", 0))
+        dead_port = dead.getsockname()[1]
+        dead.close()  # nothing listens there: any upstream use fails
+        relay = solver.SocksRelay(solver.Proxy("127.0.0.1", dead_port, "alice", "s3cret"))
+        try:
+            for name in ("127.0.0.1", "localhost"):
+                sock, reply = socks5_connect_no_auth(relay.port, name, echo.port)
+                self.assertEqual(reply, 0, name)
+                sock.sendall(b"local page")
+                self.assertEqual(_read_exactly(sock, 10), b"local page")
+                sock.close()
+            # ...while anything else still goes (and fails) through the proxy.
+            _, reply = socks5_connect_no_auth(relay.port, "example.com", 443)
+            self.assertEqual(reply, 5)
+        finally:
+            relay.close()
+            echo.close()
+
 
 class PageTest(unittest.TestCase):
     def test_page_serves_the_challenge_and_takes_the_verdict(self):
@@ -239,6 +260,13 @@ class FakeBrowserTest(unittest.TestCase):
         with self.assertRaisesRegex(solver.CheckError, "did not finish"):
             solver.run_check("c1", solver.WIDGET_ORIGIN + "/w.js", None, wait_seconds=2)
 
+    def test_a_page_that_never_opens_fails_fast(self):
+        started = time.monotonic()
+        with self.assertRaisesRegex(solver.CheckError, "never opened"):
+            solver.run_check("c1", solver.WIDGET_ORIGIN + "/w.js", None,
+                             wait_seconds=30, first_ping_grace=1)
+        self.assertLess(time.monotonic() - started, 15)
+
     def test_a_window_closed_by_hand_is_reported(self):
         def live_then_close():
             # The page pings for a second, then the window goes away.
@@ -291,8 +319,12 @@ class RequestTest(unittest.TestCase):
         command = solver.browser_command("browser.exe", "C:/tmp/p", "http://127.0.0.1:1/", 4321)
         self.assertIn("--proxy-server=socks5://127.0.0.1:4321", command)
         self.assertTrue(any(arg.startswith("--host-resolver-rules=") for arg in command))
-        self.assertNotIn("--proxy-server=socks5://127.0.0.1:4321",
-                         solver.browser_command("browser.exe", "C:/tmp/p", "http://127.0.0.1:1/", None))
+        # The check page itself is on this machine: loopback must bypass the
+        # proxy, or the browser never loads the page (and the check times out).
+        self.assertIn("--proxy-bypass-list=<-loopback>", command)
+        direct = solver.browser_command("browser.exe", "C:/tmp/p", "http://127.0.0.1:1/", None)
+        self.assertNotIn("--proxy-server=socks5://127.0.0.1:4321", direct)
+        self.assertFalse(any(arg.startswith("--proxy-bypass-list=") for arg in direct))
 
     def test_main_reports_a_bad_request_on_stdout(self):
         sys.stdin = io.StringIO("{}")
@@ -303,6 +335,25 @@ class RequestTest(unittest.TestCase):
         finally:
             sys.stdin = sys.__stdin__
         self.assertEqual(code, solver.EXIT_ERROR)
+        self.assertEqual(json.loads(out.getvalue())["status"], "error")
+
+    def test_broken_pipes_never_crash_the_helper(self):
+        class Broken:
+            def write(self, *args):
+                raise OSError(22, "Invalid argument")
+
+            def flush(self):
+                raise OSError(22, "Invalid argument")
+
+        sys.stdin = io.StringIO("{}")
+        out = io.StringIO()
+        try:
+            with redirect_stdout(out), patch.object(solver.sys, "stderr", Broken()):
+                code = solver.main([])
+        finally:
+            sys.stdin = sys.__stdin__
+        self.assertEqual(code, solver.EXIT_ERROR)
+        # The verdict still reaches the launcher on stdout.
         self.assertEqual(json.loads(out.getvalue())["status"], "error")
 
 

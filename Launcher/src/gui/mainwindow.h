@@ -42,6 +42,8 @@ protected:
 private slots:
     void on_addGameforgeAccountButton_clicked();
 
+    void on_editGameforgeAccountButton_clicked();
+
     void on_removeGameforgeAccountButton_clicked();
 
     void on_gameSettingsButton_clicked();
@@ -130,6 +132,8 @@ private:
     void displayProfile(int index);
 
     void updateGame();
+
+    QString resolveEgressIp(const GameforgeAccount* account);
 
     Ui::MainWindow *ui;
     SettingsDialog* settingsDialog;

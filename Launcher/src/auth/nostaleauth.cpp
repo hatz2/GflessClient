@@ -1,7 +1,10 @@
 #include "nostaleauth.h"
 #include "blackbox.h"
 #include "blackboxgenerator.h"
+#include <QEventLoop>
+#include <QNetworkAccessManager>
 #include <QNetworkProxy>
+#include <QTimer>
 #include <QtZlib/zlib.h>
 #include <QThread>
 
@@ -632,24 +635,66 @@ void NostaleAuth::initPrivateKey()
 
 void NostaleAuth::initGfVersion()
 {
-    QJsonObject jsonResponse;
-    QNetworkRequest request(QUrl("http://dl.tnt.gameforge.com/tnt/final-ms3/clientversioninfo.json"));
-    QNetworkReply* reply = nullptr;
+    // Fetched with a throwaway manager on purpose: the shared sync manager
+    // pops up a modal error box on any failure, but a hiccup here must not
+    // block adding accounts. Last good values are cached in QSettings.
+    QNetworkAccessManager localManager;
+    localManager.setProxy(networkManager->proxy());
 
-    reply = networkManager->get(request);
+    QNetworkRequest request(QUrl("http://dl.tnt.gameforge.com/tnt/final-ms3/clientversioninfo.json"));
+    QNetworkReply* reply = localManager.get(request);
+
+    QEventLoop loop;
+    QTimer timeout;
+    timeout.setSingleShot(true);
+    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
+    timeout.start(15000);
+    loop.exec();
+    timeout.stop();
+
+    QString version, gameforgeVersion, frontendVersion;
+
+    if (reply->isFinished()
+        && reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200)
+    {
+        const QJsonObject jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
+        version = jsonResponse["version"].toString();
+        gameforgeVersion = jsonResponse["minimumVersionForDelayedUpdate"].toString();
+        frontendVersion = jsonResponse["frontend"].toObject()["version"].toString();
+    }
     reply->deleteLater();
 
-    QByteArray response = reply->readAll();
+    if (!version.isEmpty())
+    {
+        QSettings cache;
+        cache.beginGroup("GfVersion");
+        cache.setValue("version", version);
+        cache.setValue("gameforgeVersion", gameforgeVersion);
+        cache.setValue("frontendVersion", frontendVersion);
+        cache.endGroup();
+    }
+    else
+    {
+        // offline / blocked: reuse the last known-good values
+        QSettings cache;
+        cache.beginGroup("GfVersion");
+        version = cache.value("version").toString();
+        gameforgeVersion = cache.value("gameforgeVersion").toString();
+        frontendVersion = cache.value("frontendVersion").toString();
+        cache.endGroup();
 
-    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
+        if (!version.isEmpty())
+            qDebug() << "NostaleAuth::initGfVersion using cached version" << version;
+    }
+
+    if (version.isEmpty())
         return;
 
-    jsonResponse = QJsonDocument::fromJson(response).object();
-
-    this->chromeVersion = "C" + jsonResponse["version"].toString();
-    this->version = jsonResponse["version"].toString();
-    this->gameforgeVersion = jsonResponse["minimumVersionForDelayedUpdate"].toString();
-    this->frontendVersion = jsonResponse["frontend"].toObject()["version"].toString();
+    this->chromeVersion = "C" + version;
+    this->version = version;
+    this->gameforgeVersion = gameforgeVersion;
+    this->frontendVersion = frontendVersion;
 }
 
 QString NostaleAuth::createBlackbox()

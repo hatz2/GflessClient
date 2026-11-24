@@ -9,8 +9,14 @@
 #include "creategameaccountdialog.h"
 #include "otpdialog.h"
 #include "powcaptchasolver.h"
+#include "clienttitletagger.h"
 #include <QQueue>
 #include "ui_mainwindow.h"
+#include <QEventLoop>
+#include <QNetworkAccessManager>
+#include <QNetworkProxy>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -494,6 +500,75 @@ void MainWindow::on_addGameforgeAccountButton_clicked()
 }
 
 
+void MainWindow::on_editGameforgeAccountButton_clicked()
+{
+    int index = ui->gameforgeAccountComboBox->currentIndex();
+    if (index < 0 || index >= gfAccounts.size())
+        return;
+
+    GameforgeAccount* acc = gfAccounts.at(index);
+    const NostaleAuth* auth = acc->getAuth();
+
+    AddAccountDialog dialog(this);
+    dialog.setValues(acc->getEmail(), acc->getPassword(), acc->getIdentityPath(),
+        auth->getInstallationId(), acc->getcustomClientPath(), auth->getProxyIp(),
+        auth->getSocksPort(), auth->getProxyUsername(), auth->getProxyPassword(),
+        auth->getUseProxy());
+
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+
+    // Snapshot for rollback if the new settings don't log in.
+    const QString oldEmail = acc->getEmail(), oldPassword = acc->getPassword();
+    const QString oldIdentity = acc->getIdentityPath(), oldClient = acc->getcustomClientPath();
+    const QString oldIid = auth->getInstallationId();
+    const bool oldUseProxy = auth->getUseProxy();
+    const QString oldIp = auth->getProxyIp(), oldPort = auth->getSocksPort();
+    const QString oldUser = auth->getProxyUsername(), oldPass = auth->getProxyPassword();
+
+    acc->update(dialog.getEmail(), dialog.getPassword(), dialog.getIdentityPath(),
+        dialog.getInstallationId(), dialog.getCustomClientPath(), dialog.getUseProxy(),
+        dialog.getProxyIp(), dialog.getSocksPort(), dialog.getProxyUsername(),
+        dialog.getProxyPassword());
+    ui->gameforgeAccountComboBox->setItemText(index, acc->getEmail());
+
+    // Validate with a fresh login (same captcha/OTP handling as the add
+    // flow): the new proxy/identity is exercised now, not at Play time.
+    bool ok = false;
+    QString otp;
+    for (int attempt = 0; attempt < 3 && !ok; ++attempt) {
+        if (!otp.isEmpty())
+            acc->setOtpCode(otp);
+        bool captcha = false, wrongCreds = false;
+        QString challenge;
+        if (acc->authenticate(captcha, challenge, wrongCreds)) { ok = true; break; }
+        if (captcha) {
+            if (!solveCaptcha(challenge, acc->getAuth()->getNetworkManager(), dialog.getProxyIp(),
+                    dialog.getSocksPort(), dialog.getProxyUsername(),
+                    dialog.getProxyPassword(), dialog.getUseProxy()))
+                break;
+        }
+        else if (acc->getOtpRequired()) {
+            OtpDialog otpDialog(this);
+            if (otpDialog.exec() != QDialog::Accepted)
+                break;
+            otp = otpDialog.getOtpCode();
+        }
+        else {
+            QMessageBox::critical(this, "Error",
+                wrongCreds ? "Incorrect username or password" : "Authentication failed");
+            break;
+        }
+    }
+
+    if (!ok) {
+        acc->update(oldEmail, oldPassword, oldIdentity, oldIid, oldClient, oldUseProxy,
+            oldIp, oldPort, oldUser, oldPass);
+        ui->gameforgeAccountComboBox->setItemText(index, oldEmail);
+        ui->statusbar->showMessage("Edit reverted: new settings failed to log in", 10000);
+    }
+}
+
 void MainWindow::on_removeGameforgeAccountButton_clicked()
 {
     int res = QMessageBox::warning(this, "Warning", "Do you want to remove this account?\n(This will not delete your real account)", QMessageBox::Yes | QMessageBox::No);
@@ -578,6 +653,16 @@ void MainWindow::on_actionGet_help_triggered()
     QMessageBox::about(this, "Get help", text);
 }
 
+namespace
+{
+// A blank setting is sent as "empty": the DLL waits on a blocking ReadFile,
+// which an empty write would never wake.
+QByteArray proxyAnswer(const QString& value)
+{
+    return value.isEmpty() ? QByteArray("empty") : value.toLocal8Bit();
+}
+}
+
 void MainWindow::handleLocalConnection()
 {
     QLocalSocket* sock = gflessServer->nextPendingConnection();
@@ -621,6 +706,31 @@ void MainWindow::handleLocalConnection()
 
         else if (message == "DisableNosmall")
             output = QString::number(settingsDialog->getDisabledNosmall()).toLocal8Bit();
+
+        // The account's proxy, for the client's own server connection.
+        else if (message.startsWith("Proxy") || message == "UseProxy")
+        {
+            const GameforgeAccount* gfAcc = acc.getGfAcc();
+            const NostaleAuth* auth = gfAcc != nullptr ? gfAcc->getAuth() : nullptr;
+
+            if (auth == nullptr)
+                output = message == "UseProxy" ? QByteArray("0") : QByteArray("empty");
+
+            else if (message == "UseProxy")
+                output = QString::number(auth->getUseProxy()).toLocal8Bit();
+
+            else if (message == "ProxyIP")
+                output = proxyAnswer(auth->getProxyIp());
+
+            else if (message == "ProxyPort")
+                output = proxyAnswer(auth->getSocksPort());
+
+            else if (message == "ProxyUsername")
+                output = proxyAnswer(auth->getProxyUsername());
+
+            else if (message == "ProxyPassword")
+                output = proxyAnswer(auth->getProxyPassword());
+        }
 
         sock->write(output);
     });
@@ -984,6 +1094,74 @@ void MainWindow::on_repairButton_clicked()
     updateGame();
 }
 
+QString MainWindow::resolveEgressIp(const GameforgeAccount* account)
+{
+    const NostaleAuth* auth = account->getAuth();
+    if (auth == nullptr)
+        return QString();
+
+    // Query an IP echo service through the account's own proxy, so the title
+    // shows the exact IP Gameforge sees for this account's auth traffic.
+    QNetworkAccessManager networkManager;
+
+    if (auth->getUseProxy())
+    {
+        QNetworkProxy proxy(
+            QNetworkProxy::ProxyType::Socks5Proxy,
+            auth->getProxyIp(),
+            auth->getSocksPort().toUInt()
+        );
+
+        if (!auth->getProxyUsername().isEmpty())
+        {
+            proxy.setUser(auth->getProxyUsername());
+            proxy.setPassword(auth->getProxyPassword());
+        }
+
+        networkManager.setProxy(proxy);
+    }
+
+    const QStringList services = {
+        QStringLiteral("https://checkip.amazonaws.com/"),
+        QStringLiteral("https://api.ipify.org/")
+    };
+
+    for (const QString& service : services)
+    {
+        QEventLoop loop;
+        QTimer timeout;
+        timeout.setSingleShot(true);
+
+        QNetworkReply* reply = networkManager.get(QNetworkRequest(QUrl(service)));
+
+        connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
+        timeout.start(10000);
+        loop.exec();
+        timeout.stop();
+
+        if (!reply->isFinished())
+        {
+            reply->abort();
+            reply->deleteLater();
+            continue;
+        }
+
+        const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        const QString ip = QString::fromUtf8(reply->readAll()).trimmed();
+        reply->deleteLater();
+
+        if (status == 200 && !ip.isEmpty())
+            return ip;
+    }
+
+    // Couldn't reach an echo service: the proxy host is the best hint we have.
+    if (auth->getUseProxy() && !auth->getProxyIp().isEmpty())
+        return auth->getProxyIp();
+
+    return QStringLiteral("?");
+}
+
 void MainWindow::openAccount(const Profile *profile, QQueue<int> accountIndexes)
 {
     if (accountIndexes.empty()) {
@@ -1007,14 +1185,24 @@ void MainWindow::openAccount(const Profile *profile, QQueue<int> accountIndexes)
         ui->statusbar->showMessage("Couldn't get token for account " + gameAccount.getName(), 10000);
     }
     else {
+        // Which public IP will this account connect through (its proxy exit
+        // IP when one is configured)? Shown in the game window title.
+        const QString egressIp = resolveEgressIp(gameAccount.getGfAcc());
+
         DWORD pid = 0;
 
         QString customPath = gameAccount.getGfAcc()->getcustomClientPath();
 
-        if (gflessClient->openClient(gameAccount.getName(), token, customPath.isEmpty() ? gamePath : customPath, gameLang, pid)) {
+        QString sessionId;
+        if (gflessClient->openClient(gameAccount.getName(), token, customPath.isEmpty() ? gamePath : customPath, gameLang, pid, sessionId)) {
             QString msg = "Launched game with PID " + QString::number(pid);
+            if (!egressIp.isEmpty())
+                msg += " [" + egressIp + "]";
             ui->statusbar->showMessage(msg, 10000);
             processAccounts.insert(pid, gameAccount);
+
+            if (!egressIp.isEmpty())
+                new ClientTitleTagger(this, pid, egressIp);
         }
         else {
             ui->statusbar->showMessage("Failed to launch game for account " + gameAccount.getName(), 10000);
