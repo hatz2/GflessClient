@@ -9,8 +9,14 @@
 #include "creategameaccountdialog.h"
 #include "otpdialog.h"
 #include "powcaptchasolver.h"
+#include "clienttitletagger.h"
 #include <QQueue>
 #include "ui_mainwindow.h"
+#include <QEventLoop>
+#include <QNetworkAccessManager>
+#include <QNetworkProxy>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -984,7 +990,76 @@ void MainWindow::on_repairButton_clicked()
     updateGame();
 }
 
+QString MainWindow::resolveEgressIp(const GameforgeAccount* account)
+{
+    const NostaleAuth* auth = account->getAuth();
+    if (auth == nullptr)
+        return QString();
+
+    // Query an IP echo service through the account's own proxy, so the title
+    // shows the exact IP Gameforge sees for this account's auth traffic.
+    QNetworkAccessManager networkManager;
+
+    if (auth->getUseProxy())
+    {
+        QNetworkProxy proxy(
+            QNetworkProxy::ProxyType::Socks5Proxy,
+            auth->getProxyIp(),
+            auth->getSocksPort().toUInt()
+        );
+
+        if (!auth->getProxyUsername().isEmpty())
+        {
+            proxy.setUser(auth->getProxyUsername());
+            proxy.setPassword(auth->getProxyPassword());
+        }
+
+        networkManager.setProxy(proxy);
+    }
+
+    const QStringList services = {
+        QStringLiteral("https://checkip.amazonaws.com/"),
+        QStringLiteral("https://api.ipify.org/")
+    };
+
+    for (const QString& service : services)
+    {
+        QEventLoop loop;
+        QTimer timeout;
+        timeout.setSingleShot(true);
+
+        QNetworkReply* reply = networkManager.get(QNetworkRequest(QUrl(service)));
+
+        connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
+        timeout.start(10000);
+        loop.exec();
+        timeout.stop();
+
+        if (!reply->isFinished())
+        {
+            reply->abort();
+            reply->deleteLater();
+            continue;
+        }
+
+        const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        const QString ip = QString::fromUtf8(reply->readAll()).trimmed();
+        reply->deleteLater();
+
+        if (status == 200 && !ip.isEmpty())
+            return ip;
+    }
+
+    // Couldn't reach an echo service: the proxy host is the best hint we have.
+    if (auth->getUseProxy() && !auth->getProxyIp().isEmpty())
+        return auth->getProxyIp();
+
+    return QStringLiteral("?");
+}
+
 void MainWindow::openAccount(const Profile *profile, QQueue<int> accountIndexes)
+
 {
     if (accountIndexes.empty()) {
         return;
@@ -1007,14 +1082,23 @@ void MainWindow::openAccount(const Profile *profile, QQueue<int> accountIndexes)
         ui->statusbar->showMessage("Couldn't get token for account " + gameAccount.getName(), 10000);
     }
     else {
+        // Which public IP will this account connect through (its proxy exit
+        // IP when one is configured)? Shown in the game window title.
+        const QString egressIp = resolveEgressIp(gameAccount.getGfAcc());
+
         DWORD pid = 0;
 
         QString customPath = gameAccount.getGfAcc()->getcustomClientPath();
 
         if (gflessClient->openClient(gameAccount.getName(), token, customPath.isEmpty() ? gamePath : customPath, gameLang, pid)) {
             QString msg = "Launched game with PID " + QString::number(pid);
+            if (!egressIp.isEmpty())
+                msg += " [" + egressIp + "]";
             ui->statusbar->showMessage(msg, 10000);
             processAccounts.insert(pid, gameAccount);
+
+            if (!egressIp.isEmpty())
+                new ClientTitleTagger(this, pid, egressIp);
         }
         else {
             ui->statusbar->showMessage("Failed to launch game for account " + gameAccount.getName(), 10000);

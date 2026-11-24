@@ -131,6 +131,8 @@ private:
 
     void updateGame();
 
+    QString resolveEgressIp(const GameforgeAccount* account);
+
     Ui::MainWindow *ui;
     SettingsDialog* settingsDialog;
     GflessClient* gflessClient;
