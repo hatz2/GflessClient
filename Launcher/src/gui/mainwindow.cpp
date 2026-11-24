@@ -1128,7 +1128,6 @@ QString MainWindow::resolveEgressIp(const GameforgeAccount* account)
 }
 
 void MainWindow::openAccount(const Profile *profile, QQueue<int> accountIndexes)
-
 {
     if (accountIndexes.empty()) {
         return;

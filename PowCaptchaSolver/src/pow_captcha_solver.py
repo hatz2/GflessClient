@@ -29,6 +29,7 @@ No credentials are ever printed.
 from __future__ import annotations
 
 import http.server
+import ipaddress
 import json
 import os
 import shutil
@@ -45,6 +46,9 @@ from urllib.parse import parse_qs, urlsplit
 WIDGET_ORIGIN = "https://pow-captcha.gameforge.com"
 # The widget gives up by itself after 180 s.
 WAIT_SECONDS = 200.0
+# No ping ever means the browser never opened the check page (proxy down,
+# browser missing): say so quickly instead of burning the whole timeout.
+FIRST_PING_GRACE = 45.0
 LOCALES = ("en-GB", "de-DE", "fr-FR", "es-ES", "pl-PL", "ru-RU", "tr-TR", "pt-BR")
 
 EXIT_SOLVED = 0
@@ -98,9 +102,16 @@ class CheckError(Exception):
 
 
 def log(message: str) -> None:
-    """Progress lines go to stderr; stdout carries only the verdict."""
-    if sys.stderr is not None:
-        print(message, file=sys.stderr, flush=True)
+    """Progress lines go to stderr; stdout carries only the verdict.
+
+    Never raises: the helper is built with --noconsole and the parent may
+    have gone away, in which case writing to the pipe fails on Windows
+    with OSError [Errno 22] instead of delivering anything."""
+    try:
+        if sys.stderr is not None:
+            print(message, file=sys.stderr, flush=True)
+    except (OSError, ValueError):
+        pass
 
 
 # ------------------------------------------------------------------ proxy
@@ -172,6 +183,18 @@ def connect_through_proxy(proxy: Proxy, host: str, port: int, timeout: float) ->
         raise
 
 
+def _is_loopback(host: str) -> bool:
+    """Whether `host` is this machine. Such destinations are served directly
+    and never sent to the upstream proxy (it would look on *its* loopback)."""
+    name = host.removesuffix(".").lower()
+    if name == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(name).is_loopback
+    except ValueError:
+        return False
+
+
 def open_connection(proxy: Proxy | None, host: str, port: int, timeout: float) -> socket.socket:
     if proxy is not None:
         return connect_through_proxy(proxy, host, port, timeout)
@@ -230,7 +253,12 @@ class SocksRelay:
                 client.sendall(b"\x05\x07\x00\x01" + bytes(6))
                 return
             try:
-                upstream = open_connection(self._proxy, host, port, self._timeout)
+                if _is_loopback(host):
+                    # The check page itself lives on 127.0.0.1: reach it
+                    # directly, never through the upstream proxy.
+                    upstream = socket.create_connection((host, port), self._timeout)
+                else:
+                    upstream = open_connection(self._proxy, host, port, self._timeout)
             except OSError:
                 client.sendall(b"\x05\x05\x00\x01" + bytes(6))   # connection refused
                 return
@@ -370,6 +398,10 @@ def browser_command(browser: str, profile: str, url: str, relay_port: int | None
             f"--proxy-server=socks5://127.0.0.1:{relay_port}",
             # Names are resolved by the proxy, never by this machine.
             "--host-resolver-rules=MAP * ~NOTFOUND , EXCLUDE 127.0.0.1",
+            # ...but the check page itself is on this machine: Chromium sends
+            # even loopback through --proxy-server unless told otherwise, and
+            # the upstream proxy would then look on *its* loopback and refuse.
+            "--proxy-bypass-list=<-loopback>",
         ]
     return command
 
@@ -415,7 +447,8 @@ def widget_locale(locale: str) -> str:
 
 
 def run_check(challenge_id: str, script_url: str, proxy: Proxy | None,
-              locale: str = "en-GB", wait_seconds: float = WAIT_SECONDS) -> dict:
+              locale: str = "en-GB", wait_seconds: float = WAIT_SECONDS,
+              first_ping_grace: float = FIRST_PING_GRACE) -> dict:
     """Let a browser run the challenge. Returns {"status": "solved" | "failed",
     "detail": ...}; raises CheckError when it could not be run at all."""
     if not script_url.startswith(WIDGET_ORIGIN + "/"):
@@ -441,11 +474,19 @@ def run_check(challenge_id: str, script_url: str, proxy: Proxy | None,
         # the window (see _close_browser), so its exit means nothing: the page
         # itself says when its window is closed.
         deadline = time.monotonic() + wait_seconds
+        first_ping_deadline = (time.monotonic() + first_ping_grace
+                               if first_ping_grace < wait_seconds else None)
         while time.monotonic() < deadline:
             if page.done.wait(0.5):
                 break
             if page.window_gone() and not page.done.wait(1.0):
                 raise CheckError("the browser window was closed before the check ended")
+            if (first_ping_deadline is not None and page.last_ping is None
+                    and time.monotonic() >= first_ping_deadline):
+                raise CheckError("the browser never opened the check page "
+                                 "(is Edge/Chrome installed, and is the account proxy up?)")
+            if page.done.is_set():
+                break
         if not page.done.is_set():
             raise CheckError(f"the check did not finish in {wait_seconds:.0f} s")
         # Let the window close itself before anything is killed.
@@ -494,8 +535,11 @@ def read_request(text: str) -> dict:
 
 
 def emit(status: str, detail: str) -> None:
-    if sys.stdout is not None:
-        print(json.dumps({"status": status, "detail": detail}), flush=True)
+    try:
+        if sys.stdout is not None:
+            print(json.dumps({"status": status, "detail": detail}), flush=True)
+    except (OSError, ValueError):
+        pass  # same reasoning as log(): the verdict line is best-effort then
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -515,6 +559,10 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_ERROR
     except KeyboardInterrupt:
         emit("error", "interrupted")
+        return EXIT_ERROR
+    except Exception as error:  # never show a crash dialog: always answer on stdout
+        log(f"[-] unexpected error: {error}")
+        emit("error", f"unexpected error: {error}")
         return EXIT_ERROR
     status = result.get("status", "failed")
     detail = result.get("detail", "")
