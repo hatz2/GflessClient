@@ -2,9 +2,35 @@
 #include "GameStructures/TCharacterSelectWidget.h"
 #include "PatternScanner.h"
 #include "NosmallDisabler.h"
+#include "ProxyMod.h"
 #include <Windows.h>
 #include <string>
 #include <iostream>
+
+// Asks the launcher for one value belonging to this process. Returns false
+// when the pipe breaks. "empty", which the launcher sends for a setting that
+// is not filled in, comes back as an empty string.
+static bool askLauncher(HANDLE hPipe, DWORD pid, const char* name, std::string& answer)
+{
+    const int BUFFER_SIZE = 255;
+    char readBuffer[BUFFER_SIZE];
+    std::string message = std::to_string(pid) + " " + name;
+
+    if (!WriteFile(hPipe, message.c_str(), message.size(), NULL, NULL))
+        return false;
+
+    ZeroMemory(readBuffer, BUFFER_SIZE);
+
+    if (!ReadFile(hPipe, readBuffer, BUFFER_SIZE, NULL, NULL))
+        return false;
+
+    answer = std::string(readBuffer);
+
+    if (answer == "empty")
+        answer.clear();
+
+    return true;
+}
 
 int main()
 {
@@ -17,7 +43,9 @@ int main()
     const int BUFFER_SIZE = 255;
     const char* pipeName = "\\\\.\\pipe\\GflessClient";
     int language, server, channel, character;
-    bool autoLogin, disableNosmall;
+    bool autoLogin, disableNosmall, useProxy;
+    std::string proxyIp, proxyUsername, proxyPassword;
+    unsigned short proxyPort;
     HANDLE hPipe;
     DWORD dwMode;
     BOOL fSuccess;
@@ -64,10 +92,49 @@ int main()
         return EXIT_FAILURE;
     }
 
-    if (disableNosmall) {
+    // Ask for the account's proxy before anything connects
+    std::string answer;
+
+    if (!askLauncher(hPipe, pid, "UseProxy", answer))
+        return EXIT_FAILURE;
+
+    useProxy = answer == "1";
+
+    if (!askLauncher(hPipe, pid, "ProxyIP", proxyIp)
+        || !askLauncher(hPipe, pid, "ProxyUsername", proxyUsername)
+        || !askLauncher(hPipe, pid, "ProxyPassword", proxyPassword)
+        || !askLauncher(hPipe, pid, "ProxyPort", answer))
+        return EXIT_FAILURE;
+
+    try {
+        proxyPort = answer.empty() ? 0 : static_cast<unsigned short>(std::stoi(answer));
+    }
+    catch (const std::exception& ex) {
+        std::cout << ex.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    if (useProxy && (proxyIp.empty() || proxyPort == 0)) {
+        MessageBoxA(NULL, "This account is set to use a proxy but has no proxy address.\n"
+            "The game would have connected from your real IP, so it is being closed.",
+            "Gfless Client", MB_ICONERROR);
+        ExitProcess(EXIT_FAILURE);
+    }
+
+    // NosMall opens a connection of its own, which the hooks below do not
+    // cover, so a proxied client has to keep it shut rather than leak the
+    // real IP through it.
+    if (disableNosmall || useProxy) {
         NosmallDisabler::Initialize();
     }
-    
+
+    if (useProxy && !ProxyMod::Initialize(proxyIp, proxyPort, proxyUsername, proxyPassword)) {
+        MessageBoxA(NULL, "Could not install the proxy hooks in this client build.\n"
+            "The game would have connected from your real IP, so it is being closed.",
+            "Gfless Client", MB_ICONERROR);
+        ExitProcess(EXIT_FAILURE);
+    }
+
     // Send the autologin message
     message = std::to_string(pid) + " AutoLogin";
     fSuccess = WriteFile(hPipe, message.c_str(), message.size(), NULL, NULL);
@@ -185,6 +252,12 @@ int main()
             Sleep(1000);
             characterSelectWidget->clickStartButton();
         }
+    }
+
+    // The hooks jump into this module's own code, so it has to stay loaded:
+    // returning from main() lets DllStart unmap it under the running game.
+    while (useProxy) {
+        Sleep(1000);
     }
 
 #ifdef _DEBUG

@@ -653,6 +653,16 @@ void MainWindow::on_actionGet_help_triggered()
     QMessageBox::about(this, "Get help", text);
 }
 
+namespace
+{
+// A blank setting is sent as "empty": the DLL waits on a blocking ReadFile,
+// which an empty write would never wake.
+QByteArray proxyAnswer(const QString& value)
+{
+    return value.isEmpty() ? QByteArray("empty") : value.toLocal8Bit();
+}
+}
+
 void MainWindow::handleLocalConnection()
 {
     QLocalSocket* sock = gflessServer->nextPendingConnection();
@@ -696,6 +706,31 @@ void MainWindow::handleLocalConnection()
 
         else if (message == "DisableNosmall")
             output = QString::number(settingsDialog->getDisabledNosmall()).toLocal8Bit();
+
+        // The account's proxy, for the client's own server connection.
+        else if (message.startsWith("Proxy") || message == "UseProxy")
+        {
+            const GameforgeAccount* gfAcc = acc.getGfAcc();
+            const NostaleAuth* auth = gfAcc != nullptr ? gfAcc->getAuth() : nullptr;
+
+            if (auth == nullptr)
+                output = message == "UseProxy" ? QByteArray("0") : QByteArray("empty");
+
+            else if (message == "UseProxy")
+                output = QString::number(auth->getUseProxy()).toLocal8Bit();
+
+            else if (message == "ProxyIP")
+                output = proxyAnswer(auth->getProxyIp());
+
+            else if (message == "ProxyPort")
+                output = proxyAnswer(auth->getSocksPort());
+
+            else if (message == "ProxyUsername")
+                output = proxyAnswer(auth->getProxyUsername());
+
+            else if (message == "ProxyPassword")
+                output = proxyAnswer(auth->getProxyPassword());
+        }
 
         sock->write(output);
     });
