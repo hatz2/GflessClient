@@ -34,6 +34,11 @@ public:
 
     QString getInstallationId() const;
 
+    void setValues(const QString& email, const QString& password, const QString& identityPath,
+        const QString& installationId, const QString& customClientPath, const QString& proxyIp,
+        const QString& socksPort, const QString& proxyUsername, const QString& proxyPassword,
+        bool useProxy);
+
 private slots:
     void on_showPasswordCheckBox_stateChanged(int arg1);
 

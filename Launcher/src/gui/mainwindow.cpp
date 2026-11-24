@@ -1090,7 +1090,8 @@ void MainWindow::openAccount(const Profile *profile, QQueue<int> accountIndexes)
 
         QString customPath = gameAccount.getGfAcc()->getcustomClientPath();
 
-        if (gflessClient->openClient(gameAccount.getName(), token, customPath.isEmpty() ? gamePath : customPath, gameLang, pid)) {
+        QString sessionId;
+        if (gflessClient->openClient(gameAccount.getName(), token, customPath.isEmpty() ? gamePath : customPath, gameLang, pid, sessionId)) {
             QString msg = "Launched game with PID " + QString::number(pid);
             if (!egressIp.isEmpty())
                 msg += " [" + egressIp + "]";

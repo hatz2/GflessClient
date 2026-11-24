@@ -1,21 +1,25 @@
 #include "gflessclient.h"
 #include <QMessageBox>
+#include <QUuid>
 
 GflessClient::GflessClient(QObject *parent) : QObject(parent)
 {
-    pipe = nullptr;
     gfServer = new QLocalServer(this);
     gfServer->listen("GameforgeClientJSONRPC");
-    token = "";
-    displayName = "";
 
     connect(gfServer, &QLocalServer::newConnection, this, &GflessClient::handleNewConnection);
 }
 
-bool GflessClient::openClient(const QString& displayName, const QString& token, const QString &gameClientPath, const int &gameLanguage, DWORD& createdPID)
+bool GflessClient::openClient(const QString& displayName, const QString& token, const QString &gameClientPath, const int &gameLanguage, DWORD& createdPID, QString& sessionId)
 {
-    this->displayName = displayName;
-    this->token = token;
+    // Every launched game gets its own session id (like the real launcher's
+    // random _TNT_SESSION_ID) and its own code slot, so concurrent clients
+    // can never receive each other's one-time code.
+    sessionId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    sessions.insert(sessionId, {token, displayName});
+    sessionOrder.append(sessionId);
+    while (sessionOrder.size() > 50) // bounded; the game always self-identifies
+        sessions.remove(sessionOrder.takeFirst());
 
     int index = gameClientPath.lastIndexOf("/");
 
@@ -28,7 +32,7 @@ bool GflessClient::openClient(const QString& displayName, const QString& token, 
     qint64 pid;
 
     env.insert("_TNT_CLIENT_APPLICATION_ID", "d3b2a0c1-f0d0-4888-ae0b-1c5e1febdafb");
-    env.insert("_TNT_SESSION_ID", "12345678-1234-1234-1234-123456789012");
+    env.insert("_TNT_SESSION_ID", sessionId);
 
     process.setProcessEnvironment(env);
     process.setWorkingDirectory(directory);
@@ -94,14 +98,18 @@ bool GflessClient::openClientSettings(const QString &gameClientPath)
 
 void GflessClient::handleNewConnection()
 {
-    pipe = gfServer->nextPendingConnection();
-    connect(pipe, &QLocalSocket::readyRead, this, &GflessClient::handlePipe);
+    QLocalSocket* sock = gfServer->nextPendingConnection();
+    connect(sock, &QLocalSocket::readyRead, this, [this, sock]() { handlePipe(sock); });
+    // NOTE: sessions are deliberately NOT removed here. The game opens and
+    // closes pipe connections during its handshake; wiping the code slot on
+    // disconnect is what starved later queries of their answer.
+    connect(sock, &QLocalSocket::disconnected, sock, &QLocalSocket::deleteLater);
 }
 
-void GflessClient::handlePipe()
+void GflessClient::handlePipe(QLocalSocket* sock)
 {
     QByteArray output;
-    QJsonObject json = QJsonDocument::fromJson(pipe->readAll()).object();
+    QJsonObject json = QJsonDocument::fromJson(sock->readAll()).object();
     QString method = json["method"].toString();
 
     qDebug() << QJsonDocument(json).toJson();
@@ -113,15 +121,56 @@ void GflessClient::handlePipe()
         output = prepareResponse(json, json["params"].toObject()["sessionId"].toString().toUtf8());
 
     else if (method == "ClientLibrary.queryAuthorizationCode")
-        output = prepareResponse(json, token.toUtf8());
+    {
+        const QString sid = sessionFor(sock, json);
+        if (sid.isEmpty())
+            return; // never answer with another client's code
+        output = prepareResponse(json, sessions[sid].token.toUtf8());
+    }
 
     else if (method == "ClientLibrary.queryGameAccountName")
-        output = prepareResponse(json, displayName.toUtf8());
+    {
+        const QString sid = sessionFor(sock, json);
+        if (sid.isEmpty())
+            return;
+        output = prepareResponse(json, sessions[sid].displayName.toUtf8());
+    }
 
     else
         return;
 
-    pipe->write(output);
+    sock->write(output);
+}
+
+QString GflessClient::sessionFor(QLocalSocket* sock, const QJsonObject& json)
+{
+    // Preferred: the session id the game itself reports (present in the
+    // isClientRunning/initSession params, like the real launcher flow).
+    QString sid = json["params"].toObject()["sessionId"].toString();
+    if (!sid.isEmpty())
+    {
+        sock->setProperty("sessionId", sid);
+        if (sessions.contains(sid))
+            return sid;
+    }
+
+    // Otherwise stick to this socket's session (one connection per game).
+    sid = sock->property("sessionId").toString();
+    if (!sid.isEmpty() && sessions.contains(sid))
+        return sid;
+
+    // Last resort: exactly one client waiting.
+    if (sessions.size() == 1)
+        return sessions.firstKey();
+
+    // Several clients waiting: oldest one. (First choice is always the
+    // session id the game itself reports; this is only the fallback for
+    // messages without one.)
+    for (const QString& key : sessionOrder)
+        if (sessions.contains(key))
+            return key;
+
+    return QString();
 }
 
 QByteArray GflessClient::prepareResponse(const QJsonObject &request, const QString &response)
