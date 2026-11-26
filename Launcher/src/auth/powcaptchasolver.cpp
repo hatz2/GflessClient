@@ -16,7 +16,29 @@ namespace
     const QString HELPER_NAME = "PowCaptchaSolver.exe";
     // The widget gives up by itself after 180 s; the helper a little later.
     const int HELPER_TIMEOUT_SECONDS = 200;
-    const int DIALOG_TIMEOUT_MS = (HELPER_TIMEOUT_SECONDS + 30) * 1000;
+    // The helper is a one-file exe that unpacks itself before it starts to
+    // count, which takes a while on a slow PC: the dialog waits long enough
+    // for the helper to report its own, more precise, reason.
+    const int DIALOG_TIMEOUT_MS = (HELPER_TIMEOUT_SECONDS + 90) * 1000;
+
+    // The helper is a PyInstaller one-file exe: the process started here only
+    // unpacks and runs the real one, which QProcess::kill() would leave
+    // behind (still waiting for the browser, and crashing later on its
+    // closed pipes). taskkill takes the whole tree down.
+    void killTree(QProcess& process)
+    {
+        if (process.state() == QProcess::NotRunning)
+            return;
+
+#ifdef Q_OS_WIN
+        QProcess::execute("taskkill", {"/PID", QString::number(process.processId()), "/T", "/F"});
+#endif
+
+        if (process.state() != QProcess::NotRunning)
+            process.kill();
+
+        process.waitForFinished(5000);
+    }
 }
 
 PowCaptchaSolver::PowCaptchaSolver(const QString &challengeId, const QString &scriptUrl, QObject *parent)
@@ -117,8 +139,7 @@ PowCaptchaSolver::Result PowCaptchaSolver::run(QWidget *parent)
     dialog.hide();
 
     if (process.state() != QProcess::NotRunning) {
-        process.kill();
-        process.waitForFinished(5000);
+        killTree(process);
         result.detail = cancelled ? "cancelled." : "the check did not finish in time.";
         return result;
     }

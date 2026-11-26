@@ -61,15 +61,22 @@ PAGE = """<!doctype html>
 <body>
 <p id="status">Gameforge is checking this login. This window closes by itself.</p>
 <div id="box"></div>
-<script src="{script}"></script>
 <script>
-  let last = "";
-  const report = (status, detail) => fetch("/done", {{
+  const post = (path, body) => fetch(path, {{
       method: "POST", headers: {{"Content-Type": "application/json"}},
-      body: JSON.stringify({{status: status, detail: String(detail || "")}})}})
-    .catch(() => {{}})
-    // This page is the window's only history entry, so it may close itself.
-    .finally(() => setTimeout(() => window.close(), 300));
+      body: JSON.stringify(body)}}).catch(() => {{}});
+  // Progress notes for the helper's log: they say where a check that never
+  // ends got stuck (script download, widget, Gameforge's answer).
+  const progress = (event) => post("/progress", {{event: String(event)}});
+  let last = "";
+  let reported = false;
+  const report = (status, detail) => {{
+    if (reported) return;
+    reported = true;
+    post("/done", {{status: status, detail: String(detail || "")}})
+      // This page is the window's only history entry, so it may close itself.
+      .finally(() => setTimeout(() => window.close(), 300));
+  }};
   // A closing browser drops its last requests, so instead of a goodbye the
   // page pings while it lives: the helper knows the window is gone when
   // the pings stop (closed by hand before the verdict, or by itself after).
@@ -79,28 +86,53 @@ PAGE = """<!doctype html>
   // The widget resolves its promise for "solved" and for "failed" alike:
   // the message it posts is what tells them apart.
   window.addEventListener("message", (event) => {{
-    if (event.origin === "{origin}" && event.data && event.data.type) last = event.data.type;
+    if (event.origin === "{origin}" && event.data && event.data.type) {{
+      last = event.data.type;
+      progress("widget message: " + last);
+    }}
   }});
-  window.addEventListener("load", () => {{
+  // The widget script is fetched only now, once the pings run: a download
+  // that stalls (a proxy that never answers) then shows as a page that is
+  // alive but never gets its script, instead of a window that just loads.
+  const script = document.createElement("script");
+  let loaded = false;
+  script.onload = () => {{
+    loaded = true;
+    progress("widget script loaded");
     const run = window["gf-pow-captcha"];
-    if (!run) {{ report("failed", "the widget script did not load"); return; }}
+    if (!run) {{ report("failed", "the widget script did not define gf-pow-captcha"); return; }}
+    progress("widget started");
     run(document.getElementById("box"), {{challengeId: "{challenge}", locale: "{locale}"}})
-      .then(() => report(last === "pow-captcha-solved" ? "solved" : "failed", last))
+      .then(() => report(last === "pow-captcha-solved" ? "solved" : "failed",
+                         last || "the widget ended without a verdict"))
       .catch((error) => report("failed", (error && error.message) || error));
-  }});
+  }};
+  script.onerror = () => report("failed", "the widget script could not be downloaded (a proxy that refuses it?)");
+  setTimeout(() => {{ if (!loaded) progress("widget script still downloading after 30 s"); }}, 30000);
+  progress("downloading the widget script");
+  script.src = "{script}";
+  document.head.appendChild(script);
 </script>
 </body></html>
 """
-
 
 class CheckError(Exception):
     """The check could not be run (no browser, bad input, timeout)."""
 
 
+_STARTED = time.monotonic()
+
+
 def log(message: str) -> None:
-    """Progress lines go to stderr; stdout carries only the verdict."""
-    if sys.stderr is not None:
-        print(message, file=sys.stderr, flush=True)
+    """Progress lines go to stderr, each with the seconds since the start;
+    stdout carries only the verdict. Writing can fail (the launcher is gone
+    and the pipe with it): a lost diary line is never a reason to crash."""
+    if sys.stderr is None:
+        return
+    try:
+        print(f"[{time.monotonic() - _STARTED:6.1f}s] {message}", file=sys.stderr, flush=True)
+    except (OSError, ValueError):
+        pass
 
 
 # ------------------------------------------------------------------ proxy
@@ -279,6 +311,8 @@ class Page:
         self.result: dict | None = None
         self.done = threading.Event()
         self.last_ping: float | None = None
+        self.fetched = False                 # the browser asked for the page
+        self.progress: list[str] = []        # the page's notes, oldest first
         page = self
 
         class Handler(http.server.BaseHTTPRequestHandler):
@@ -289,6 +323,9 @@ class Page:
                 if urlsplit(self.path).path != "/":
                     self.send_error(404)
                     return
+                if not page.fetched:
+                    page.fetched = True
+                    log("[*] the browser asked for the page")
                 body = html.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -303,6 +340,16 @@ class Page:
                 raw = self.rfile.read(length)
                 if path == "/ping":
                     page.last_ping = time.monotonic()
+                    self.send_response(204)
+                    self.end_headers()
+                    return
+                if path == "/progress":
+                    try:
+                        event = str(json.loads(raw.decode("utf-8")).get("event", ""))[:200]
+                    except (ValueError, UnicodeDecodeError, AttributeError):
+                        event = raw.decode("utf-8", "replace")[:200]
+                    page.progress.append(event)
+                    log(f"[*] page: {event}")
                     self.send_response(204)
                     self.end_headers()
                     return
@@ -327,6 +374,16 @@ class Page:
     def window_gone(self) -> bool:
         """The page was seen alive and has stopped pinging."""
         return self.last_ping is not None and time.monotonic() - self.last_ping > self.PING_SILENCE
+
+    def summary(self) -> str:
+        """Where the check stood, for the message of one that never ended."""
+        if not self.fetched:
+            return "the browser never asked for the page"
+        if self.last_ping is None:
+            return "the page was served but its script never ran"
+        if not self.progress:
+            return "the page is alive but reported no progress"
+        return "last progress: " + self.progress[-1]
 
     def close(self) -> None:
         self._server.shutdown()
@@ -434,8 +491,8 @@ def run_check(challenge_id: str, script_url: str, proxy: Proxy | None,
     try:
         command = browser_command(browser, profile, f"http://127.0.0.1:{page.port}/",
                                   relay.port if relay else None)
-        log("[*] opening a browser window for Gameforge's login check"
-            + (" through the proxy" if relay else ""))
+        log(f"[*] opening {browser} for Gameforge's login check"
+            + (f" through the proxy (relay on 127.0.0.1:{relay.port})" if relay else ""))
         process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # The process started here may exit at once while another one shows
         # the window (see _close_browser), so its exit means nothing: the page
@@ -445,9 +502,9 @@ def run_check(challenge_id: str, script_url: str, proxy: Proxy | None,
             if page.done.wait(0.5):
                 break
             if page.window_gone() and not page.done.wait(1.0):
-                raise CheckError("the browser window was closed before the check ended")
+                raise CheckError(f"the browser window was closed before the check ended ({page.summary()})")
         if not page.done.is_set():
-            raise CheckError(f"the check did not finish in {wait_seconds:.0f} s")
+            raise CheckError(f"the check did not finish in {wait_seconds:.0f} s ({page.summary()})")
         # Let the window close itself before anything is killed.
         for _ in range(int(Page.PING_SILENCE * 2) + 4):
             if page.window_gone():
