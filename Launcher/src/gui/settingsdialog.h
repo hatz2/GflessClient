@@ -15,7 +15,7 @@ enum Theme
     ThemeWindows,
     ThemeDark,
     ThemeLight,
-    ThemeDefault = ThemeDark
+    ThemeDefault = ThemeModernWindows
 };
 
 class SettingsDialog : public QDialog
