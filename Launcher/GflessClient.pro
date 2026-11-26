@@ -8,7 +8,7 @@ RC_ICONS = resources/gfless_icon.ico
 
 QMAKE_LFLAGS_WINDOWS += "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
 
-LIBS += -lkernel32 -luser32 -lgdi32
+LIBS += -lkernel32 -luser32 -lgdi32 -lcrypt32
 
 VERSION = 1.2.0
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
@@ -43,6 +43,7 @@ SOURCES += \
     src/gui/otpdialog.cpp \
     src/auth/nostaleauth.cpp \
     src/auth/powcaptchasolver.cpp \
+    src/auth/credentialprotection.cpp \
     src/profile.cpp \
     src/gui/settingsdialog.cpp \
     src/syncnetworkaccessmanager.cpp \
@@ -71,6 +72,7 @@ HEADERS += \
     src/gui/mainwindow.h \
     src/auth/nostaleauth.h \
     src/auth/powcaptchasolver.h \
+    src/auth/credentialprotection.h \
     src/processchecker.h \
     src/profile.h \
     src/gui/settingsdialog.h \

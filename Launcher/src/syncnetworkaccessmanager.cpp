@@ -53,6 +53,10 @@ QNetworkReply *SyncNetworAccesskManager::sendCustomRequest(const QNetworkRequest
 
 void SyncNetworAccesskManager::handleReplyError(QNetworkReply *reply)
 {
+    const bool usesSession = reply->request().hasRawHeader("Authorization");
+    if (usesSession && reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 401)
+        return;
+
     qDebug() << "Error code:" << reply->error();
     QString err = reply->errorString();
     QMessageBox::critical(nullptr, "Error", err);

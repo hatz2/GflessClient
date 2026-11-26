@@ -9,34 +9,31 @@ class GameforgeAccount : public QObject
 {
     Q_OBJECT
 public:
-    explicit GameforgeAccount(
-        const QString& gfEmail,
-        const QString& gfPassword,
-        const QString& identPath,
-        const QString& installationId,
-        const QString& customGamePath,
-        bool proxy,
-        const QString& proxyHost,
-        const QString& proxyPort,
-        const QString& proxyUsername,
-        const QString& proxyPassword,
-        QObject *parent = nullptr
-    );
+    explicit GameforgeAccount(const QString &email, const QString &identityPath, const QString &installationId,
+                              const QString &customClientPath, bool useProxy, const QString &proxyIp,
+                              const QString &socksPort, const QString &proxyUsername, QObject *parent = nullptr);
 
-    bool authenticate(bool& captcha, QString& gfChallengeId, bool& wrongCredentials);
+    bool authenticate(const QString &password, bool &captcha, QString &challengeId, bool &badCredentials);
 
     bool createGameAccount(const QString& name, const QString& gfLang, QJsonObject& response);
 
-    void setToken(const QString& token);
+    void setSessionToken(const QString &token);
+    const QString &getSessionToken() const;
+    bool hasSession() const;
+    void clearSession(bool keepProxyPassword = false);
+
+    void setRememberSession(bool remember);
+    bool getRememberSession() const;
+
+    bool needsProxyPassword() const;
+    void setProxyPassword(const QString &password);
 
     const QMap<QString, QString>& getGameAccounts() const;
 
-    void updateGameAccounts();
+    bool updateGameAccounts();
 
-    QString getToken(const QString& accountId) const;
+    QString getToken(const QString &accountId) const;
     QString getEmail() const;
-
-    QString getPassword() const;
 
     QString getIdentityPath() const;
 
@@ -52,10 +49,10 @@ public:
 
 private:
     QString email;
-    QString password;
     QString identityPath;
     QString customClientPath;
     NostaleAuth* auth;
+    bool rememberSession = false;
     QMap<QString /* id */, QString /* name */> gameAccounts;
 };
 

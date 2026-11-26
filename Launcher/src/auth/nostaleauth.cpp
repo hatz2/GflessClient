@@ -5,45 +5,25 @@
 #include <QtZlib/zlib.h>
 #include <QThread>
 
-NostaleAuth::NostaleAuth(const QString &identityPath, const QString& installationID, bool proxy, const QString &proxyHost, const QString &proxyPort, const QString &proxyUser, const QString &proxyPasswd, QObject *parent)
+NostaleAuth::NostaleAuth(const QString &identityPath, const QString &installationId, bool useProxy,
+                         const QString &proxyIp, const QString &socksPort, const QString &proxyUsername,
+                         QObject *parent)
     : QObject(parent)
-    , installationId(installationID)
-    , proxyIp(proxyHost)
-    , socksPort(proxyPort)
-    , proxyUsername(proxyUser)
-    , proxyPassword(proxyPasswd)
-    , useProxy(proxy)
+    , installationId(installationId)
+    , identityPath(identityPath)
+    , proxyIp(proxyIp)
+    , socksPort(socksPort)
+    , proxyUsername(proxyUsername)
+    , useProxy(useProxy)
 {
-    if (identityPath.isEmpty()) {
-        identity = nullptr;
-    }
-    else {
-        identity = std::make_shared<Identity>(identityPath, proxyHost, proxyPort, proxyUser, proxyPasswd, proxy);
-    }
-
-
     this->locale = QLocale().name().replace("_", "-");
-    this->browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
+    this->browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                             "Chrome/72.0.3626.121 Safari/537.36";
     this->eventsSessionId = QUuid::createUuid().toString(QUuid::StringFormat::WithoutBraces);
 
     networkManager = new SyncNetworAccesskManager(this);
+    setProxyPassword({});
 
-    if (useProxy) {
-        QNetworkProxy proxy(
-            QNetworkProxy::ProxyType::Socks5Proxy,
-            proxyIp,
-            socksPort.toUInt()
-        );
-
-        if (!proxyUsername.isEmpty()) {
-            proxy.setUser(proxyUsername);
-            proxy.setPassword(proxyPassword);
-        }
-
-        networkManager->setProxy(proxy);
-    }
-
-    initGfVersion();
     initCert();
     initInstallationId();
     initAllCerts();
@@ -89,11 +69,10 @@ QByteArray decompressGzip(const QByteArray &data) {
     return out;
 }
 
-QMap<QString, QString> NostaleAuth::getAccounts()
+bool NostaleAuth::getAccounts(QMap<QString, QString> &accounts)
 {
-    if (!getUserInformation()) {
-        return {};
-    }
+    if (token.isEmpty() || !getUserInformation())
+        return false;
 
     // if (!sendSystemInformation()) {
     //     return {};
@@ -103,26 +82,22 @@ QMap<QString, QString> NostaleAuth::getAccounts()
     //     return {};
     // }
 
-    QJsonObject jsonResponse;
-    QMap<QString, QString> accounts;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v1/user/accounts"));
-    QNetworkReply* reply = nullptr;
-
-    if (token.isEmpty())
-        return {};
-
     request.setRawHeader("User-Agent", browserUserAgent.toUtf8());
     request.setRawHeader("TNT-Installation-Id", installationId.toUtf8());
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
 
-    reply = networkManager->get(request);
+    QNetworkReply *reply = networkManager->get(request);
+    reply->deleteLater();
+    if (!checkSessionResponse(reply, 200))
+        return false;
 
-    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
-        return {};
+    const QJsonDocument document = QJsonDocument::fromJson(reply->readAll());
+    if (!document.isObject())
+        return false;
 
-    QByteArray replyContent = reply->readAll();
-    jsonResponse = QJsonDocument::fromJson(replyContent).object();
-
+    const QJsonObject jsonResponse = document.object();
+    accounts.clear();
     for (const auto& key : jsonResponse.keys())
     {
         auto accountData = jsonResponse[key].toObject();
@@ -134,26 +109,20 @@ QMap<QString, QString> NostaleAuth::getAccounts()
         accounts.insert(accountData["id"].toString(), accountData["displayName"].toString());
     }
 
-    reply->deleteLater();
-
-    return accounts;
+    return true;
 }
 
-bool NostaleAuth::authenticate(const QString &email, const QString &password, bool& captcha, QString& gfChallengeId, bool &wrongCredentials)
+bool NostaleAuth::authenticate(const QString &email, const QString &password, bool &captcha, QString &gfChallengeId,
+                               bool &wrongCredentials)
 {
-    QJsonObject content, jsonResponse;
-    QNetworkRequest request(
-        QUrl("https://spark.gameforge.com/api/v2/authProviders/credentials/sessions"));
-    QNetworkReply* reply = nullptr;
+    QJsonObject content;
+    QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v2/authProviders/credentials/sessions"));
+    otpRequired = false;
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     request.setRawHeader("User-Agent", browserUserAgent.toUtf8());
     request.setRawHeader("tnt-installation-id", installationId.toUtf8());
     request.setRawHeader("gf-installation-id", installationId.toUtf8());
-
-    if (identity == nullptr) {
-
-    }
 
     content["blackbox"] = createBlackbox();
     content["email"] = email;
@@ -162,56 +131,31 @@ bool NostaleAuth::authenticate(const QString &email, const QString &password, bo
 
     if (!otpCode.isEmpty()) {
         content["otpCode"] = otpCode;
+        otpCode.clear();
     }
 
-    reply = networkManager->post(request, QJsonDocument(content).toJson(QJsonDocument::Compact));
+    QNetworkReply *reply = networkManager->post(request, QJsonDocument(content).toJson(QJsonDocument::Compact));
     reply->deleteLater();
 
-    jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
-
-    qDebug() << jsonResponse;
-
-    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 201)
-    {
-        QJsonArray errorTypes = jsonResponse["errorTypes"].toArray();
-
+    const QJsonObject jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
+    const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    if (status != 201) {
+        const QJsonArray errorTypes = jsonResponse["errorTypes"].toArray();
         if (errorTypes.contains("OTP_REQUIRED")) {
             otpRequired = true;
-            return false;
         }
-
-        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 409) // Conflict Captcha or incorrect username or password
-        {
-            if (errorTypes.contains("CHALLENGE_REQUIRED")) {
-                gfChallengeId = reply->rawHeader("gf-challenge-id").split(';').first();
-                captcha = true;
-                return false;
-            }
-
-            if (errorTypes.contains("CREDENTIALS_INVALID")) {
-                wrongCredentials = true;
-                return false;
-            }
-
-            return false;
-
+        else if (status == 409 && errorTypes.contains("CHALLENGE_REQUIRED")) {
+            gfChallengeId = reply->rawHeader("gf-challenge-id").split(';').first();
+            captcha = true;
         }
-        else if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 403) // Incorrect username or password
-        {
+        else if (status == 403 || (status == 409 && errorTypes.contains("CREDENTIALS_INVALID"))) {
             wrongCredentials = true;
-            return false;
         }
-        else
-        {
-            return false;
-        }
+        return false;
     }
 
     token = jsonResponse["token"].toString();
-    otpCode.clear();
-    otpRequired = false;
-
-    return true;
+    return !token.isEmpty();
 }
 
 QString NostaleAuth::getToken(const QString &accountId)
@@ -219,6 +163,9 @@ QString NostaleAuth::getToken(const QString &accountId)
     if (token.isEmpty()) {
         return {};
     }
+
+    if (chromeVersion.isEmpty())
+        initGfVersion();
 
     generateGameSessionId();
 
@@ -293,8 +240,9 @@ bool NostaleAuth::getUserInformation()
     request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
 
     reply = networkManager->get(request);
+    reply->deleteLater();
 
-    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
+    if (!checkSessionResponse(reply, 200))
         return false;
 
     QByteArray replyContent = reply->readAll();
@@ -305,6 +253,14 @@ bool NostaleAuth::getUserInformation()
     this->email = jsonResponse["email"].toString();
 
     return true;
+}
+
+bool NostaleAuth::checkSessionResponse(QNetworkReply *reply, int expectedStatus)
+{
+    const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    if (status == 401)
+        token.clear();
+    return status == expectedStatus;
 }
 
 bool NostaleAuth::sendStartTime()
@@ -494,9 +450,7 @@ bool NostaleAuth::sendIovation(const QString& accountId)
 
     QByteArray response = reply->readAll();
 
-    qDebug() << "NostaleAuth::sendIovation" << response;
-
-    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
+    if (!checkSessionResponse(reply, 200))
         return false;
 
     jsonResponse = QJsonDocument::fromJson(response).object();
@@ -527,17 +481,11 @@ QString NostaleAuth::sendThinCodes(const QString &accountId)
 
     reply = networkManager->post(request, QJsonDocument(content).toJson());
 
-    QByteArray response = reply->readAll();
-
-    qDebug() << "NostaleAuth::getToken" << response;
-
-    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 201)
+    reply->deleteLater();
+    if (!checkSessionResponse(reply, 201))
         return {};
 
-    jsonResponse = QJsonDocument::fromJson(response).object();
-
-    reply->deleteLater();
-
+    jsonResponse = QJsonDocument::fromJson(reply->readAll()).object();
     return jsonResponse["code"].toString();
 }
 
@@ -709,12 +657,12 @@ void NostaleAuth::refreshIdentity()
     }
 }
 
-void NostaleAuth::setToken(const QString &newToken)
+void NostaleAuth::setSessionToken(const QString &newToken)
 {
     token = newToken;
 }
 
-QString NostaleAuth::getToken() const
+const QString &NostaleAuth::getSessionToken() const
 {
     return token;
 }
@@ -739,8 +687,11 @@ SyncNetworAccesskManager *NostaleAuth::getNetworkManager() const
     return networkManager;
 }
 
-bool NostaleAuth::createGameAccount(const QString &email, const QString& name, const QString &gfLang, QJsonObject &response)
+bool NostaleAuth::createGameAccount(const QString &, const QString &name, const QString &gfLang, QJsonObject &response)
 {
+    if (token.isEmpty())
+        return false;
+
     QJsonObject content;
     QNetworkRequest request(QUrl("https://spark.gameforge.com/api/v2/users/me/accounts"));
     QNetworkReply* reply;
@@ -760,15 +711,25 @@ bool NostaleAuth::createGameAccount(const QString &email, const QString& name, c
     content["gameId"] = gameId;
 
     reply = networkManager->post(request, QJsonDocument(content).toJson());
+    reply->deleteLater();
 
     response = QJsonDocument::fromJson(reply->readAll()).object();
 
-    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) != 201) {
-        return false;
-    }
+    return checkSessionResponse(reply, 201);
+}
 
+void NostaleAuth::setProxyPassword(const QString &password)
+{
+    proxyPassword = useProxy && !proxyUsername.isEmpty() ? password : QString();
+    if (!identityPath.isEmpty())
+        identity = std::make_shared<Identity>(identityPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
 
-    return true;
+    if (!useProxy)
+        return;
+
+    QNetworkProxy proxy(QNetworkProxy::Socks5Proxy, proxyIp, socksPort.toUInt(), proxyUsername, proxyPassword);
+    networkManager->clearAccessCache();
+    networkManager->setProxy(proxy);
 }
 
 QString NostaleAuth::getProxyPassword() const

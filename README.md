@@ -12,7 +12,7 @@ For help and more in-depth tutorials, join the Discord server.
 
 ### Account Management
 * Store multiple Gameforge accounts in the same launcher.
-* Log in with Gameforge credentials or an existing authentication token.
+* Log in with Gameforge credentials, with optional session saving per account.
 * Use a different identity (fingerprint) and installation ID for each Gameforge account.
 * Add accounts with SOCKS5 proxy support (per-account IP, port, username, password).
 
@@ -64,6 +64,17 @@ For help and more in-depth tutorials, join the Discord server.
 5. Go to `Options > Settings` and select your `NostaleClientX.exe`.
 6. Add a Gameforge account.
 7. Select the accounts you want to open and click **Play**.
+
+### Remembering a session
+
+**Remember session on this device** is off by default. Enable it to protect the session token and, if used,
+the proxy password with Windows DPAPI. Your Gameforge password is never saved. Turning the option off removes
+both saved credentials without ending the current session. **Sign out** also removes both.
+If you already had a saved session with an authenticated proxy, use **Connect** once to save the proxy password.
+
+The first launch after upgrading removes credentials stored in plain text by older versions. Sign in again to
+start a new session. DPAPI protects saved credentials at rest but cannot isolate them from programs running as the
+same Windows user.
 
 ## How to generate identity file
 

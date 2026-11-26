@@ -19,22 +19,15 @@ class NostaleAuth : public QObject
 {
     Q_OBJECT
 public:
-    explicit NostaleAuth(
-        const QString& identityPath,
-        const QString& installationID,
-        bool proxy,
-        const QString& proxyHost,
-        const QString& proxyPort,
-        const QString& proxyUser,
-        const QString& proxyPasswd,
-        QObject *parent = nullptr
-    );
+    explicit NostaleAuth(const QString &identityPath, const QString &installationId, bool useProxy,
+                         const QString &proxyIp, const QString &socksPort, const QString &proxyUsername,
+                         QObject *parent = nullptr);
 
-    QMap<QString /* displayName */, QString /* id */> getAccounts();
+    bool getAccounts(QMap<QString, QString> &accounts);
 
     bool authenticate(const QString& email, const QString& password, bool &captcha, QString &gfChallengeId, bool& wrongCredentials);
 
-    QString getToken(const QString& accountId);
+    QString getToken(const QString &accountId);
 
     QString getProxyIp() const;
     QString getSocksPort() const;
@@ -44,9 +37,11 @@ public:
 
     QString getProxyPassword() const;
 
+    void setProxyPassword(const QString &password);
+
     SyncNetworAccesskManager *getNetworkManager() const;
 
-    bool createGameAccount(const QString& email, const QString& name, const QString& gfLang, QJsonObject& response);
+    bool createGameAccount(const QString &email, const QString &name, const QString &gfLang, QJsonObject &response);
 
     QString getInstallationId() const;
 
@@ -56,14 +51,16 @@ public:
 
     void refreshIdentity();
 
-    void setToken(const QString &newToken);
-    QString getToken() const;
+    void setSessionToken(const QString &newToken);
+    const QString &getSessionToken() const;
 
 signals:
     void captchaStart();
     void captchaEnd();
 
 private:
+    bool checkSessionResponse(QNetworkReply *reply, int expectedStatus);
+
     QChar getFirstNumber(QString uuid);
 
     QByteArray generateSecondTypeUserAgentMagic();
@@ -123,6 +120,7 @@ private:
     QString otpCode;
     bool otpRequired = false;
     QList<QSslCertificate> allCerts;
+    QString identityPath;
     std::shared_ptr<Identity> identity;
 
     SyncNetworAccesskManager* networkManager;

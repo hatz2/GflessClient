@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>376</width>
+    <width>393</width>
     <height>466</height>
    </rect>
   </property>
@@ -44,6 +44,34 @@
          <widget class="QPushButton" name="removeGameforgeAccountButton">
           <property name="text">
            <string>Remove</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="sessionLayout">
+        <item>
+         <widget class="QCheckBox" name="rememberSessionCheckBox">
+          <property name="toolTip">
+           <string>Other programs running as your Windows user may be able to access a saved session.</string>
+          </property>
+          <property name="text">
+           <string>Remember session on this device</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="signInButton">
+          <property name="text">
+           <string>Sign in</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="signOutButton">
+          <property name="text">
+           <string>Sign out</string>
           </property>
          </widget>
         </item>
@@ -177,7 +205,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>376</width>
+     <width>393</width>
      <height>21</height>
     </rect>
    </property>

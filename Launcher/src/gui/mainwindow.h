@@ -22,6 +22,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QVector>
+#include <QQueue>
 
 
 QT_BEGIN_NAMESPACE
@@ -43,6 +44,12 @@ private slots:
     void on_addGameforgeAccountButton_clicked();
 
     void on_removeGameforgeAccountButton_clicked();
+
+    void on_signInButton_clicked();
+
+    void on_signOutButton_clicked();
+
+    void on_rememberSessionCheckBox_toggled(bool checked);
 
     void on_gameSettingsButton_clicked();
 
@@ -79,7 +86,8 @@ private slots:
     void on_repairButton_clicked();
 
 private:
-    void openAccount(const Profile* profile, QQueue<int> accountIndexes);
+    void openAccount(QQueue<GameAccount> accounts);
+    void launchAccount(const GameAccount &gameAccount);
     void createTrayIcon();
     bool checkGameClientPath();
     bool checkIdentityPath();
@@ -88,45 +96,14 @@ private:
     void setupDefaultProfile();
     void loadAccountProfiles(const QString& path);
     void saveAccountProfiles(const QString& path);
-    void addGameforgeAccount(
-        const QString& email,
-        const QString& password,
-        const QString &identityPath,
-        const QString& installationId,
-        const QString& customClientPath,
-        const QString& proxyIp,
-        const QString& socksPort,
-        const QString& proxyUsername,
-        const QString& proxyPassword,
-        const bool useProxy,
-        const QString& otpCode = ""
-    );
-
-    void addGameforgeAccount(
-        const QString& email,
-        const QString& password,
-        const QString& token,
-        const QString &identityPath,
-        const QString& installationId,
-        const QString& customClientPath,
-        const QString& proxyIp,
-        const QString& socksPort,
-        const QString& proxyUsername,
-        const QString& proxyPassword,
-        const bool useProxy
-        );
-
-    bool solveCaptcha(
-        const QString& gfChallengeId,
-        SyncNetworAccesskManager* netManager,
-        const QString& proxyIp,
-        const QString& socksPort,
-        const QString& proxyUsername,
-        const QString& proxyPassword,
-        const bool useProxy
-    );
-
-    void removeAccountsFromDefaultProfile(const QString& email);
+    GameforgeAccount *selectedGameforgeAccount() const;
+    void updateSessionControls();
+    bool authenticateAccount(GameforgeAccount *account, const QString &password);
+    bool solveCaptcha(const QString &gfChallengeId, const NostaleAuth *auth);
+    bool refreshGameAccounts(GameforgeAccount *account);
+    void clearAccountSession(GameforgeAccount *account, bool keepProxyPassword = false);
+    void sessionExpired(GameforgeAccount *account);
+    void removeAccountsFromDefaultProfile(GameforgeAccount *account);
     void displayProfile(int index);
 
     void updateGame();
@@ -141,6 +118,7 @@ private:
     QVector<GameforgeAccount*> gfAccounts;
     QMap<DWORD, GameAccount> processAccounts;
 
+    bool accountOperationInProgress = false;
     bool defaultAutoLogin = false;
     int defaultServerLocation = 0;
     int defaultServer = 0;

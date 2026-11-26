@@ -9,8 +9,45 @@
 #include "creategameaccountdialog.h"
 #include "otpdialog.h"
 #include "powcaptchasolver.h"
-#include <QQueue>
+#include "credentialprotection.h"
+#include <QInputDialog>
+#include <QScopedValueRollback>
+#include <QSignalBlocker>
 #include "ui_mainwindow.h"
+
+namespace {
+const QString accountsArray = QStringLiteral("GF accounts data");
+const QString protectedTokenKey = QStringLiteral("token_dpapi");
+const QString protectedProxyKey = QStringLiteral("proxy_password_dpapi");
+
+void removeStaleCredentials(QSettings &settings, qsizetype accountCount)
+{
+    const QString prefix = accountsArray + '/';
+    for (const QString &key : settings.allKeys()) {
+        if (!key.startsWith(prefix, Qt::CaseInsensitive))
+            continue;
+
+        const QString field = key.section('/', -1).toLower();
+        const int entry = key.section('/', 1, 1).toInt();
+        const bool oldCredential = field == "password" || field == "token" || field == "proxy_password";
+        const bool protectedCredential = field == protectedTokenKey || field == protectedProxyKey;
+        const bool unusedCredential = protectedCredential && (entry < 1 || entry > accountCount);
+        if (oldCredential || unusedCredential)
+            settings.remove(key);
+    }
+}
+
+bool saveProtectedCredential(QSettings &settings, const QString &key, const QString &credential)
+{
+    const QByteArray encrypted = CredentialProtection::protect(credential);
+    if (encrypted.isEmpty())
+        settings.remove(key);
+    else
+        settings.setValue(key, encrypted);
+
+    return credential.isEmpty() || !encrypted.isEmpty();
+}
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -45,6 +82,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::loadSettings()
 {
+    const QScopedValueRollback accountOperation(accountOperationInProgress, true);
     QSettings settings;
 
     settings.beginGroup("MainWindow");
@@ -66,34 +104,55 @@ void MainWindow::loadSettings()
 
     settings.endGroup();
 
+    settings.setFallbacksEnabled(false);
     settings.beginGroup("Gameforge Accounts");
-    int numAccs = settings.beginReadArray("GF accounts data");
+    removeStaleCredentials(settings, settings.value(accountsArray + "/size", 0).toInt());
+    const int numAccs = settings.beginReadArray(accountsArray);
 
     for (int i = 0; i < numAccs; ++i) {
         settings.setArrayIndex(i);
 
         QString email = settings.value("email", "").toString();
-        QString password = settings.value("password", "").toString();
-        QString token = settings.value("token", "").toString();
         QString identity = settings.value("identity_path", "").toString();
         QString installationId = settings.value("installation_id", "").toString();
         QString proxyIp = settings.value("proxy_ip", "").toString();
         QString socksPort = settings.value("socks_port", "").toString();
         QString proxyUsername = settings.value("proxy_username", "").toString();
-        QString proxyPassword = settings.value("proxy_password", "").toString();
         QString customClientPath = settings.value("custom_client", "").toString();
         bool useProxy = settings.value("use_proxy", false).toBool();
 
-        if (token.isEmpty())
-            addGameforgeAccount(email, password, identity, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
-        else
-            addGameforgeAccount(email, password, token, identity, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+        auto *account = new GameforgeAccount(email, identity, installationId, customClientPath, useProxy, proxyIp,
+                                            socksPort, proxyUsername, this);
+        account->setRememberSession(settings.value("remember_session", false).toBool());
+        if (account->getRememberSession()) {
+            account->setSessionToken(CredentialProtection::unprotect(settings.value(protectedTokenKey).toByteArray()));
+            if (account->needsProxyPassword()) {
+                const QByteArray encrypted = settings.value(protectedProxyKey).toByteArray();
+                const QString password = CredentialProtection::unprotect(encrypted);
+                if (!password.isEmpty())
+                    account->setProxyPassword(password);
+            }
+        }
+        if (!account->hasSession())
+            settings.remove(protectedTokenKey);
+        if (account->getAuth()->getProxyPassword().isEmpty())
+            settings.remove(protectedProxyKey);
+
+        gfAccounts.push_back(account);
+        ui->gameforgeAccountComboBox->addItem(email);
     }
 
     settings.endArray();
     settings.endGroup();
+    settings.sync();
+    if (settings.status() != QSettings::NoError)
+        QMessageBox::warning(this, tr("Session storage"), tr("Windows could not clean up the saved credentials."));
 
-    displayProfile(ui->profileComboBox->currentIndex());
+    for (auto *account : gfAccounts) {
+        if (account->hasSession() && !account->needsProxyPassword())
+            refreshGameAccounts(account);
+    }
+    updateSessionControls();
 }
 
 void MainWindow::saveSettings()
@@ -116,15 +175,23 @@ void MainWindow::saveSettings()
     settings.setValue("default_character", defaultCharacter);
     settings.endGroup();
 
+    settings.setFallbacksEnabled(false);
     settings.beginGroup("Gameforge Accounts");
-    settings.beginWriteArray("GF accounts data");
+    removeStaleCredentials(settings, gfAccounts.size());
+    settings.beginWriteArray(accountsArray, gfAccounts.size());
+    bool encryptionFailed = false;
     for (int i = 0; i < gfAccounts.size(); ++i) {
         settings.setArrayIndex(i);
         GameforgeAccount* acc = gfAccounts.at(i);
 
+        const bool rememberSession = acc->getRememberSession();
+        const QString token = rememberSession ? acc->getSessionToken() : QString();
+        const QString proxyPassword = rememberSession ? acc->getAuth()->getProxyPassword() : QString();
+        encryptionFailed |= !saveProtectedCredential(settings, protectedTokenKey, token);
+        encryptionFailed |= !saveProtectedCredential(settings, protectedProxyKey, proxyPassword);
+
+        settings.setValue("remember_session", rememberSession);
         settings.setValue("email", acc->getEmail());
-        settings.setValue("password", acc->getPassword());
-        settings.setValue("token", acc->getAuth()->getToken());
         settings.setValue("identity_path", acc->getIdentityPath());
         settings.setValue("installation_id", acc->getAuth()->getInstallationId());
         settings.setValue("custom_client", acc->getcustomClientPath());
@@ -133,12 +200,15 @@ void MainWindow::saveSettings()
         settings.setValue("proxy_ip", acc->getAuth()->getProxyIp());
         settings.setValue("socks_port", acc->getAuth()->getSocksPort());
         settings.setValue("proxy_username", acc->getAuth()->getProxyUsername());
-        settings.setValue("proxy_password", acc->getAuth()->getProxyPassword());
     }
 
     settings.endArray();
-
     settings.endGroup();
+    settings.sync();
+    if (settings.status() != QSettings::NoError)
+        QMessageBox::warning(this, tr("Session storage"), tr("Windows could not update the saved settings."));
+    else if (encryptionFailed)
+        QMessageBox::warning(this, tr("Session storage"), tr("Some credentials could not be encrypted or saved."));
 }
 
 void MainWindow::setupDefaultProfile()
@@ -244,8 +314,9 @@ void MainWindow::saveAccountProfiles(const QString &path)
 
 // Handles the challenge Gameforge answered the login with. Returns true when
 // it was passed and the login can be retried.
-bool MainWindow::solveCaptcha(const QString &gfChallengeId, SyncNetworAccesskManager *netManager, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
+bool MainWindow::solveCaptcha(const QString &gfChallengeId, const NostaleAuth *auth)
 {
+    auto *netManager = auth->getNetworkManager();
     QJsonObject captchaInfo = CaptchaSolver::getCaptchaInfo(gfChallengeId, netManager);
     QString type = captchaInfo.value("type").toString();
     QString script = captchaInfo.value("script").toString();
@@ -260,9 +331,9 @@ bool MainWindow::solveCaptcha(const QString &gfChallengeId, SyncNetworAccesskMan
         // Nothing to answer: Gameforge's own script runs the check in a browser.
         PowCaptchaSolver solver(gfChallengeId, script, this);
 
-        if (useProxy) {
-            solver.setProxy(proxyIp, socksPort, proxyUsername, proxyPassword);
-        }
+        if (auth->getUseProxy())
+            solver.setProxy(auth->getProxyIp(), auth->getSocksPort(), auth->getProxyUsername(),
+                            auth->getProxyPassword());
 
         PowCaptchaSolver::Result result = solver.run(this);
 
@@ -288,116 +359,80 @@ bool MainWindow::solveCaptcha(const QString &gfChallengeId, SyncNetworAccesskMan
     return false;
 }
 
-void MainWindow::addGameforgeAccount(const QString &email, const QString &password, const QString& identityPath, const QString &installationId, const QString &customClientPath, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy, const QString &otpCode)
+bool MainWindow::authenticateAccount(GameforgeAccount *account, const QString &password)
 {
-    bool captcha = false;
-    bool wrongCredentials = false;
-    QString gfChallengeId;
-    GameforgeAccount* gfAcc = new GameforgeAccount(
-        email,
-        password,
-        identityPath,
-        installationId,
-        customClientPath,
-        useProxy,
-        proxyIp,
-        socksPort,
-        proxyUsername,
-        proxyPassword,
-        this
-    );
+    for (;;) {
+        bool captcha = false;
+        bool wrongCredentials = false;
+        QString challengeId;
+        if (account->authenticate(password, captcha, challengeId, wrongCredentials))
+            return true;
 
-    if (!otpCode.isEmpty()) {
-        gfAcc->setOtpCode(otpCode);
-    }
-
-    if (!gfAcc->authenticate(captcha, gfChallengeId, wrongCredentials)) {
         if (captcha) {
-            if (solveCaptcha(gfChallengeId, gfAcc->getAuth()->getNetworkManager(), proxyIp, socksPort, proxyUsername, proxyPassword, useProxy)) {
-                addGameforgeAccount(email, password, identityPath, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
-            }
+            if (solveCaptcha(challengeId, account->getAuth()))
+                continue;
+            return false;
         }
-        else if (gfAcc->getOtpRequired()) {
-            OtpDialog otpDialog(this);
-            int res = otpDialog.exec();
-
-            if (res == QDialog::Accepted) {
-                addGameforgeAccount(email, password, identityPath, installationId, customClientPath, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy, otpDialog.getOtpCode());
-            }
-        }
-        else if (wrongCredentials) {
-            QMessageBox::critical(this, "Error", "Incorrect username or password");
-        }
-        else {
-            QMessageBox::critical(this, "Error", "Authentication failed");
+        if (account->getOtpRequired()) {
+            OtpDialog dialog(this);
+            if (dialog.exec() != QDialog::Accepted)
+                return false;
+            account->setOtpCode(dialog.getOtpCode());
+            continue;
         }
 
-        delete gfAcc;
-        return;
+        const QString error = wrongCredentials ? tr("Incorrect email or password.") : tr("Authentication failed.");
+        QMessageBox::critical(this, tr("Sign in"), error);
+        return false;
     }
-
-    gfAccounts.push_back(gfAcc);
-
-    ui->gameforgeAccountComboBox->addItem(email);
-
-
-    // Update default profile
-    QMap<QString, QString> gameAccs = gfAcc->getGameAccounts();
-
-    for (auto it = gameAccs.begin(); it != gameAccs.end(); ++it) {
-        GameAccount gameAccount(gfAcc, it.value(), it.key(), it.value(), defaultServerLocation, defaultServer, defaultChannel, defaultCharacter, defaultAutoLogin);
-        profiles.first()->addAccount(gameAccount);
-    }
-
-    displayProfile(ui->profileComboBox->currentIndex());
 }
 
-void MainWindow::addGameforgeAccount(const QString &email, const QString& password, const QString &token, const QString &identityPath, const QString &installationId, const QString &customClientPath, const QString &proxyIp, const QString &socksPort, const QString &proxyUsername, const QString &proxyPassword, const bool useProxy)
+bool MainWindow::refreshGameAccounts(GameforgeAccount *account)
 {
-    GameforgeAccount* gfAcc = new GameforgeAccount(
-        email,
-        password,
-        identityPath,
-        installationId,
-        customClientPath,
-        useProxy,
-        proxyIp,
-        socksPort,
-        proxyUsername,
-        proxyPassword,
-        this
-    );
+    if (!account->updateGameAccounts()) {
+        if (!account->hasSession())
+            sessionExpired(account);
+        return false;
+    }
 
-    gfAcc->setToken(token);
-
-    gfAccounts.push_back(gfAcc);
-
-    ui->gameforgeAccountComboBox->addItem(email);
-
-
-    // Update default profile
-    gfAcc->updateGameAccounts();
-    QMap<QString, QString> gameAccs = gfAcc->getGameAccounts();
-
-    for (auto it = gameAccs.begin(); it != gameAccs.end(); ++it) {
-        GameAccount gameAccount(gfAcc, it.value(), it.key(), it.value(), defaultServerLocation, defaultServer, defaultChannel, defaultCharacter, defaultAutoLogin);
+    removeAccountsFromDefaultProfile(account);
+    const auto &gameAccounts = account->getGameAccounts();
+    for (auto it = gameAccounts.cbegin(); it != gameAccounts.cend(); ++it) {
+        GameAccount gameAccount(account, it.value(), it.key(), it.value(), defaultServerLocation, defaultServer,
+                                defaultChannel, defaultCharacter, defaultAutoLogin);
         profiles.first()->addAccount(gameAccount);
     }
 
     displayProfile(ui->profileComboBox->currentIndex());
+    return true;
 }
 
-void MainWindow::removeAccountsFromDefaultProfile(const QString &email)
+void MainWindow::clearAccountSession(GameforgeAccount *account, bool keepProxyPassword)
+{
+    account->clearSession(keepProxyPassword);
+    removeAccountsFromDefaultProfile(account);
+    displayProfile(ui->profileComboBox->currentIndex());
+    updateSessionControls();
+}
+
+void MainWindow::sessionExpired(GameforgeAccount *account)
+{
+    clearAccountSession(account, account->getRememberSession());
+    saveSettings();
+    ui->statusbar->showMessage(tr("Session expired. Sign in again as %1.").arg(account->getEmail()), 10000);
+}
+
+void MainWindow::removeAccountsFromDefaultProfile(GameforgeAccount *account)
 {
     if (profiles.count() <= 0)
         return;
 
     Profile* defaultProfile = profiles[0];
 
-    auto accs = defaultProfile->getAccounts();
+    const auto &accs = defaultProfile->getAccounts();
 
     for (int i = accs.count() - 1; i >= 0; --i) {
-        if (accs[i].getGfAcc()->getEmail() == email) {
+        if (accs[i].getGfAcc() == account) {
             defaultProfile->removeAccount(i);
         }
     }
@@ -473,45 +508,113 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::on_addGameforgeAccountButton_clicked()
 {
-    AddAccountDialog addAccountDialog(this);
-    int res = addAccountDialog.exec();
-
-    if (res != QDialog::Accepted)
+    if (accountOperationInProgress)
         return;
 
-    QString email = addAccountDialog.getEmail();
-    QString password = addAccountDialog.getPassword();
-    QString identityPath = addAccountDialog.getIdentityPath();
-    QString installationId = addAccountDialog.getInstallationId();
-    QString proxyIp = addAccountDialog.getProxyIp();
-    QString socksPort = addAccountDialog.getSocksPort();
-    QString proxyUsername = addAccountDialog.getProxyUsername();
-    QString proxyPassword = addAccountDialog.getProxyPassword();
-    QString customClient = addAccountDialog.getCustomClientPath();
-    bool useProxy = addAccountDialog.getUseProxy();
+    const QScopedValueRollback accountOperation(accountOperationInProgress, true);
+    GameforgeAccount *account;
+    {
+        AddAccountDialog dialog(this);
+        if (dialog.exec() != QDialog::Accepted)
+            return;
 
-    addGameforgeAccount(email, password, identityPath, installationId, customClient, proxyIp, socksPort, proxyUsername, proxyPassword, useProxy);
+        account = new GameforgeAccount(dialog.getEmail(), dialog.getIdentityPath(), dialog.getInstallationId(),
+                                       dialog.getCustomClientPath(), dialog.getUseProxy(), dialog.getProxyIp(),
+                                       dialog.getSocksPort(), dialog.getProxyUsername(), this);
+        account->setProxyPassword(dialog.getProxyPassword());
+        if (!authenticateAccount(account, dialog.getPassword())) {
+            delete account;
+            return;
+        }
+    }
+
+    gfAccounts.push_back(account);
+    ui->gameforgeAccountComboBox->addItem(account->getEmail());
+    ui->gameforgeAccountComboBox->setCurrentIndex(gfAccounts.size() - 1);
+    saveSettings();
+    refreshGameAccounts(account);
 }
-
 
 void MainWindow::on_removeGameforgeAccountButton_clicked()
 {
-    int res = QMessageBox::warning(this, "Warning", "Do you want to remove this account?\n(This will not delete your real account)", QMessageBox::Yes | QMessageBox::No);
-
-    if (res == QMessageBox::No)
+    if (accountOperationInProgress || !selectedGameforgeAccount())
         return;
 
-    int index = ui->gameforgeAccountComboBox->currentIndex();
-
-    if (index < 0)
+    const QScopedValueRollback accountOperation(accountOperationInProgress, true);
+    const int index = ui->gameforgeAccountComboBox->currentIndex();
+    const QString message = tr("Remove this account from the launcher? This will not delete your Gameforge account.");
+    if (QMessageBox::question(this, tr("Remove account"), message) != QMessageBox::Yes)
         return;
 
-    removeAccountsFromDefaultProfile(ui->gameforgeAccountComboBox->currentText());
-
-    gfAccounts.remove(index);
+    clearAccountSession(gfAccounts.at(index));
+    gfAccounts.removeAt(index);
     ui->gameforgeAccountComboBox->removeItem(index);
+    updateSessionControls();
+    saveSettings();
+}
 
-    displayProfile(ui->profileComboBox->currentIndex());
+void MainWindow::on_signInButton_clicked()
+{
+    auto *account = selectedGameforgeAccount();
+    if (accountOperationInProgress || !account)
+        return;
+
+    const QScopedValueRollback accountOperation(accountOperationInProgress, true);
+    const bool needsProxyPassword = account->needsProxyPassword();
+    if (needsProxyPassword) {
+        bool accepted = false;
+        const QString prompt = tr("Proxy password for %1:").arg(account->getEmail());
+        const QString password = QInputDialog::getText(this, tr("Connect"), prompt, QLineEdit::Password, {}, &accepted);
+        if (!accepted || password.isEmpty())
+            return;
+        account->setProxyPassword(password);
+    }
+
+    const bool signingIn = !account->hasSession();
+    if (signingIn) {
+        bool accepted = false;
+        const QString prompt = tr("Gameforge password for %1:").arg(account->getEmail());
+        const QString title = tr("Sign in");
+        const QString password = QInputDialog::getText(this, title, prompt, QLineEdit::Password, {}, &accepted);
+        if (!accepted || password.isEmpty() || !authenticateAccount(account, password)) {
+            account->clearSession(account->getRememberSession() && !needsProxyPassword);
+            return;
+        }
+        saveSettings();
+    }
+
+    const bool refreshed = refreshGameAccounts(account);
+    if (needsProxyPassword && !signingIn) {
+        if (refreshed && account->getRememberSession())
+            saveSettings();
+        else if (!refreshed && account->hasSession())
+            account->setProxyPassword({});
+    }
+    updateSessionControls();
+}
+
+void MainWindow::on_signOutButton_clicked()
+{
+    auto *account = selectedGameforgeAccount();
+    if (accountOperationInProgress || !account)
+        return;
+
+    const QScopedValueRollback accountOperation(accountOperationInProgress, true);
+    clearAccountSession(account);
+    saveSettings();
+}
+
+void MainWindow::on_rememberSessionCheckBox_toggled(bool checked)
+{
+    auto *account = selectedGameforgeAccount();
+    if (accountOperationInProgress || !account) {
+        updateSessionControls();
+        return;
+    }
+
+    const QScopedValueRollback accountOperation(accountOperationInProgress, true);
+    account->setRememberSession(checked);
+    saveSettings();
 }
 
 
@@ -910,31 +1013,47 @@ void MainWindow::on_profileComboBox_currentIndexChanged(int index)
 
 void MainWindow::on_openAccountsButton_clicked()
 {
-    if (ui->accountsListWidget->currentRow() < 0)
+    if (accountOperationInProgress || ui->accountsListWidget->currentRow() < 0)
         return;
 
     if (!checkGameClientPath())
         return;
 
-    int openInterval = settingsDialog->getOpenInterval();
-    Profile* profile = profiles[ui->profileComboBox->currentIndex()];
-    GameAccount gameAccount;
-    QString gamePath = settingsDialog->getGameClientPath();
-    int gameLang = settingsDialog->getGameLanguage();
-
-    QQueue<int> accountIndexes;
-
-    for (int i = 0; i < ui->accountsListWidget->selectedItems().count(); ++i) {
-        int row = ui->accountsListWidget->row(ui->accountsListWidget->selectedItems().at(i));
-        accountIndexes.push_back(row);
+    const auto &profileAccounts = profiles.at(ui->profileComboBox->currentIndex())->getAccounts();
+    QQueue<GameAccount> accounts;
+    for (auto *item : ui->accountsListWidget->selectedItems()) {
+        const int row = ui->accountsListWidget->row(item);
+        accounts.enqueue(profileAccounts.at(row));
     }
 
-    openAccount(profile, accountIndexes);
+    openAccount(accounts);
 }
 
+GameforgeAccount *MainWindow::selectedGameforgeAccount() const
+{
+    const int index = ui->gameforgeAccountComboBox->currentIndex();
+    return index >= 0 && index < gfAccounts.size() ? gfAccounts.at(index) : nullptr;
+}
+
+void MainWindow::updateSessionControls()
+{
+    const auto *account = selectedGameforgeAccount();
+    const bool hasSession = account && account->hasSession();
+    const QSignalBlocker blocker(ui->rememberSessionCheckBox);
+    ui->rememberSessionCheckBox->setEnabled(account != nullptr);
+    ui->rememberSessionCheckBox->setChecked(account && account->getRememberSession());
+    ui->signInButton->setEnabled(account != nullptr);
+    ui->signOutButton->setEnabled(hasSession);
+
+    QString action = tr("Sign in");
+    if (hasSession)
+        action = account->needsProxyPassword() ? tr("Connect") : tr("Refresh");
+    ui->signInButton->setText(action);
+}
 
 void MainWindow::on_gameforgeAccountComboBox_currentIndexChanged(int index)
 {
+    updateSessionControls();
     if (index < 0)
         return;
 
@@ -963,18 +1082,37 @@ void MainWindow::on_gameforgeAccountComboBox_currentIndexChanged(int index)
 
 void MainWindow::on_createGameAccButton_clicked()
 {
-    CreateGameAccountDialog dialog(gfAccounts, settingsDialog->getGameLanguage(), this);
+    if (accountOperationInProgress)
+        return;
+
+    const QScopedValueRollback accountOperation(accountOperationInProgress, true);
+    QVector<GameforgeAccount*> signedInAccounts;
+    for (auto *account : gfAccounts) {
+        if (account->hasSession() && !account->needsProxyPassword())
+            signedInAccounts.push_back(account);
+    }
+    if (signedInAccounts.isEmpty()) {
+        ui->statusbar->showMessage(tr("Sign in to a Gameforge account first."), 10000);
+        return;
+    }
+
+    CreateGameAccountDialog dialog(signedInAccounts, settingsDialog->getGameLanguage(), this);
     if (dialog.exec() == QDialog::Accepted) {
         QJsonValue accInfo = dialog.getNewAccountInfo();
 
         QString displayName = accInfo["displayName"].toString();
         QString id = accInfo["accountId"].toString();
 
-        GameAccount gameAcc(dialog.getGfAcc(), displayName, id, displayName, defaultServerLocation, defaultServer, defaultChannel, defaultCharacter, defaultAutoLogin);
+        GameAccount gameAcc(dialog.getGfAcc(), displayName, id, displayName, defaultServerLocation, defaultServer,
+                            defaultChannel, defaultCharacter, defaultAutoLogin);
         profiles.first()->addAccount(gameAcc);
         profiles.first()->sort();
 
         displayProfile(ui->profileComboBox->currentIndex());
+    }
+    for (auto *account : signedInAccounts) {
+        if (!account->hasSession())
+            sessionExpired(account);
     }
 }
 
@@ -984,44 +1122,56 @@ void MainWindow::on_repairButton_clicked()
     updateGame();
 }
 
-void MainWindow::openAccount(const Profile *profile, QQueue<int> accountIndexes)
+void MainWindow::openAccount(QQueue<GameAccount> accounts)
 {
-    if (accountIndexes.empty()) {
+    if (accounts.isEmpty())
+        return;
+
+    if (accountOperationInProgress) {
+        ui->statusbar->showMessage(tr("Another account operation is in progress. Try again."), 10000);
         return;
     }
 
-    int row = accountIndexes.front();
-    accountIndexes.pop_front();
+    const QScopedValueRollback accountOperation(accountOperationInProgress, true);
+    launchAccount(accounts.dequeue());
+    if (!accounts.isEmpty()) {
+        const int delay = settingsDialog->getOpenInterval() * 1000;
+        QTimer::singleShot(delay, this, [this, accounts] { openAccount(accounts); });
+    }
+}
 
-    int openInterval = settingsDialog->getOpenInterval();
-    QString gamePath = settingsDialog->getGameClientPath();
-    int gameLang = settingsDialog->getGameLanguage();
+void MainWindow::launchAccount(const GameAccount &gameAccount)
+{
+    const qsizetype index = gfAccounts.indexOf(gameAccount.getGfAcc());
+    if (index < 0)
+        return;
 
-    const GameAccount& gameAccount = profile->getAccounts().at(row);
+    auto *account = gfAccounts.at(index);
+    if (!account->hasSession() || account->needsProxyPassword()) {
+        ui->statusbar->showMessage(tr("Sign in or connect as %1 first.").arg(account->getEmail()), 10000);
+        return;
+    }
 
-    ui->statusbar->showMessage("Trying to open account " + gameAccount.getName(), 10000);
+    ui->statusbar->showMessage(tr("Trying to open account %1").arg(gameAccount.getName()), 10000);
+    const QString code = account->getToken(gameAccount.getId());
+    if (code.isEmpty()) {
+        if (!account->hasSession())
+            sessionExpired(account);
+        else
+            ui->statusbar->showMessage(tr("Couldn't get a launch code for %1.").arg(gameAccount.getName()), 10000);
+        return;
+    }
 
-    QString token = gameAccount.getGfAcc()->getToken(gameAccount.getId());
-
-    if (token.isEmpty()) {
-        ui->statusbar->showMessage("Couldn't get token for account " + gameAccount.getName(), 10000);
+    DWORD pid = 0;
+    QString path = account->getcustomClientPath();
+    if (path.isEmpty())
+        path = settingsDialog->getGameClientPath();
+    const int language = settingsDialog->getGameLanguage();
+    if (gflessClient->openClient(gameAccount.getName(), code, path, language, pid)) {
+        processAccounts.insert(pid, gameAccount);
+        ui->statusbar->showMessage(tr("Launched game with PID %1").arg(pid), 10000);
     }
     else {
-        DWORD pid = 0;
-
-        QString customPath = gameAccount.getGfAcc()->getcustomClientPath();
-
-        if (gflessClient->openClient(gameAccount.getName(), token, customPath.isEmpty() ? gamePath : customPath, gameLang, pid)) {
-            QString msg = "Launched game with PID " + QString::number(pid);
-            ui->statusbar->showMessage(msg, 10000);
-            processAccounts.insert(pid, gameAccount);
-        }
-        else {
-            ui->statusbar->showMessage("Failed to launch game for account " + gameAccount.getName(), 10000);
-        }
+        ui->statusbar->showMessage(tr("Failed to launch game for %1.").arg(gameAccount.getName()), 10000);
     }
-
-    QTimer::singleShot(openInterval * 1000, this, [=]() {
-        openAccount(profile, accountIndexes);
-    });
 }

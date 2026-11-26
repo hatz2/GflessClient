@@ -1,52 +1,68 @@
 #include "gameforgeaccount.h"
 
-GameforgeAccount::GameforgeAccount(const QString &gfEmail,
-    const QString &gfPassword,
-    const QString& identPath, const QString &installationId,
-    const QString& customGamePath,
-    bool proxy,
-    const QString &proxyHost,
-    const QString &proxyPort,
-    const QString &proxyUsername,
-    const QString &proxyPassword, QObject *parent
-)
-    : QObject{parent}
-    , email(gfEmail)
-    , password(gfPassword)
-    , identityPath(identPath)
-    , customClientPath(customGamePath)
+GameforgeAccount::GameforgeAccount(const QString &email, const QString &identityPath, const QString &installationId,
+                                   const QString &customClientPath, bool useProxy, const QString &proxyIp,
+                                   const QString &socksPort, const QString &proxyUsername, QObject *parent)
+    : QObject(parent)
+    , email(email)
+    , identityPath(identityPath)
+    , customClientPath(customClientPath)
 {
-    auth = new NostaleAuth(
-        identityPath,
-        installationId,
-        proxy,
-        proxyHost,
-        proxyPort,
-        proxyUsername,
-        proxyPassword,
-        this
-    );
+    auth = new NostaleAuth(identityPath, installationId, useProxy, proxyIp, socksPort, proxyUsername, this);
 }
 
-bool GameforgeAccount::authenticate(bool &captcha, QString &gfChallengeId, bool &wrongCredentials)
+bool GameforgeAccount::authenticate(const QString &password, bool &captcha, QString &challengeId, bool &badCredentials)
 {
-    bool res = auth->authenticate(email, password, captcha, gfChallengeId, wrongCredentials);
-
-    if (res) {
-        updateGameAccounts();
-    }
-
-    return res;
+    return auth->authenticate(email, password, captcha, challengeId, badCredentials);
 }
 
 bool GameforgeAccount::createGameAccount(const QString &name, const QString &gfLang, QJsonObject& response)
 {
-    return auth->createGameAccount(this->email, name, gfLang, response);
+    return auth->createGameAccount(email, name, gfLang, response);
 }
 
-void GameforgeAccount::setToken(const QString &token)
+void GameforgeAccount::setSessionToken(const QString &token)
 {
-    auth->setToken(token);
+    auth->setSessionToken(token);
+}
+
+const QString &GameforgeAccount::getSessionToken() const
+{
+    return auth->getSessionToken();
+}
+
+bool GameforgeAccount::hasSession() const
+{
+    return !getSessionToken().isEmpty();
+}
+
+void GameforgeAccount::clearSession(bool keepProxyPassword)
+{
+    setSessionToken({});
+    auth->setOtpCode({});
+    if (!keepProxyPassword && !auth->getProxyPassword().isEmpty())
+        setProxyPassword({});
+    gameAccounts.clear();
+}
+
+void GameforgeAccount::setRememberSession(bool remember)
+{
+    rememberSession = remember;
+}
+
+bool GameforgeAccount::getRememberSession() const
+{
+    return rememberSession;
+}
+
+bool GameforgeAccount::needsProxyPassword() const
+{
+    return auth->getUseProxy() && !auth->getProxyUsername().isEmpty() && auth->getProxyPassword().isEmpty();
+}
+
+void GameforgeAccount::setProxyPassword(const QString &password)
+{
+    auth->setProxyPassword(password);
 }
 
 const QMap<QString, QString> &GameforgeAccount::getGameAccounts() const
@@ -54,9 +70,9 @@ const QMap<QString, QString> &GameforgeAccount::getGameAccounts() const
     return gameAccounts;
 }
 
-void GameforgeAccount::updateGameAccounts()
+bool GameforgeAccount::updateGameAccounts()
 {
-    gameAccounts = auth->getAccounts();
+    return auth->getAccounts(gameAccounts);
 }
 
 QString GameforgeAccount::getToken(const QString &accountId) const
@@ -67,11 +83,6 @@ QString GameforgeAccount::getToken(const QString &accountId) const
 QString GameforgeAccount::getEmail() const
 {
     return email;
-}
-
-QString GameforgeAccount::getPassword() const
-{
-    return password;
 }
 
 QString GameforgeAccount::getIdentityPath() const

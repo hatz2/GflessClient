@@ -8,9 +8,8 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QDir>
-#include <QSettings>
-#include <QTimer>
 #include <Windows.h>
+#include <memory>
 
 class GflessClient : public QObject
 {
@@ -18,21 +17,22 @@ class GflessClient : public QObject
 public:
     explicit GflessClient(QObject *parent = nullptr);
 
-    bool openClient(const QString& displayName, const QString& token, const QString& gameClientPath, const int& gameLanguage, DWORD& createdPID);
+    bool openClient(const QString &displayName, const QString &code, const QString &gameClientPath,
+                    int gameLanguage, DWORD &createdPID);
 
     bool openClientSettings(const QString& gameClientPath);
 
 private slots:
     void handleNewConnection();
 
-    void handlePipe();
-
 private:
     QLocalServer* gfServer;
-    QLocalSocket* pipe;
-    QString token;
+    std::unique_ptr<void, decltype(&CloseHandle)> gameProcess{nullptr, CloseHandle};
+    QString launchCode;
     QString displayName;
 
+    bool isGameConnection(QLocalSocket *socket) const;
+    void handlePipe(QLocalSocket *socket);
     QByteArray prepareResponse(const QJsonObject& request, const QString& response);
 
     bool injectDll(DWORD pid, const QString& dllPath);

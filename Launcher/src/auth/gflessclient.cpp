@@ -1,81 +1,68 @@
 #include "gflessclient.h"
+#include <QFileInfo>
 #include <QMessageBox>
+#include <string>
+#include <utility>
 
 GflessClient::GflessClient(QObject *parent) : QObject(parent)
 {
-    pipe = nullptr;
     gfServer = new QLocalServer(this);
     gfServer->listen("GameforgeClientJSONRPC");
-    token = "";
-    displayName = "";
 
     connect(gfServer, &QLocalServer::newConnection, this, &GflessClient::handleNewConnection);
 }
 
-bool GflessClient::openClient(const QString& displayName, const QString& token, const QString &gameClientPath, const int &gameLanguage, DWORD& createdPID)
+bool GflessClient::openClient(const QString &displayName, const QString &code, const QString &gameClientPath,
+                             int gameLanguage, DWORD &createdPID)
 {
-    this->displayName = displayName;
-    this->token = token;
-
-    int index = gameClientPath.lastIndexOf("/");
-
-    if (index < 0)
+    if (!gfServer->isListening())
         return false;
 
-    QString directory = gameClientPath.left(index);
-    QProcess process;
-    QProcessEnvironment env = process.processEnvironment();
-    qint64 pid;
-
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     env.insert("_TNT_CLIENT_APPLICATION_ID", "d3b2a0c1-f0d0-4888-ae0b-1c5e1febdafb");
     env.insert("_TNT_SESSION_ID", "12345678-1234-1234-1234-123456789012");
+    QStringList variables = env.toStringList();
+    variables.sort(Qt::CaseInsensitive);
+    std::wstring environment = variables.join(QChar(u'\0')).toStdWString();
+    environment.push_back(L'\0'); // Including the string terminator, the block ends with two NULs.
 
-    process.setProcessEnvironment(env);
-    process.setWorkingDirectory(directory);
-    process.setProgram(gameClientPath);
-    process.setArguments({"gf", QString::number(gameLanguage)});
-
-    PROCESS_INFORMATION* procInfo;
-    DWORD threadId;
-
-    process.setCreateProcessArgumentsModifier([&](QProcess::CreateProcessArguments *args) {
-        args->flags |= CREATE_SUSPENDED;
-        procInfo = args->processInformation;
-    });
-
-    if (!process.startDetached(&pid))
-    {
-        qDebug() << "Error creating process";
+    const QFileInfo game(gameClientPath);
+    const std::wstring path = QDir::toNativeSeparators(game.absoluteFilePath()).toStdWString();
+    const std::wstring directory = QDir::toNativeSeparators(game.absolutePath()).toStdWString();
+    std::wstring arguments = L"\"" + path + L"\" gf " + std::to_wstring(gameLanguage);
+    STARTUPINFOW startup = {};
+    startup.cb = sizeof(startup);
+    PROCESS_INFORMATION process = {};
+    const DWORD flags = CREATE_SUSPENDED | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW;
+    if (!CreateProcessW(path.c_str(), arguments.data(), nullptr, nullptr, FALSE, flags, environment.data(),
+                        directory.c_str(), &startup, &process)) {
+        qWarning() << "Error creating game process:" << GetLastError();
         return false;
     }
 
-    threadId = procInfo->dwThreadId;
+    const DWORD pid = process.dwProcessId;
 
     QString dllPath = QDir::currentPath() + "/GflessDLL.dll";
-
     if (!injectDll(pid, dllPath))
         qDebug() << "Dll injection failed";
     else
         qDebug() << "Dll injected successfully";
 
-    // Resume the game
-    HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, threadId);
+    gameProcess.reset(process.hProcess);
+    launchCode = code;
+    this->displayName = displayName;
 
-    if (hThread == NULL)
-    {
-        qDebug() << "Error on OpenThread:" << GetLastError();
+    if (ResumeThread(process.hThread) == DWORD(-1)) {
+        qWarning() << "Error resuming game process:" << GetLastError();
+        TerminateProcess(process.hProcess, 1);
+        CloseHandle(process.hThread);
+        gameProcess.reset();
+        launchCode.clear();
         return false;
     }
 
-    if (ResumeThread(hThread) == -1) {
-        qDebug() << "Error on ResumeThread:" << GetLastError();
-        CloseHandle(hThread);
-        return false;
-    }
-
-    CloseHandle(hThread);
+    CloseHandle(process.hThread);
     createdPID = pid;
-
     return true;
 }
 
@@ -92,19 +79,42 @@ bool GflessClient::openClientSettings(const QString &gameClientPath)
     return QProcess::startDetached(settingsPath, {}, directory);
 }
 
-void GflessClient::handleNewConnection()
+bool GflessClient::isGameConnection(QLocalSocket *socket) const
 {
-    pipe = gfServer->nextPendingConnection();
-    connect(pipe, &QLocalSocket::readyRead, this, &GflessClient::handlePipe);
+    if (!gameProcess || WaitForSingleObject(gameProcess.get(), 0) != WAIT_TIMEOUT)
+        return false;
+
+    ULONG clientPid = 0;
+    const auto pipe = reinterpret_cast<HANDLE>(socket->socketDescriptor());
+    return GetNamedPipeClientProcessId(pipe, &clientPid) && clientPid == GetProcessId(gameProcess.get());
 }
 
-void GflessClient::handlePipe()
+void GflessClient::handleNewConnection()
 {
-    QByteArray output;
-    QJsonObject json = QJsonDocument::fromJson(pipe->readAll()).object();
-    QString method = json["method"].toString();
+    while (auto *socket = gfServer->nextPendingConnection()) {
+        if (!isGameConnection(socket)) {
+            socket->abort();
+            socket->deleteLater();
+            continue;
+        }
 
-    qDebug() << QJsonDocument(json).toJson();
+        connect(socket, &QLocalSocket::disconnected, socket, &QObject::deleteLater);
+        connect(socket, &QLocalSocket::readyRead, this, [this, socket] { handlePipe(socket); });
+        if (socket->bytesAvailable() > 0)
+            handlePipe(socket);
+    }
+}
+
+void GflessClient::handlePipe(QLocalSocket *socket)
+{
+    if (!isGameConnection(socket)) {
+        socket->abort();
+        return;
+    }
+
+    QByteArray output;
+    const QJsonObject json = QJsonDocument::fromJson(socket->readAll()).object();
+    const QString method = json["method"].toString();
 
     if (method == "ClientLibrary.isClientRunning")
         output = prepareResponse(json, "true");
@@ -113,15 +123,15 @@ void GflessClient::handlePipe()
         output = prepareResponse(json, json["params"].toObject()["sessionId"].toString().toUtf8());
 
     else if (method == "ClientLibrary.queryAuthorizationCode")
-        output = prepareResponse(json, token.toUtf8());
+        output = prepareResponse(json, std::exchange(launchCode, QString()));
 
     else if (method == "ClientLibrary.queryGameAccountName")
-        output = prepareResponse(json, displayName.toUtf8());
+        output = prepareResponse(json, displayName);
 
     else
         return;
 
-    pipe->write(output);
+    socket->write(output);
 }
 
 QByteArray GflessClient::prepareResponse(const QJsonObject &request, const QString &response)
